@@ -54,8 +54,12 @@
 				<div class="column">
 					<div class="control">
 						<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" name="cliente_numero_documento"
-							value="<?php echo $documento_db; ?>" required>
+						<input class="input" type="text" 
+       					name="cliente_numero_documento" 
+       					value="<?php echo $documento_db; ?>" 
+       					pattern="[0-9]{7,11}" 
+       					maxlength="11" 
+       					required >
 					</div>
 				</div>
 			</div>
