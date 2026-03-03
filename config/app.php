@@ -5,7 +5,10 @@
 	const APP_SESSION_NAME="POS";
 
 	/*----------  Tipos de documentos  ----------*/
-	const DOCUMENTOS_USUARIOS=["RIF","Cedula","Otro"];
+	const DOCUMENTOS_USUARIOS=["V","E","J","G","P"];
+
+	/*----------  Prefijos telefónicos Venezuela  ----------*/
+    const PREFIJOS_TELEFONICOS=["0412","0422","0414","0424","0416","0426"];
 
 
 	/*----------  Tipos de unidades de productos  ----------*/
