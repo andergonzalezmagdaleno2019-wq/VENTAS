@@ -47,8 +47,8 @@ class productController extends mainModel
 			exit();
 		}
 
-		if ($codigo == "" || $nombre == "" || $precio == "" || $stock == "" || $categoria == "" || $unidad == "" || $costo == "" || $stock_min == "") {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Faltan campos obligatorios", "icono" => "error"];
+		if ($codigo == "" || $nombre == "" || $precio == "" || $stock == "" || $categoria == "" || $unidad == "" || $costo == "" || $stock_min ==  "" || $stock_max == "") {
+			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
 			return json_encode($alerta);
 			exit();
 		}
@@ -64,6 +64,29 @@ class productController extends mainModel
             exit();
         }
 
+		/*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
+		if ((int)$stock_max <= 0) {
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Límite de Stock Inválido", 
+                "texto" => "El Stock Máximo (Límite) debe ser mayor a 0", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
+
+		if ((int)$stock_min >= (int)$stock_max) {
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Lógica de Stock Incorrecta", 
+                "texto" => "El Stock Mínimo (Alerta) no puede ser mayor o igual al Stock Máximo", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
+
 		$check_codigo = $this->ejecutarConsulta("SELECT producto_codigo FROM producto WHERE producto_codigo='$codigo'");
 		if ($check_codigo->rowCount() > 0) {
 			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El código ya existe", "icono" => "error"];
@@ -73,7 +96,7 @@ class productController extends mainModel
 
 		$img_dir = "../views/productos/";
 		$foto = "";
-		if ($_FILES['producto_foto']['name'] != "" && $_FILES['producto_foto']['size'] > 0) {
+		if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['name'] != "" && $_FILES['producto_foto']['size'] > 0) {
 			if (!file_exists($img_dir)) {
 				if (!mkdir($img_dir, 0777)) {
 					$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Error al crear directorio", "icono" => "error"];
@@ -401,6 +424,29 @@ class productController extends mainModel
             exit();
         }
 
+		/*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
+		if ((int)$stock_max <= 0) {
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Límite de Stock Inválido", 
+                "texto" => "El Stock Máximo (Límite) debe ser mayor a 0", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
+
+		if ((int)$stock_min >= (int)$stock_max) {
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Lógica de Stock Incorrecta", 
+                "texto" => "El Stock Mínimo (Alerta) no puede ser mayor o igual al Stock Máximo", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
+
 		if ($datos['producto_codigo'] != $codigo) {
 			$check_codigo = $this->ejecutarConsulta("SELECT producto_codigo FROM producto WHERE producto_codigo='$codigo'");
 			if ($check_codigo->rowCount() > 0) {
@@ -446,7 +492,7 @@ class productController extends mainModel
 		}
 		$datos = $datos->fetch();
 		$img_dir = "../views/productos/";
-		if ($_FILES['producto_foto']['name'] == "" && $_FILES['producto_foto']['size'] <= 0) {
+		if (!isset($_FILES['producto_foto']) || $_FILES['producto_foto']['name'] == "" || $_FILES['producto_foto']['size'] <= 0) {
 			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Seleccione una foto", "icono" => "error"];
 			return json_encode($alerta);
 			exit();

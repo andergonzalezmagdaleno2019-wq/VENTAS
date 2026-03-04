@@ -53,7 +53,7 @@
 
             $img_dir="../views/fotos/";
             $foto="";
-            if($_FILES['usuario_foto']['name']!="" && $_FILES['usuario_foto']['size']>0){
+            if(isset($_FILES['usuario_foto']) && $_FILES['usuario_foto']['name']!="" && $_FILES['usuario_foto']['size']>0){
                 if(!file_exists($img_dir)){ if(!mkdir($img_dir,0777)){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Error al crear directorio","icono"=>"error"]; return json_encode($alerta); exit(); } }
                 if(mime_content_type($_FILES['usuario_foto']['tmp_name'])!="image/jpeg" && mime_content_type($_FILES['usuario_foto']['tmp_name'])!="image/png"){
                     $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Formato de imagen no permitido","icono"=>"error"]; return json_encode($alerta); exit();
@@ -212,8 +212,9 @@
             $check_ventas=$this->ejecutarConsulta("SELECT usuario_id FROM venta WHERE usuario_id='$id' LIMIT 1");
             if($check_ventas->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se puede eliminar, tiene ventas asociadas","icono"=>"error"]; return json_encode($alerta); exit(); }
 
-            // IMPORTANTE: Primero borrar bitacora para evitar error de integridad
-            $this->ejecutarConsulta("DELETE FROM bitacora WHERE usuario_id='$id'");
+            
+            // IMPORTANTE: Mantenemos el historial de auditoría pasándolo al usuario principal (Admin)
+            $this->ejecutarConsulta("UPDATE bitacora SET usuario_id='1' WHERE usuario_id='$id'");
 
             $eliminarUsuario=$this->eliminarRegistro("usuario","usuario_id",$id);
             if($eliminarUsuario->rowCount()==1){
@@ -335,7 +336,7 @@
             if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado","icono"=>"error"]; return json_encode($alerta); exit(); }
             $datos=$datos->fetch();
             $img_dir="../views/fotos/";
-            if($_FILES['usuario_foto']['name']=="" && $_FILES['usuario_foto']['size']<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Seleccione una foto","icono"=>"error"]; return json_encode($alerta); exit(); }
+            if(!isset($_FILES['usuario_foto']) || $_FILES['usuario_foto']['name']=="" && $_FILES['usuario_foto']['size']<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Seleccione una foto","icono"=>"error"]; return json_encode($alerta); exit(); }
             if(!file_exists($img_dir)){ if(!mkdir($img_dir,0777)){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Error directorio","icono"=>"error"]; return json_encode($alerta); exit(); } }
             if(mime_content_type($_FILES['usuario_foto']['tmp_name'])!="image/jpeg" && mime_content_type($_FILES['usuario_foto']['tmp_name'])!="image/png"){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Formato incorrecto","icono"=>"error"]; return json_encode($alerta); exit(); }
             if($datos['usuario_foto']!=""){ $foto=explode(".", $datos['usuario_foto']); $foto=$foto[0]; }else{ $foto=str_ireplace(" ","_",$datos['usuario_nombre'])."_".rand(0,100); }

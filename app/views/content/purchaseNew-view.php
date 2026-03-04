@@ -6,6 +6,30 @@
 <div class="container is-fluid pb-6">
     
     <div class="columns">
+        
+        <div class="column is-one-third">
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        <i class="fas fa-tags"></i> &nbsp; Categorías
+                    </p>
+                </header>
+                <div class="card-content" style="max-height: 350px; overflow-y: auto;">
+                    <?php
+                        $datos_categorias_compra = $insLogin->seleccionarDatos("Normal","categoria","*",0);
+                        if($datos_categorias_compra->rowCount()>0){
+                            $datos_categorias_compra = $datos_categorias_compra->fetchAll();
+                            foreach($datos_categorias_compra as $cat_row){
+                                echo '<button type="button" class="button is-fullwidth is-outlined is-link mb-2" onclick="cargar_por_categoria_compra('.$cat_row['categoria_id'].')">'.$cat_row['categoria_nombre'].'</button>';
+                            }
+                        }else{
+                            echo '<p class="has-text-centered">No hay categorías</p>';
+                        }
+                    ?>
+                </div>
+            </div>
+        </div>
+
         <div class="column">
             <div class="card">
                 <header class="card-header">
@@ -20,18 +44,18 @@
                                 <input class="input" type="text" name="buscar_producto" id="buscar_producto" placeholder="Nombre o código del producto" required>
                             </div>
                             <div class="control">
-                                <button type="submit" class="button is-info">Buscar</button>
+                                <button type="submit" class="button is-info"><i class="fas fa-search"></i></button>
                             </div>
                         </div>
                     </form>
                     
-                    <div id="resultados_busqueda" class="mt-4"></div>
+                    <div id="resultados_busqueda" class="mt-4" style="max-height: 250px; overflow-y: auto;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="columns">
+    <div class="columns mt-4">
         <div class="column">
             <form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" method="POST" autocomplete="off" name="formpurchase">
                 <input type="hidden" name="modulo_compra" value="registrar">
@@ -124,52 +148,46 @@
     </div>
 
     <script>
-        /* 1. Calcular Totales en Bolívares al cargar la página */
-        document.addEventListener('DOMContentLoaded', function() {
-            let tasa_bcv = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
+        const resultadoBusqueda = document.getElementById('resultados_busqueda');
 
-            // Calcular subtotales de la tabla
-            let elementos = document.querySelectorAll('.precio-bcv-cart');
-            elementos.forEach(function(el) {
-                let usd = parseFloat(el.getAttribute('data-usd')) || 0;
-                if(tasa_bcv > 0){
-                    let formatBs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(usd * tasa_bcv);
-                    el.innerHTML = `Bs. ${formatBs}`;
-                } else {
-                    el.innerHTML = `<span class="has-text-danger">Sin BCV</span>`;
-                }
-            });
+        /* 1. Función para Cargar por Categoría mediante AJAX */
+        function cargar_por_categoria_compra(id){
+            let datos = new FormData();
+            datos.append('categoria_id', id);
+            datos.append('modulo_compra', 'buscar_por_categoria');
 
-            // Total General
-            let total_dolares = document.querySelector('#compra_total_hidden');
-            if(total_dolares){
-                let total_num = parseFloat(total_dolares.value) || 0;
-                
-                if(tasa_bcv > 0 && total_num > 0) {
-                    let total_bs = total_num * tasa_bcv;
-                    let formato_bs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(total_bs);
-                    document.querySelector('#total_compra_bs_label').innerHTML = `Bs. ${formato_bs}`;
-                } else if (total_num === 0) {
-                    document.querySelector('#total_compra_bs_label').innerHTML = `Bs. 0.00`;
-                } else {
-                    document.querySelector('#total_compra_bs_label').innerHTML = `<small class="has-text-danger is-size-6">Sin conexión BCV</small>`;
-                }
-            }
-        });
-
-        /* 2. Atrapar la tasa al enviar el formulario (Igual que en ventas) */
-        let form_purchase_action = document.querySelector("form[name='formpurchase']");
-        if(form_purchase_action){
-            form_purchase_action.addEventListener('submit', function(e){
-                let input_tasa = document.querySelector('#compra_tasa_bcv');
-                let tasa_bcv = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
-                if(input_tasa){ input_tasa.value = tasa_bcv; }
+            fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php',{
+                method: 'POST',
+                body: datos
+            })
+            .then(respuesta => respuesta.text())
+            .then(respuesta =>{
+                resultadoBusqueda.innerHTML = respuesta;
+                reactivarFormularios();
             });
         }
 
-        const formularioBuscar = document.getElementById('form-buscar-compra');
-        const resultadoBusqueda = document.getElementById('resultados_busqueda');
+        /* 2. Búsqueda en vivo (Mientras escribes) */
+        (function(){
+            let timer = null;
+            let input = document.querySelector('#buscar_producto');
+            let form = document.querySelector('#form-buscar-compra');
+            if(input){
+                input.addEventListener('keyup', function(e){
+                    clearTimeout(timer);
+                    timer = setTimeout(function(){
+                        if(input.value.trim().length > 0){ 
+                            form.dispatchEvent(new Event('submit')); 
+                        } else { 
+                            resultadoBusqueda.innerHTML = '';
+                        } 
+                    }, 300); // Espera 300ms después de dejar de teclear
+                });
+            }
+        })();
 
+        /* 3. Buscar normal por formulario */
+        const formularioBuscar = document.getElementById('form-buscar-compra');
         formularioBuscar.addEventListener('submit', function(e){
             e.preventDefault();
             let datos = new FormData(this);
@@ -203,6 +221,46 @@
                         return alertas_ajax(respuesta);
                     });
                 });
+            });
+        }
+
+        /* 4. Calcular Totales en Bolívares al cargar la página */
+        document.addEventListener('DOMContentLoaded', function() {
+            let tasa_bcv = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
+            let elementos = document.querySelectorAll('.precio-bcv-cart');
+            elementos.forEach(function(el) {
+                let usd = parseFloat(el.getAttribute('data-usd')) || 0;
+                if(tasa_bcv > 0){
+                    let formatBs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(usd * tasa_bcv);
+                    el.innerHTML = `Bs. ${formatBs}`;
+                } else {
+                    el.innerHTML = `<span class="has-text-danger">Sin BCV</span>`;
+                }
+            });
+
+            let total_dolares = document.querySelector('#compra_total_hidden');
+            if(total_dolares){
+                let total_num = parseFloat(total_dolares.value) || 0;
+                
+                if(tasa_bcv > 0 && total_num > 0) {
+                    let total_bs = total_num * tasa_bcv;
+                    let formato_bs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(total_bs);
+                    document.querySelector('#total_compra_bs_label').innerHTML = `Bs. ${formato_bs}`;
+                } else if (total_num === 0) {
+                    document.querySelector('#total_compra_bs_label').innerHTML = `Bs. 0.00`;
+                } else {
+                    document.querySelector('#total_compra_bs_label').innerHTML = `<small class="has-text-danger is-size-6">Sin conexión BCV</small>`;
+                }
+            }
+        });
+
+        /* 5. Atrapar la tasa al enviar el formulario */
+        let form_purchase_action = document.querySelector("form[name='formpurchase']");
+        if(form_purchase_action){
+            form_purchase_action.addEventListener('submit', function(e){
+                let input_tasa = document.querySelector('#compra_tasa_bcv');
+                let tasa_bcv = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
+                if(input_tasa){ input_tasa.value = tasa_bcv; }
             });
         }
     </script>

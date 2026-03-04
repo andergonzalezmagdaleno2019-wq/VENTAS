@@ -14,13 +14,13 @@
 		<div class="columns">
 			<div class="column">
 				<div class="control">
-					<label>Nombres</label>
+					<label>Nombres <?php echo CAMPO_OBLIGATORIO;?></label>
 					<input class="input" type="text" name="usuario_nombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
-					<label>Apellidos</label>
+					<label>Apellidos <?php echo CAMPO_OBLIGATORIO;?></label>
 					<input class="input" type="text" name="usuario_apellido" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
 				</div>
 			</div>
@@ -28,21 +28,21 @@
 		<div class="columns">
 			<div class="column">
 				<div class="control">
-					<label>Usuario</label>
+					<label>Usuario <?php echo CAMPO_OBLIGATORIO;?></label>
 					<input class="input" type="text" name="usuario_usuario" pattern="[a-zA-Z0-9]{4,20}" maxlength="20" required>
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
-					<label>Email</label>
-					<input class="input" type="email" name="usuario_email" maxlength="70">
+					<label>Email <?php echo CAMPO_OBLIGATORIO;?></label>
+					<input class="input" type="email" name="usuario_email" maxlength="70" required>
 				</div>
 			</div>
 		</div>
 		<div class="columns">
 			<div class="column">
 				<div class="control">
-					<label>Clave (Mínimo 7 caracteres)</label>
+					<label>Clave (Mínimo 7 caracteres) <?php echo CAMPO_OBLIGATORIO;?></label>
 					<input class="input" type="password" name="usuario_clave_1"
 						pattern="[a-zA-Z0-9$@.-]{7,100}"
 						maxlength="100" required>
@@ -50,16 +50,15 @@
 			</div>
 			<div class="column">
 				<div class="control">
-					<label>Repetir clave</label>
+					<label>Repetir clave <?php echo CAMPO_OBLIGATORIO;?></label>
 					<input class="input" type="password" name="usuario_clave_2"
 						pattern="[a-zA-Z0-9$@.-]{7,100}"
 						maxlength="100" required>
 				</div>
 			</div>
-		</div>
-</div>
-<div class="columns">
-	<div class="column">
+              </div>
+             <div class="columns">
+	          <div class="column">
 		<div class="file has-name is-boxed">
 			<label class="file-label">
 				<input class="file-input" type="file" name="usuario_foto" accept=".jpg, .png, .jpeg">

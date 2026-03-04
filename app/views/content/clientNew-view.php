@@ -26,7 +26,7 @@
 			<div class="control">
 				<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
 				<input class="input" type="text" name="cliente_numero_documento"
-					pattern="[0-9]{7,11}" maxlength="11" required>
+					pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" placeholder="Ej: V-12345678 o 12345678-9" required>
 			</div>
 		</div>
 		<div class="columns">
@@ -66,7 +66,7 @@
 		<div class="columns">
 			<div class="column">
 				<div class="control">
-					<label>Teléfono</label>
+					<label>Teléfono <?php echo CAMPO_OBLIGATORIO; ?></label>
 					<div class="field has-addons">
 						<p class="control">
 							<span class="select">
@@ -81,15 +81,15 @@
 						<p class="control is-expanded">
 							<input class="input" type="text" name="cliente_telefono"
 								pattern="[0-9]{7}" maxlength="7"
-								placeholder="1234567">
+								placeholder="1234567" required>
 						</p>
 					</div>
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
-					<label>Email</label>
-					<input class="input" type="email" name="cliente_email" maxlength="70">
+					<label>Email <?php echo CAMPO_OBLIGATORIO; ?></label>
+					<input class="input" type="email" name="cliente_email" maxlength="70" required>
 				</div>
 			</div>
 		</div>

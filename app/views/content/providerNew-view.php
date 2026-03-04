@@ -12,25 +12,41 @@
 		<div class="columns">
 		  	<div class="column">
 		    	<div class="control">
-					<label>Nombre del Proveedor</label>
+					<label>Nombre del Proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="proveedor_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required >
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
-					<label>RIF / Identificación</label>
-				  	<input class="input" type="text" name="proveedor_rif" pattern="[a-zA-Z0-9-]{1,30}" maxlength="30" required >
+					<label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
+				  	<input class="input" type="text" name="proveedor_rif" pattern="[0-9\-]{1,15}" maxlength="15" placeholder="Ej: 12345678-9" required >
 				</div>
 		  	</div>
-		</div>
 
+		</div>
 		<div class="columns">
-		  	<div class="column">
-		    	<div class="control">
-					<label>Teléfono</label>
-				  	<input class="input" type="text" name="proveedor_telefono" pattern="[0-9()+]{1,20}" maxlength="20" >
+			<div class="column">
+				<div class="control">
+					<label>Teléfono de contacto del proveedor<?php echo CAMPO_OBLIGATORIO; ?></label>
+					<div class="field has-addons">
+						<p class="control">
+							<span class="select">
+								<select name="proveedor_telefono_codigo">
+									<option value="" selected>Cód.</option>
+									<?php
+									echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO");
+									?>
+								</select>
+							</span>
+						</p>
+						<p class="control is-expanded">
+							<input class="input" type="text" name="proveedor_telefono"
+								pattern="[0-9]{7}" maxlength="7"
+								placeholder="1234567" required>
+						</p>
+					</div>
 				</div>
-		  	</div>
+			</div>
 		  	<div class="column">
 		    	<div class="control">
 					<label>Dirección</label>
@@ -40,8 +56,11 @@
 		</div>
 
 		<p class="has-text-centered">
-			<button type="reset" class="button is-link is-light is-rounded">Limpiar</button>
-			<button type="submit" class="button is-info is-rounded">Guardar</button>
+			<button type="reset" class="button is-link is-light is-rounded"><i class="fas fa-paint-roller"></i> &nbsp; Limpiar</button>
+			<button type="submit" class="button is-info is-rounded"><i class="far fa-save"></i> &nbsp; Guardar</button>
+		</p>
+		<p class="has-text-centered pt-6">
+			<small>Los campos marcados con <?php echo CAMPO_OBLIGATORIO; ?> son obligatorios</small>
 		</p>
 	</form>
 </div>

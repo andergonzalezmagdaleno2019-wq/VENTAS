@@ -23,6 +23,19 @@
 				exit();
 			}
 
+			
+			if($this->verificarDatos("[0-9\-]{1,15}", $rif)){
+				$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Formato de RIF Inválido",
+					"texto"=>"El RIF ingresado tiene caracteres no válidos. Solo se permiten números y guiones (-).",
+					"icono"=>"error"
+				];
+				return json_encode($alerta);
+				exit();
+			}
+			
+
 			$check_rif=$this->ejecutarConsulta("SELECT proveedor_rif FROM proveedor WHERE proveedor_rif='$rif'");
 			if($check_rif->rowCount()>0){
 				$alerta=[
@@ -194,6 +207,19 @@
 			if($nombre=="" || $rif==""){
 				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Los campos Nombre y RIF son obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
 			}
+
+			
+			if($this->verificarDatos("[0-9\-]{1,15}", $rif)){
+				$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Formato de RIF Inválido",
+					"texto"=>"El RIF ingresado tiene caracteres no válidos. Solo se permiten números y guiones (-).",
+					"icono"=>"error"
+				];
+				return json_encode($alerta);
+				exit();
+			}
+			
 
             // Validar si el RIF se cambió y si ya pertenece a otro proveedor
             if($datos['proveedor_rif'] != $rif){

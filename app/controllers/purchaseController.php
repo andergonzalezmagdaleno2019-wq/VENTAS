@@ -23,6 +23,27 @@
 			}else{ return '<div class="notification is-warning is-light"><strong>¡No encontrado!</strong><br>No hemos encontrado ningún producto con ese código o nombre.</div>'; }
 		}
 
+        /*----------  Controlador buscar producto por categoría (COMPRA) ----------*/
+		public function buscarPorCategoriaCompraControlador(){
+			$categoria_id = $this->limpiarCadena($_POST['categoria_id']);
+			if($categoria_id=="" || !is_numeric($categoria_id)){
+				return '<div class="notification is-warning is-light"><strong>¡Ocurrió un error!</strong><br>Categoría inválida</div>'; exit();
+			}
+
+			$datos=$this->ejecutarConsulta("SELECT * FROM producto WHERE categoria_id='$categoria_id' ORDER BY producto_nombre ASC");
+
+			if($datos->rowCount()>=1){
+				$datos=$datos->fetchAll();
+				$tabla='<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr><th class="has-text-centered">Producto</th><th class="has-text-centered">Stock Actual</th><th class="has-text-centered">Costo Actual</th><th class="has-text-centered">Agregar</th></tr></thead><tbody>';
+				foreach($datos as $rows){
+                    // NOTA: Pre-cargamos el input de Costo con el costo actual de la BD para que sea más rápido
+					$tabla.='<tr class="has-text-centered"><td>'.$rows['producto_nombre'].' ('.$rows['producto_codigo'].')</td><td>'.$rows['producto_stock'].'</td><td>$'.$rows['producto_costo'].'</td><td><form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" autocomplete="off"><input type="hidden" name="modulo_compra" value="agregar"><input type="hidden" name="producto_id" value="'.$rows['producto_id'].'"><div class="field has-addons is-justify-content-center"><div class="control"><input class="input is-small" type="number" name="compra_cantidad" placeholder="Cant." required min="1" style="width: 70px;"></div><div class="control"><input class="input is-small" type="text" name="compra_costo" placeholder="Costo $" value="'.$rows['producto_costo'].'" required style="width: 80px;"></div><div class="control"><button type="submit" class="button is-success is-small"><i class="fas fa-plus"></i></button></div></div></form></td></tr>';
+				}
+				$tabla.='</tbody></table></div>';
+				return $tabla;
+			}else{ return '<div class="notification is-warning is-light"><strong>¡No encontrado!</strong><br>No hemos encontrado ningún producto en esta categoría.</div>'; }
+		}
+
 		/*----------  Controlador agregar producto al carrito  ----------*/
 		public function agregarProductoCompraControlador(){
 			$id=$this->limpiarCadena($_POST['producto_id']);
@@ -76,8 +97,18 @@
                     $datos_detalle=[ ["campo_nombre"=>"compra_codigo","campo_marcador"=>":Codigo","campo_valor"=>$codigo_compra], ["campo_nombre"=>"producto_id","campo_marcador"=>":Producto","campo_valor"=>$detalle['producto_id']], ["campo_nombre"=>"compra_detalle_cantidad","campo_marcador"=>":Cantidad","campo_valor"=>$detalle['compra_cantidad']], ["campo_nombre"=>"compra_detalle_precio","campo_marcador"=>":Precio","campo_valor"=>$detalle['compra_costo']] ];
                     $this->guardarDatos("compra_detalle",$datos_detalle);
 
-                    $nuevo_costo = $detalle['compra_costo'];
-                    $nuevo_precio_venta = $nuevo_costo * 1.20; 
+                    // Obtenemos el precio actual del producto antes de actualizar
+$info_prod = $this->conectar()->query("SELECT producto_costo, producto_precio FROM producto WHERE producto_id='".$detalle['producto_id']."'")->fetch();
+
+$nuevo_costo = $detalle['compra_costo'];
+
+// Si el costo cambia, ajustamos el precio respetando el porcentaje de ganancia que ya tenía el producto
+if($info_prod['producto_costo'] > 0){
+    $porcentaje_ganancia = ($info_prod['producto_precio'] - $info_prod['producto_costo']) / $info_prod['producto_costo'];
+    $nuevo_precio_venta = $nuevo_costo + ($nuevo_costo * $porcentaje_ganancia);
+} else {
+    $nuevo_precio_venta = $nuevo_costo * 1.20; // Solo aplica 20% si el costo anterior era 0
+}
                     
                     $update_producto = $this->conectar()->prepare("UPDATE producto SET producto_stock = producto_stock + :Cantidad, producto_costo = :Costo, producto_precio = :Precio WHERE producto_id = :ID");
                     $update_producto->bindValue(":Cantidad", $detalle['compra_cantidad']);

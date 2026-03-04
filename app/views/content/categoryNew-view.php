@@ -18,7 +18,7 @@
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
-					<label>Ubicación en Almacén (Pasillo/Estante)</label>
+					<label>Ubicación en Almacenes </label>
 				  	<input class="input" type="text" name="categoria_ubicacion" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{5,150}" maxlength="150" >
 				</div>
 		  	</div>

@@ -36,7 +36,7 @@
 		<div class="columns">
 		  	<div class="column">
 		    	<div class="control">
-					<label>Código de barra</label>
+					<label>Código de barra <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_codigo" value="<?php echo $datos['producto_codigo']; ?>" pattern="[0-9]{1,13}" 
            				maxlength="13" 
            				required>
@@ -44,7 +44,7 @@
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
-					<label>Nombre</label>
+					<label>Nombre <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_nombre" value="<?php echo $datos['producto_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required >
 				</div>
 		  	</div>
@@ -68,23 +68,23 @@
 		<div class="columns">
 		  	<div class="column">
 		    	<div class="control">
-					<label>Costo de Compra (Neto) $</label>
+					<label>Costo de Compra (Neto) $ <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_costo" id="producto_costo_up" value="<?php echo $datos['producto_costo']; ?>" pattern="[0-9.]{1,25}" maxlength="25" required >
                     <p class="help is-info has-text-weight-bold" id="costo_bs_label_up">Bs. 0.00</p>
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
-					<label>Precio de Venta $</label>
+					<label>Precio de Venta $ <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_precio" id="producto_precio_up" value="<?php echo $datos['producto_precio']; ?>" pattern="[0-9.]{1,25}" maxlength="25" required >
                     <p class="help is-link has-text-weight-bold" id="precio_bs_label_up">Bs. 0.00</p>
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
-					<label>Unidad</label>
+					<label>Tipo de Producto <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<div class="select is-fullwidth">
-					  	<select name="producto_unidad">
+					  	<select name="producto_unidad" required>
 	                        <?php
 	                        	echo $insLogin->generarSelect(PRODUCTO_UNIDAD,$datos['producto_unidad']);
 	                        ?>
@@ -97,19 +97,19 @@
         <div class="columns">
 		  	<div class="column">
 		    	<div class="control">
-					<label>Stock Actual</label>
+					<label>Stock Actual <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_stock" value="<?php echo $datos['producto_stock']; ?>" pattern="[0-9]{1,25}" maxlength="25" required >
 				</div>
 		  	</div>
             <div class="column">
 		    	<div class="control">
-					<label>Stock Mínimo</label>
+					<label>Stock Mínimo <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_stock_min" value="<?php echo $datos['producto_stock_min']; ?>" pattern="[0-9]{1,25}" maxlength="25" required >
 				</div>
 		  	</div>
             <div class="column">
 		    	<div class="control">
-					<label>Stock Máximo</label>
+					<label>Stock Máximo <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_stock_max" value="<?php echo $datos['producto_stock_max']; ?>" pattern="[0-9]{1,25}" maxlength="25" required >
 				</div>
 		  	</div>
@@ -117,9 +117,10 @@
 
 		<div class="columns">
 		  	<div class="column">
-				<label>Categoría</label>
+				<label>Categoría <?php echo CAMPO_OBLIGATORIO; ?></label>
 		    	<div class="select is-fullwidth">
-				  	<select name="producto_categoria" >
+				  	<select name="producto_categoria" required>
+						<option value="" selected="" >Seleccione una opción</option>
 				    	<?php
                             $datos_categorias=$insLogin->seleccionarDatos("Normal","categoria","*",0);
                             $cc=1;

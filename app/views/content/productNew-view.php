@@ -12,7 +12,7 @@
 		<div class="columns">
 		  	<div class="column">
 		    	<div class="control">
-					<label>Código de barra</label>
+					<label>Código de barra <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_codigo" 
            				pattern="[0-9]{1,13}" 
            				maxlength="13" 
@@ -22,7 +22,7 @@
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
-					<label>Nombre</label>
+					<label>Nombre <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required >
 				</div>
 		  	</div>
@@ -60,9 +60,9 @@
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
-					<label>Unidad</label>
+					<label>Tipo de Producto <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<div class="select is-fullwidth">
-					  	<select name="producto_unidad">
+					  	<select name="producto_unidad" required>
 					  		<option value="" selected="" >Seleccione una opción</option>
 					  		<?php
                         		echo $insLogin->generarSelect(PRODUCTO_UNIDAD,"VACIO");
@@ -76,29 +76,29 @@
         <div class="columns">
 		  	<div class="column">
 		    	<div class="control">
-					<label>Stock Inicial</label>
+					<label>Stock Inicial (Cantidad) <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_stock" pattern="[0-9]{1,25}" maxlength="25" required >
 				</div>
 		  	</div>
             <div class="column">
 		    	<div class="control">
-					<label>Stock Mínimo (Alerta)</label>
-				  	<input class="input" type="text" name="producto_stock_min" pattern="[0-9]{1,25}" maxlength="25" required value="5" >
+					<label>Stock Mínimo (Alerta) <?php echo CAMPO_OBLIGATORIO; ?></label>
+				  	<input class="input" type="text" name="producto_stock_min" pattern="[0-9]{1,25}"  maxlength="25" required value="5" >
 				</div>
 		  	</div>
             <div class="column">
 		    	<div class="control">
-					<label>Stock Máximo (Límite)</label>
-				  	<input class="input" type="text" name="producto_stock_max" pattern="[0-9]{1,25}" maxlength="25" required value="100" >
+					<label>Stock Máximo (Límite) <?php echo CAMPO_OBLIGATORIO; ?></label>
+				  	<input class="input" type="text" name="producto_stock_max" pattern="[0-9]{1,25}"  maxlength="25" required value="100" >
 				</div>
 		  	</div>
 		</div>
 
 		<div class="columns">
 		  	<div class="column">
-				<label>Categoría</label>
+				<label>Categoría <?php echo CAMPO_OBLIGATORIO; ?></label>
 		    	<div class="select is-fullwidth">
-				  	<select name="producto_categoria" >
+				  	<select name="producto_categoria" required>
 				  		<option value="" selected="" >Seleccione una opción</option>
 				  		<?php
                             $datos_categorias=$insLogin->seleccionarDatos("Normal","categoria","*",0);

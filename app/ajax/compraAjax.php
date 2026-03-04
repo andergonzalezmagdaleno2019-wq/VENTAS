@@ -24,6 +24,9 @@
         if($_POST['modulo_compra']=="eliminar"){
             echo $insCompra->eliminarCompraControlador();
         }
+        if($_POST['modulo_compra']=="buscar_por_categoria"){
+            echo $insCompra->buscarPorCategoriaCompraControlador();
+        }
 	}else{
 		session_destroy();
 		header("Location: ".APP_URL."login/");

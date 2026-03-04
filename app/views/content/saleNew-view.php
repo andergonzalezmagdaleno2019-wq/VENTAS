@@ -199,10 +199,55 @@
                 </div>
                 <?php } ?>
 
+               <div class="columns">
+                    <div class="column is-half">
+                        <div class="control mb-5">
+                            <label>Método de Pago <?php echo CAMPO_OBLIGATORIO; ?></label>
+                            <div class="select is-fullwidth">
+                                <select name="venta_metodo_pago" id="venta_metodo_pago" required>
+                                    <option value="" selected>Seleccione una opción</option>
+                                    <option value="Pago Movil">Pago Móvil</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Divisas">Divisas ($ / €)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="control mb-5">
+                            <label>Referencia (Últ. 6 dígitos) <span id="req_referencia" style="color:red; display:none;">*</span></label>
+                            <input class="input" type="text" name="venta_referencia" id="venta_referencia" pattern="[0-9]{6}" maxlength="6" minlength="6" placeholder="Ej: 123456" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    /* Lógica para bloquear/desbloquear la referencia según el método de pago */
+                    document.getElementById('venta_metodo_pago').addEventListener('change', function(){
+                        let metodo = this.value;
+                        let refInput = document.getElementById('venta_referencia');
+                        let reqSpan = document.getElementById('req_referencia');
+                        
+                        // Si es pago electrónico, exigimos la referencia
+                        if(metodo === 'Pago Movil' || metodo === 'Transferencia'){
+                            refInput.disabled = false;
+                            refInput.required = true;
+                            reqSpan.style.display = 'inline'; // Muestra el asterisco rojo
+                        } else {
+                            // Si es efectivo, divisa o vacío, la bloqueamos y borramos
+                            refInput.disabled = true;
+                            refInput.required = false;
+                            refInput.value = '';
+                            reqSpan.style.display = 'none';
+                        }
+                    });
+                </script>
+
                 <div class="control mb-5">
                     <label>Monto Pagado / Confirmado (En <?php echo MONEDA_NOMBRE; ?>) <?php echo CAMPO_OBLIGATORIO; ?></label>
                     <input class="input has-text-weight-bold" type="text" name="venta_abono" id="venta_abono" value="<?php echo number_format($_SESSION['venta_total'],MONEDA_DECIMALES,'.',''); ?>" pattern="[0-9.]{1,25}" maxlength="25" readonly>
-                    <p class="help is-info">Monto exacto de la transferencia</p>
+                    <p class="help is-info">Monto exacto de la operación</p>
                 </div>
 
                 <div class="box mt-6 p-5" style="border-top: 5px solid #004595; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">

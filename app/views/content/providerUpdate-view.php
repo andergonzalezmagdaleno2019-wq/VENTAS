@@ -24,23 +24,28 @@
 		<div class="columns">
 		  	<div class="column">
 		    	<div class="control">
-					<label>Nombre del Proveedor</label>
+					<label>Nombre del Proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="proveedor_nombre" value="<?php echo $datos['proveedor_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,\- ]{3,70}" maxlength="70" required >
 				</div>
 		  	</div>
             <div class="column">
-		    	<div class="control">
-					<label>RIF</label>
-				  	<input class="input" type="text" name="proveedor_rif" value="<?php echo $datos['proveedor_rif']; ?>" pattern="[a-zA-Z0-9-]{8,20}" maxlength="20" required >
-				</div>
+					<div class="control">
+						<label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
+						<input class="input" type="text" 
+       					name="proveedor_rif" 
+       					value="<?php echo $datos['proveedor_rif']; ?>" 
+       					pattern="[0-9\-]{1,15}"
+       					maxlength="15" 
+       					required >
+					</div>
 		  	</div>
 		</div>
 
 		<div class="columns">
             <div class="column is-4">
 		    	<div class="control">
-					<label>Teléfono</label>
-				  	<input class="input" type="text" name="proveedor_telefono" value="<?php echo isset($datos['proveedor_telefono']) ? $datos['proveedor_telefono'] : ''; ?>" pattern="[0-9()+]{8,20}" maxlength="20" >
+					<label>Teléfono <?php echo CAMPO_OBLIGATORIO; ?></label>
+				  	<input class="input" type="text" name="proveedor_telefono" value="<?php echo isset($datos['proveedor_telefono']) ? $datos['proveedor_telefono'] : ''; ?>" pattern="[0-9()+]{8,20}" maxlength="20" required >
 				</div>
 		  	</div>
 		  	<div class="column is-8">

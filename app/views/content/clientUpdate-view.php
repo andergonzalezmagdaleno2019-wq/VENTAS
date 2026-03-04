@@ -49,18 +49,15 @@
 								?>
 							</select>
 						</div>
+						<div>
 					</div>
 				</div>
-				<div class="column">
-					<div class="control">
-						<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" 
-       					name="cliente_numero_documento" 
-       					value="<?php echo $documento_db; ?>" 
-       					pattern="[0-9]{7,11}" 
-       					maxlength="11" 
-       					required >
-					</div>
+				
+				<div class="control">
+				<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
+				<input class="input" type="text" name="cliente_numero_documento" value="<?php echo $datos['cliente_numero_documento']; ?>" pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" placeholder="Ej: V-12345678 o 12345678-9" required>
+			</div>
+			
 				</div>
 			</div>
 			<div class="columns">

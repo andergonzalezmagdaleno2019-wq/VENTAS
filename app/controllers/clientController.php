@@ -290,8 +290,8 @@ class clientController extends mainModel
 			exit();
 		}
 		# Verificando integridad de los datos (Documento, Nombre y Apellido) #
-		if ($this->verificarDatos("[0-9]{7,11}", $numero_documento)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El NUMERO DE DOCUMENTO no coincide con el formato solicitado (Solo números)", "icono" => "error"];
+		if ($this->verificarDatos("[a-zA-Z0-9\-]{7,30}", $numero_documento)) {
+			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El NUMERO DE DOCUMENTO no coincide con el formato solicitado. Se permiten letras, números y guiones.", "icono" => "error"];
 			return json_encode($alerta);
 			exit();
 		}

@@ -141,7 +141,30 @@
         public function registrarVentaControlador(){
             $caja=$this->limpiarCadena($_POST['venta_caja']);
             $venta_pagado=$this->limpiarCadena($_POST['venta_abono']);
+            $venta_metodo_pago = $this->limpiarCadena($_POST['venta_metodo_pago']);
             
+            // Si la caja estaba deshabilitada (Efectivo), PHP no recibe la variable, así que prevenimos ese error
+            $venta_referencia = isset($_POST['venta_referencia']) ? $this->limpiarCadena($_POST['venta_referencia']) : "";
+
+            /*== VALIDACIÓN ESTRICTA DE MÉTODOS DE PAGO ==*/
+            if($venta_metodo_pago == "Pago Movil" || $venta_metodo_pago == "Transferencia"){
+                
+                // Exigimos que sean exactamente 6 dígitos numéricos usando preg_match
+                if(!preg_match("/^[0-9]{6}$/", $venta_referencia)){
+                    $alerta=[
+                        "tipo"=>"simple",
+                        "titulo"=>"Referencia Inválida",
+                        "texto"=>"Para pagos electrónicos (Pago Móvil / Transferencia) la referencia debe ser de EXACTAMENTE 6 NÚMEROS.",
+                        "icono"=>"error"
+                    ];
+                    return json_encode($alerta);
+                    exit();
+                }
+
+            } else {
+                // Si es Efectivo o Divisa, por seguridad forzamos a que la referencia quede vacía en la base de datos
+                $venta_referencia = "";
+            }
             // Capturar la Tasa BCV
             $venta_tasa_bcv=$this->limpiarCadena($_POST['venta_tasa_bcv']);
             if(!is_numeric($venta_tasa_bcv) || $venta_tasa_bcv == ""){ $venta_tasa_bcv = 0; }
@@ -161,7 +184,13 @@
             if($venta_pagado<$venta_total_final){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El pagado no puede ser menor al total","icono"=>"error"]; return json_encode($alerta); exit(); }
             $venta_cambio=$venta_pagado-$venta_total_final; $venta_cambio=number_format($venta_cambio,MONEDA_DECIMALES,'.','');
             $movimiento_cantidad=$venta_pagado-$venta_cambio; $movimiento_cantidad=number_format($movimiento_cantidad,MONEDA_DECIMALES,'.','');
-            $total_caja=$datos_caja['caja_efectivo']+$movimiento_cantidad; $total_caja=number_format($total_caja,MONEDA_DECIMALES,'.','');
+            if($venta_metodo_pago == "Efectivo" || $venta_metodo_pago == "Divisas"){
+    $total_caja=$datos_caja['caja_efectivo']+$movimiento_cantidad; 
+} else {
+    
+    $total_caja=$datos_caja['caja_efectivo']; 
+}
+$total_caja=number_format($total_caja,MONEDA_DECIMALES,'.','');
 
             $errores_productos=0;
 			foreach($_SESSION['datos_producto_venta'] as $productos){
@@ -195,11 +224,14 @@
 				["campo_nombre"=>"venta_pagado","campo_marcador"=>":Pagado","campo_valor"=>$venta_pagado],
 				["campo_nombre"=>"venta_cambio","campo_marcador"=>":Cambio","campo_valor"=>$venta_cambio],
                 ["campo_nombre"=>"venta_tasa_bcv","campo_marcador"=>":Tasa","campo_valor"=>$venta_tasa_bcv],
+                
+                ["campo_nombre"=>"venta_metodo_pago","campo_marcador"=>":Metodo","campo_valor"=>$venta_metodo_pago],
+                ["campo_nombre"=>"venta_referencia","campo_marcador"=>":Referencia","campo_valor"=>$venta_referencia],
+                
 				["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
 				["campo_nombre"=>"cliente_id","campo_marcador"=>":Cliente","campo_valor"=>$_SESSION['datos_cliente_venta']['cliente_id']],
 				["campo_nombre"=>"caja_id","campo_marcador"=>":Caja","campo_valor"=>$caja]
             ];
-
             $agregar_venta=$this->guardarDatos("venta",$datos_venta_reg);
 
             if($agregar_venta->rowCount()!=1){
@@ -256,30 +288,39 @@
         }
 
         /*----------  Controlador listar venta (CON BOLÍVARES EN TABLA) ----------*/
+		/*----------  Controlador listar venta (CON BOLÍVARES Y MÉTODOS DE PAGO) ----------*/
 		public function listarVentaControlador($pagina,$registros,$url,$busqueda){
 			$pagina=$this->limpiarCadena($pagina); $registros=$this->limpiarCadena($registros); $url=$this->limpiarCadena($url); $url=APP_URL.$url."/"; $busqueda=$this->limpiarCadena($busqueda); $tabla="";
 			$pagina = (isset($pagina) && $pagina>0) ? (int) $pagina : 1; $inicio = ($pagina>0) ? (($pagina * $registros)-$registros) : 0;
 			
-            // NUEVO: SE AGREGÓ venta_tasa_bcv A LA CONSULTA
-            $campos_tablas="venta.venta_id,venta.venta_codigo,venta.venta_fecha,venta.venta_hora,venta.venta_total,venta.venta_tasa_bcv,venta.usuario_id,venta.cliente_id,venta.caja_id,usuario.usuario_id,usuario.usuario_nombre,usuario.usuario_apellido,cliente.cliente_id,cliente.cliente_nombre,cliente.cliente_apellido";
+            // EXTRAEMOS METODO DE PAGO Y REFERENCIA DE LA BD
+            $campos_tablas="venta.venta_id,venta.venta_codigo,venta.venta_fecha,venta.venta_hora,venta.venta_total,venta.venta_tasa_bcv,venta.venta_metodo_pago,venta.venta_referencia,venta.usuario_id,venta.cliente_id,venta.caja_id,usuario.usuario_id,usuario.usuario_nombre,usuario.usuario_apellido,cliente.cliente_id,cliente.cliente_nombre,cliente.cliente_apellido";
 			
             if(isset($busqueda) && $busqueda!=""){
-				$consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id WHERE (venta.venta_codigo='$busqueda') ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
-				$consulta_total="SELECT COUNT(venta_id) FROM venta WHERE (venta.venta_codigo='$busqueda')";
+                // AHORA BUSCA POR CÓDIGO O POR NÚMERO DE REFERENCIA
+				$consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id WHERE (venta.venta_codigo='$busqueda' OR venta.venta_referencia='$busqueda') ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
+				$consulta_total="SELECT COUNT(venta_id) FROM venta WHERE (venta.venta_codigo='$busqueda' OR venta.venta_referencia='$busqueda')";
 			}else{
 				$consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
 				$consulta_total="SELECT COUNT(venta_id) FROM venta";
 			}
 			$datos = $this->ejecutarConsulta($consulta_datos); $datos = $datos->fetchAll(); $total = $this->ejecutarConsulta($consulta_total); $total = (int) $total->fetchColumn(); $numeroPaginas =ceil($total/$registros);
-			$tabla.='<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-light"><th class="has-text-centered">NRO.</th><th class="has-text-centered">Codigo</th><th class="has-text-centered">Fecha</th><th class="has-text-centered">Cliente</th><th class="has-text-centered">Vendedor</th><th class="has-text-centered">Total Facturado</th><th class="has-text-centered">Opciones</th></tr></thead><tbody>';
-		    if($total>=1 && $pagina<=$numeroPaginas){
+			
+            // AGREGAMOS LA COLUMNA "PAGO"
+            $tabla.='<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-light"><th class="has-text-centered">NRO.</th><th class="has-text-centered">Codigo</th><th class="has-text-centered">Fecha</th><th class="has-text-centered">Cliente</th><th class="has-text-centered">Vendedor</th><th class="has-text-centered">Pago</th><th class="has-text-centered">Total Facturado</th><th class="has-text-centered">Opciones</th></tr></thead><tbody>';
+		    
+            if($total>=1 && $pagina<=$numeroPaginas){
 				$contador=$inicio+1; $pag_inicio=$inicio+1;
 				foreach($datos as $rows){
                     
-                    // Cálculo de Bolívares para la tabla
+                    // Cálculo de Bolívares
                     $tasa = (isset($rows['venta_tasa_bcv']) && $rows['venta_tasa_bcv'] > 0) ? $rows['venta_tasa_bcv'] : 0;
                     $total_bs = $rows['venta_total'] * $tasa;
                     $str_bs = ($tasa > 0) ? 'Bs. '.number_format($total_bs, 2, ',', '.') : '<small class="has-text-grey">N/A</small>';
+
+                    // Método de Pago y Referencia visual
+                    $metodo = isset($rows['venta_metodo_pago']) ? $rows['venta_metodo_pago'] : "N/A";
+                    $referencia = (isset($rows['venta_referencia']) && $rows['venta_referencia']!="") ? "<br><small class='has-text-grey'>Ref: ".$rows['venta_referencia']."</small>" : "";
 
 					$tabla.='<tr class="has-text-centered" >
                                 <td>'.$rows['venta_id'].'</td>
@@ -287,6 +328,9 @@
                                 <td>'.date("d-m-Y", strtotime($rows['venta_fecha'])).' '.$rows['venta_hora'].'</td>
                                 <td>'.$this->limitarCadena($rows['cliente_nombre'].' '.$rows['cliente_apellido'],30,"...").'</td>
                                 <td>'.$this->limitarCadena($rows['usuario_nombre'].' '.$rows['usuario_apellido'],30,"...").'</td>
+                                <td>
+                                    <strong>'.$metodo.'</strong>'.$referencia.'
+                                </td>
                                 <td>
                                     <strong>'.MONEDA_SIMBOLO.number_format($rows['venta_total'],MONEDA_DECIMALES,MONEDA_SEPARADOR_DECIMAL,MONEDA_SEPARADOR_MILLAR).' '.MONEDA_NOMBRE.'</strong><br>
                                     <span class="has-text-link is-size-7">'.$str_bs.'</span>
@@ -299,7 +343,7 @@
                             </tr>';
 					$contador++;
 				} $pag_final=$contador-1;
-			}else{ $tabla.='<tr class="has-text-centered" ><td colspan="7">No hay registros en el sistema</td></tr>'; }
+			}else{ $tabla.='<tr class="has-text-centered" ><td colspan="8">No hay registros en el sistema</td></tr>'; }
 			$tabla.='</tbody></table></div>';
 			if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando ventas <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de un <strong>total de '.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7); }
 			return $tabla;

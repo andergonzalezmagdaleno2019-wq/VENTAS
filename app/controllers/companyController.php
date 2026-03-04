@@ -49,6 +49,35 @@
 				}
             }
 
+			/*== PROCESANDO EL LOGO DE LA EMPRESA ==*/
+            if(isset($_FILES['empresa_foto']) && $_FILES['empresa_foto']['name'] != "" && $_FILES['empresa_foto']['size'] > 0){
+                
+                $img_dir = "../views/img/";
+                
+                // Comprobando el formato de la imagen
+                if($_FILES['empresa_foto']['type']=="image/jpeg" || $_FILES['empresa_foto']['type']=="image/png" || $_FILES['empresa_foto']['type']=="image/jpg"){
+                    
+                    // Comprobando el peso (Máximo 3MB)
+                    if(($_FILES['empresa_foto']['size']/1024) <= 3072){
+                        
+                        // Forzamos el nombre a "logo.png" que es el que buscan los reportes PDF
+                        $foto_nombre = "logo.png";
+                        
+                        // Otorgamos permisos y sobreescribimos la imagen
+                        chmod($img_dir, 0777);
+                        if(!move_uploaded_file($_FILES['empresa_foto']['tmp_name'], $img_dir.$foto_nombre)){
+                            $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No se pudo subir el logo al servidor","icono"=>"error"]; return json_encode($alerta); exit();
+                        }
+
+                    }else{
+                        $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"La imagen supera el peso máximo permitido de 3MB","icono"=>"error"]; return json_encode($alerta); exit();
+                    }
+
+                }else{
+                    $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El formato del logo no está permitido (solo JPG o PNG)","icono"=>"error"]; return json_encode($alerta); exit();
+                }
+            }
+
             $empresa_datos_reg=[
 				["campo_nombre"=>"empresa_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
                 ["campo_nombre"=>"empresa_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
@@ -129,6 +158,35 @@
 				["campo_nombre"=>"empresa_email","campo_marcador"=>":Email","campo_valor"=>$email],
 				["campo_nombre"=>"empresa_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
 			];
+
+			/*== PROCESANDO EL LOGO DE LA EMPRESA ==*/
+            if(isset($_FILES['empresa_foto']) && $_FILES['empresa_foto']['name'] != "" && $_FILES['empresa_foto']['size'] > 0){
+                
+                $img_dir = "../views/img/";
+                
+                // Comprobando el formato de la imagen
+                if($_FILES['empresa_foto']['type']=="image/jpeg" || $_FILES['empresa_foto']['type']=="image/png" || $_FILES['empresa_foto']['type']=="image/jpg"){
+                    
+                    // Comprobando el peso (Máximo 3MB)
+                    if(($_FILES['empresa_foto']['size']/1024) <= 3072){
+                        
+                        // Forzamos el nombre a "logo.png" que es el que buscan los reportes PDF
+                        $foto_nombre = "logo.png";
+                        
+                        // Otorgamos permisos y sobreescribimos la imagen
+                        chmod($img_dir, 0777);
+                        if(!move_uploaded_file($_FILES['empresa_foto']['tmp_name'], $img_dir.$foto_nombre)){
+                            $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No se pudo subir el logo al servidor","icono"=>"error"]; return json_encode($alerta); exit();
+                        }
+
+                    }else{
+                        $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"La imagen supera el peso máximo permitido de 3MB","icono"=>"error"]; return json_encode($alerta); exit();
+                    }
+
+                }else{
+                    $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El formato del logo no está permitido (solo JPG o PNG)","icono"=>"error"]; return json_encode($alerta); exit();
+                }
+            }
 
 			$condicion=["condicion_campo"=>"empresa_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
