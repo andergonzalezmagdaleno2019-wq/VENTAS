@@ -20,7 +20,6 @@
         use app\controllers\categoryController;
         $insCategory = new categoryController();
 
-        // Pedimos todos los datos, ya que el controlador parece ignorar el WHERE
         $datos = $insCategory->seleccionarDatos("Normal", "categoria", "*", "");
         
         $contador = 1;

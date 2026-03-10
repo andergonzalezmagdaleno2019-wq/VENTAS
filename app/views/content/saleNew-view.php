@@ -25,7 +25,7 @@
                         <div class="column">
                             <div class="field is-grouped">
                                 <p class="control is-expanded">
-                                    <input class="input" type="text" pattern="[a-zA-Z0-9- ]{1,70}" maxlength="70" autofocus="autofocus" placeholder="Código de barras o Nombre" id="sale-barcode-input">
+                                    <input class="input" type="text" pattern="[a-zA-Z0-9- ]{1,70}" maxlength="70" autofocus="autofocus" placeholder="Ingrese el Código de barras" id="sale-barcode-input">
                                 </p>
                                 <a class="control">
                                     <button type="submit" class="button is-info">
@@ -360,23 +360,86 @@
                 </script>
                 <div class="column">
                     <div class="field">
-                        <label class="label">Buscar (Nombre, Marca, Modelo o Código)</label>
-                        <div class="control has-addons">
-                            <input class="input" type="text" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{1,30}" name="input_codigo" id="input_codigo" maxlength="30" placeholder="Buscar en la categoría o en todo el catálogo">
-                            <a class="control">
-                                <button type="button" class="button is-link" id="btn_buscar_modal" onclick="buscar_codigo()"><i class="fas fa-search"></i></button>
-                            </a>
+                        <label class="label">Filtros de búsqueda avanzada</label>
+                        <input type="hidden" id="id_categoria_variable" value="">
+                        <div class="columns is-multiline">
+
+                            <div class="column is-6">
+                                <div class="field">
+                                    <div class="control has-icons-left">
+                                        <div class="select is-fullwidth">
+                                            <select id="filtro_marca" onchange="buscar_codigo()">
+                                                <option value="">Todas las Marcas</option>
+                                                <?php
+                                                $marcas = $insProductoModal->seleccionarDatos("Normal", "producto GROUP BY producto_marca", "producto_marca", 0);
+                                                while ($m = $marcas->fetch()) {
+                                                    if ($m['producto_marca'] != "") echo '<option value="' . $m['producto_marca'] . '">' . $m['producto_marca'] . '</option>';
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        <div class="icon is-small is-left"><i class="fas fa-tag"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-6">
+                                <div class="field">
+                                    <div class="control has-icons-left">
+                                        <div class="select is-fullwidth">
+                                            <select id="filtro_modelo" onchange="buscar_codigo()">
+                                                <option value="">Todos los Modelos</option>
+                                                <?php
+                                                $modelos = $insProductoModal->seleccionarDatos("Normal", "producto GROUP BY producto_modelo", "producto_modelo", 0);
+                                                while ($mo = $modelos->fetch()) {
+                                                    if ($mo['producto_modelo'] != "") echo '<option value="' . $mo['producto_modelo'] . '">' . $mo['producto_modelo'] . '</option>';
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        <div class="icon is-small is-left"><i class="fas fa-microchip"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-12">
+                                <div class="field has-addons">
+                                    <div class="control is-expanded">
+                                        <input class="input" type="text" id="input_codigo" placeholder="Escribe nombre, marca o modelo...">
+                                    </div>
+                                    <div class="control">
+                                        <button type="button" class="button is-link" onclick="buscar_codigo()">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                     <div id="tabla_productos"></div>
                 </div>
             </div>
             <script>
-                // Cargar productos por categoría via AJAX
+
+                //Funcion para cargar productos por categoria
                 function cargar_por_categoria(id) {
+                    let filtroMarca = document.querySelector('#filtro_marca');
+                    let filtroModelo = document.querySelector('#filtro_modelo');
+                    let inputBusqueda = document.querySelector('#input_codigo');
+                    let categoriaVariable = document.querySelector('#id_categoria_variable');
+
+                    if (filtroMarca) filtroMarca.value = "";
+                    if (filtroModelo) filtroModelo.value = "";
+                    if (inputBusqueda) inputBusqueda.value = "";
+
+                    // 2. Guardamos el ID de la subcategoría en el input oculto que acabas de crear
+                    if (categoriaVariable) categoriaVariable.value = id;
+
+                    // 3. Enviamos la petición al servidor para cargar los productos
                     let datos = new FormData();
-                    datos.append('categoria_id', id);
-                    datos.append('modulo_venta', 'buscar_por_categoria');
+                    datos.append("categoria_id", id);
+                    datos.append("modulo_venta", "buscar_por_categoria");
 
                     fetch('<?php echo APP_URL; ?>app/ajax/ventaAjax.php', {
                             method: 'POST',
@@ -384,7 +447,10 @@
                         })
                         .then(respuesta => respuesta.text())
                         .then(respuesta => {
-                            document.querySelector('#tabla_productos').innerHTML = respuesta;
+                            let tabla_productos = document.querySelector('#tabla_productos');
+                            if (tabla_productos) {
+                                tabla_productos.innerHTML = respuesta;
+                            }
                         });
                 }
 
@@ -534,14 +600,17 @@
 
     /*----------  Buscar codigo  ----------*/
     function buscar_codigo() {
-        let input_codigo = document.querySelector('#input_codigo').value;
+        let input_codigo = document.querySelector('#input_codigo').value.trim();
+        let marca = document.querySelector('#filtro_marca').value;
+        let modelo = document.querySelector('#filtro_modelo').value;
 
-        input_codigo = input_codigo.trim();
-
-        if (input_codigo != "") {
+        // Aunque el texto esté vacío, si hay marca o modelo seleccionados, permitimos la búsqueda
+        if (input_codigo != "" || marca != "" || modelo != "") {
 
             let datos = new FormData();
             datos.append("buscar_codigo", input_codigo);
+            datos.append("filtro_marca", marca); // Enviamos marca
+            datos.append("filtro_modelo", modelo); // Enviamos modelo
             datos.append("modulo_venta", "buscar_codigo");
 
             fetch('<?php echo APP_URL; ?>app/ajax/ventaAjax.php', {
@@ -555,12 +624,7 @@
                 });
 
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Ocurrió un error inesperado',
-                text: 'Debes de introducir el Nombre, Marca o Modelo del producto',
-                confirmButtonText: 'Aceptar'
-            });
+            document.querySelector('#tabla_productos').innerHTML = "";
         }
     }
 

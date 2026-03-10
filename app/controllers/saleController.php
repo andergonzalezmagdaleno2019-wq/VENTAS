@@ -5,24 +5,103 @@
 
 	class saleController extends mainModel{
 
-		/*---------- Controlador buscar codigo de producto ----------*/
-        public function buscarCodigoVentaControlador(){
-			$producto=$this->limpiarCadena($_POST['buscar_codigo']);
-			if($producto==""){
-				return '<article class="message is-warning mt-4 mb-4"><div class="message-header"><p>¡Ocurrió un error inesperado!</p></div><div class="message-body has-text-centered"><i class="fas fa-exclamation-triangle fa-2x"></i><br>Debes de introducir el Nombre, Marca o Modelo del producto</div></article>'; exit();
-            }
-            $datos_productos=$this->ejecutarConsulta("SELECT * FROM producto WHERE producto_estado='Activo' AND (producto_nombre LIKE '%$producto%' OR producto_marca LIKE '%$producto%' OR producto_codigo LIKE '%$producto%' OR producto_modelo LIKE '%$producto%') ORDER BY producto_nombre ASC");
-            if($datos_productos->rowCount()>=1){
-				$datos_productos=$datos_productos->fetchAll();
-				$tabla='<div class="table-container mb-6"><table class="table is-striped is-narrow is-hoverable is-fullwidth"><tbody>';
-				foreach($datos_productos as $rows){
-					$tabla.='<tr class="has-text-left" ><td><i class="fas fa-box fa-fw"></i> &nbsp; '.$rows['producto_nombre'].' (Stock: '.$rows['producto_stock'].')</td><td class="has-text-centered"><button type="button" class="button is-link is-rounded is-small" onclick="agregar_codigo(\''.$rows['producto_codigo'].'\')"><i class="fas fa-plus-circle"></i></button></td></tr>';
-				}
-				$tabla.='</tbody></table></div>'; return $tabla;
-			}else{
-				return '<article class="message is-warning mt-4 mb-4"><div class="message-header"><p>¡Ocurrió un error inesperado!</p></div><div class="message-body has-text-centered"><i class="fas fa-exclamation-triangle fa-2x"></i><br>No hemos encontrado ningún producto ACTIVO en el sistema que coincida con <strong>“'.$producto.'”</strong></div></article>'; exit();
-			}
+    /*---------- Controlador buscar codigo de producto ----------*/
+    public function buscarCodigoVentaControlador()
+    {
+        // Limpiamos los 3 posibles campos de búsqueda
+        $producto = $this->limpiarCadena($_POST['buscar_codigo']);
+        $marca = isset($_POST['filtro_marca']) ? $this->limpiarCadena($_POST['filtro_marca']) : "";
+        $modelo = isset($_POST['filtro_modelo']) ? $this->limpiarCadena($_POST['filtro_modelo']) : "";
+
+        // Ahora validamos que AL MENOS uno de los tres tenga contenido
+        if ($producto == "" && $marca == "" && $modelo == "") {
+            return '<article class="message is-warning mt-4 mb-4">
+            <div class="message-header"><p>¡Ocurrió un error inesperado!</p></div>
+            <div class="message-body has-text-centered">
+                <i class="fas fa-exclamation-triangle fa-2x"></i><br>
+                Debes de introducir el Nombre, seleccionar una Marca o un Modelo
+            </div>
+        </article>';
+            exit();
         }
+
+        // Iniciamos la consulta base
+        $consulta_sql = "SELECT * FROM producto WHERE producto_estado='Activo'";
+
+        // Agregamos filtros dinámicos según lo que el usuario haya usado
+        if ($producto != "") {
+            $consulta_sql .= " AND (producto_nombre LIKE '%$producto%' OR producto_codigo LIKE '%$producto%')";
+        }
+
+        if ($marca != "") {
+            $consulta_sql .= " AND producto_marca = '$marca'";
+        }
+
+        if ($modelo != "") {
+            $consulta_sql .= " AND producto_modelo = '$modelo'";
+        }
+
+        $consulta_sql .= " ORDER BY producto_nombre ASC";
+
+        // Ejecutamos la consulta final
+        $datos_productos = $this->ejecutarConsulta($consulta_sql);
+
+        if ($datos_productos->rowCount() >= 1) {
+            $datos_productos = $datos_productos->fetchAll();
+            $tabla = ""; // Limpiamos para usar el diseño de columnas
+
+            /*---------- Encabezado de guía (NUEVO) ----------*/
+            $tabla .= '
+                <div class="columns is-mobile has-text-grey is-size-7 has-text-weight-bold has-text-centered mb-0 p-2" style="border-bottom: 2px solid #edeff2; margin: 0;">
+                    <div class="column is-narrow" style="width: 40px;"></div> 
+                    <div class="column is-4 has-text-left">NOMBRE</div>
+                    <div class="column is-3">MARCA</div>
+                    <div class="column is-3">MODELO | STOCK</div>
+                    <div class="column is-narrow" style="width: 40px;"></div>
+                </div>';
+
+            foreach ($datos_productos as $rows) {
+                /*---------- Filas de productos con el nuevo diseño ----------*/
+                $tabla .= '
+                <div class="columns is-mobile is-vcentered mb-0 p-2" style="border-bottom: 1px solid #f1f1f1; margin: 0;">
+                    
+                    <div class="column is-narrow">
+                        <i class="fas fa-box has-text-grey-light"></i>
+                    </div>
+
+                    <div class="column is-4 has-text-left">
+                        <span class="is-size-7 has-text-weight-semibold">' . $rows['producto_nombre'] . '</span>
+                    </div>
+                    
+                    <div class="column is-3 has-text-centered">
+                        <span class="tag is-light">' . $rows['producto_marca'] . '</span>
+                    </div>
+                    
+                    <div class="column is-3 has-text-centered">
+                        <span class="is-size-7 has-text-grey">' . $rows['producto_modelo'] . '</span>
+                        <br>
+                        <small class="has-text-link">Stock: ' . $rows['producto_stock'] . '</small>
+                    </div>
+
+                    <div class="column is-narrow">
+                        <button type="button" class="button is-link is-rounded is-small" onclick="agregar_codigo(\'' . $rows['producto_codigo'] . '\')">
+                            <i class="fas fa-plus-circle"></i>
+                        </button>
+                    </div>
+                </div>';
+            }
+            return $tabla;
+        } else {
+            return '<article class="message is-warning mt-4 mb-4">
+            <div class="message-header"><p>¡Ocurrió un error inesperado!</p></div>
+            <div class="message-body has-text-centered">
+                <i class="fas fa-exclamation-triangle fa-2x"></i><br>
+                No hemos encontrado ningún producto que coincida con los filtros seleccionados.
+            </div>
+        </article>';
+            exit();
+        }
+    }
 
         /*---------- Controlador buscar productos por categoría ----------*/
         public function buscarPorCategoriaVentaControlador(){
@@ -35,9 +114,42 @@
             if($datos_productos->rowCount()>=1){
                 $datos_productos=$datos_productos->fetchAll();
                 $tabla='<div class="table-container mb-6"><table class="table is-striped is-narrow is-hoverable is-fullwidth"><tbody>';
-                foreach($datos_productos as $rows){
-                    $tabla.='<tr class="has-text-left" ><td><i class="fas fa-box fa-fw"></i> &nbsp; '.$rows['producto_nombre'].' (Stock: '.$rows['producto_stock'].')</td><td class="has-text-centered"><button type="button" class="button is-link is-rounded is-small" onclick="agregar_codigo(\''.$rows['producto_codigo'].'\')"><i class="fas fa-plus-circle"></i></button></td></tr>';
-                }
+
+                $tabla .= '
+                <div class="columns is-gapless mb-2 is-mobile has-text-grey is-size-7 has-text-weight-bold has-text-centered" style="border-bottom: 2px solid #edeff2; padding-bottom: 5px; margin-left: 35px; margin-right: 45px;">
+                    <div class="column is-4">NOMBRE</div>
+                    <div class="column is-4">MARCA</div>
+                    <div class="column is-4">MODELO | STOCK</div>
+                </div>';
+            foreach($datos_productos as $rows){
+                $tabla .= '
+                <div class="columns is-mobile is-vcentered mb-0 p-2" style="border-bottom: 1px solid #f1f1f1; margin: 0;">
+                    
+                    <div class="column is-narrow">
+                        <i class="fas fa-box has-text-grey-light"></i>
+                    </div>
+
+                    <div class="column is-4 has-text-left">
+                        <span class="is-size-7 has-text-weight-semibold">' . $rows['producto_nombre'] . '</span>
+                    </div>
+                    
+                    <div class="column is-3 has-text-centered">
+                        <span class="tag is-light">' . $rows['producto_marca'] . '</span>
+                    </div>
+                    
+                    <div class="column is-3 has-text-centered">
+                        <span class="is-size-7 has-text-grey">' . $rows['producto_modelo'] . '</span>
+                        <br>
+                        <small class="has-text-link">Stock: ' . $rows['producto_stock'] . '</small>
+                    </div>
+
+                    <div class="column is-narrow">
+                        <button type="button" class="button is-link is-rounded is-small" onclick="agregar_codigo(\'' . $rows['producto_codigo'] . '\')">
+                            <i class="fas fa-plus-circle"></i>
+                        </button>
+                    </div>
+                </div>';
+            }
                 $tabla.='</tbody></table></div>'; return $tabla;
             }else{
                 return '<article class="message is-warning mt-4 mb-4"><div class="message-header"><p>¡Ocurrió un error inesperado!</p></div><div class="message-body has-text-centered"><i class="fas fa-exclamation-triangle fa-2x"></i><br>No hemos encontrado ningún producto ACTIVO en esta categoría</div></article>'; exit();
@@ -60,17 +172,39 @@
                 $stock_total=$campos['producto_stock']-$detalle_cantidad;
                 if($stock_total<0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Lo sentimos, no hay existencias disponibles","icono"=>"error"]; return json_encode($alerta); exit(); }
                 $detalle_total=$detalle_cantidad*$campos['producto_precio']; $detalle_total=number_format($detalle_total,MONEDA_DECIMALES,'.','');
-                $_SESSION['datos_producto_venta'][$codigo]=[ "producto_id"=>$campos['producto_id'], "producto_codigo"=>$campos['producto_codigo'], "producto_stock_total"=>$stock_total, "producto_stock_total_old"=>$campos['producto_stock'], "venta_detalle_precio_compra"=>$campos['producto_costo'], "venta_detalle_precio_venta"=>$campos['producto_precio'], "venta_detalle_cantidad"=>1, "venta_detalle_total"=>$detalle_total, "venta_detalle_descripcion"=>$campos['producto_nombre'] ];
+                $_SESSION['datos_producto_venta'][$codigo]=[
+                     "producto_id"=>$campos['producto_id'], 
+                     "producto_codigo"=>$campos['producto_codigo'],
+                     "producto_stock_total"=>$stock_total, 
+                     "producto_stock_total_old"=>$campos['producto_stock'], 
+                     "producto_marca"=>$campos['producto_marca'],
+                     "producto_modelo"=>$campos['producto_modelo'],
+                     "venta_detalle_precio_compra"=>$campos['producto_costo'], "venta_detalle_precio_venta"=>$campos['producto_precio'], "venta_detalle_cantidad"=>1, "venta_detalle_total"=>$detalle_total, "venta_detalle_descripcion"=>$campos['producto_nombre'] ];
                 $_SESSION['alerta_producto_agregado']="Se agregó <strong>".$campos['producto_nombre']."</strong> a la venta";
             }else{
                 $detalle_cantidad=($_SESSION['datos_producto_venta'][$codigo]['venta_detalle_cantidad'])+1;
                 $stock_total=$campos['producto_stock']-$detalle_cantidad;
                 if($stock_total<0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Lo sentimos, no hay existencias disponibles","icono"=>"error"]; return json_encode($alerta); exit(); }
                 $detalle_total=$detalle_cantidad*$campos['producto_precio']; $detalle_total=number_format($detalle_total,MONEDA_DECIMALES,'.','');
-                $_SESSION['datos_producto_venta'][$codigo]=[ "producto_id"=>$campos['producto_id'], "producto_codigo"=>$campos['producto_codigo'], "producto_stock_total"=>$stock_total, "producto_stock_total_old"=>$campos['producto_stock'], "venta_detalle_precio_compra"=>$campos['producto_costo'], "venta_detalle_precio_venta"=>$campos['producto_precio'], "venta_detalle_cantidad"=>$detalle_cantidad, "venta_detalle_total"=>$detalle_total, "venta_detalle_descripcion"=>$campos['producto_nombre'] ];
+                $_SESSION['datos_producto_venta'][$codigo]=[ "producto_id"=>$campos['producto_id'], "producto_codigo"=>$campos['producto_codigo'], 
+                "producto_stock_total"=>$stock_total, 
+                "producto_stock_total_old"=>$campos['producto_stock'], 
+                "producto_marca"=>$campos['producto_marca'], 
+                "producto_modelo"=>$campos['producto_modelo'], 
+                "venta_detalle_precio_compra"=>$campos['producto_costo'], "venta_detalle_precio_venta"=>$campos['producto_precio'], "venta_detalle_cantidad"=>$detalle_cantidad, 
+                "venta_detalle_total"=>$detalle_total, 
+                "venta_detalle_descripcion"=>$campos['producto_nombre'] ];
                 $_SESSION['alerta_producto_agregado']="Se agregó +1 <strong>".$campos['producto_nombre']."</strong> a la venta. Total: <strong>$detalle_cantidad</strong>";
             }
-            $alerta=["tipo"=>"redireccionar","url"=>APP_URL."saleNew/"]; return json_encode($alerta);
+            $alerta = [
+                "tipo" => "redireccionar",
+                "titulo" => "Producto agregado",
+                "texto" => strip_tags($_SESSION['alerta_producto_agregado']),
+                "icono" => "success",
+                "url" => APP_URL . "saleNew/"
+            ];
+
+             return json_encode($alerta);
         }
 
         /*---------- Controlador remover producto de venta ----------*/

@@ -146,7 +146,7 @@ class productController extends mainModel
 
 		if ($registrar_producto->rowCount() == 1) {
 			$this->guardarBitacora("Productos", "Registro", "Se registró el producto: " . $nombre . " (Cód: " . $codigo . ")");
-			$alerta = ["tipo" => "limpiar", "titulo" => "Éxito", "texto" => "Producto registrado", "icono" => "success"];
+			$alerta = ["tipo" => "redireccionar", "titulo" => "Éxito", "texto" => "Producto registrado", "icono" => "success", "url" => APP_URL."productList/"];
 		} else {
 			if (is_file($img_dir . $foto)) {
 				chmod($img_dir . $foto, 0777);
