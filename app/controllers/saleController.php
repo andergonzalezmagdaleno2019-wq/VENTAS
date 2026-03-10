@@ -231,7 +231,17 @@
                 $detalle_total=$detalle_cantidad*$campos['producto_precio']; $detalle_total=number_format($detalle_total,MONEDA_DECIMALES,'.','');
                 $_SESSION['datos_producto_venta'][$codigo]=[ "producto_id"=>$campos['producto_id'], "producto_codigo"=>$campos['producto_codigo'], "producto_stock_total"=>$stock_total, "producto_stock_total_old"=>$campos['producto_stock'], "venta_detalle_precio_compra"=>$campos['producto_costo'], "venta_detalle_precio_venta"=>$campos['producto_precio'], "venta_detalle_cantidad"=>$detalle_cantidad, "venta_detalle_total"=>$detalle_total, "venta_detalle_descripcion"=>$campos['producto_nombre'] ];
                 $_SESSION['alerta_producto_agregado']="Se $diferencia_productos <strong>".$campos['producto_nombre']."</strong> en la venta.";
-                $alerta=["tipo"=>"redireccionar","url"=>APP_URL."saleNew/"]; return json_encode($alerta);
+                $_SESSION['alerta_producto_agregado']="Se $diferencia_productos <strong>".$campos['producto_nombre']."</strong> en la venta.";
+                
+                
+                $alerta=[
+                    "tipo"=>"recargar",
+                    "titulo"=>"¡Cantidad Actualizada!",
+                    "texto"=>"Se ha modificado la cantidad del producto con éxito.",
+                    "icono"=>"success"
+                ]; 
+                return json_encode($alerta);
+                
             }else{
                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Producto no encontrado en carrito","icono"=>"error"]; return json_encode($alerta);
             }
