@@ -7,29 +7,57 @@
     
     <div class="columns">
         
-        <div class="column is-one-third">
-            <div class="card">
-                <header class="card-header">
-                    <p class="card-header-title">
-                        <i class="fas fa-tags"></i> &nbsp; Categorías
-                    </p>
-                </header>
-                <div class="card-content" style="max-height: 350px; overflow-y: auto;">
-                    <?php
-                        $datos_categorias_compra = $insLogin->seleccionarDatos("Normal","categoria","*",0);
-                        if($datos_categorias_compra->rowCount()>0){
-                            $datos_categorias_compra = $datos_categorias_compra->fetchAll();
-                            foreach($datos_categorias_compra as $cat_row){
-                                echo '<button type="button" class="button is-fullwidth is-outlined is-link mb-2" onclick="cargar_por_categoria_compra('.$cat_row['categoria_id'].')">'.$cat_row['categoria_nombre'].'</button>';
-                            }
-                        }else{
-                            echo '<p class="has-text-centered">No hay categorías</p>';
-                        }
-                    ?>
-                </div>
-            </div>
-        </div>
+<div class="column is-one-third">
+    <div class="card">
+        <header class="card-header">
+            <p class="card-header-title">
+                <i class="fas fa-tags"></i> &nbsp; Categorías
+            </p>
+        </header>
+        <div class="card-content" style="max-height: 450px; overflow-y: auto;">
+            <?php
+                $datos_cat = $insLogin->seleccionarDatos("Normal", "categoria", "*", "ORDER BY categoria_nombre ASC");
+                
+                if($datos_cat->rowCount() > 0){
+                    $todas = $datos_cat->fetchAll();
 
+                    foreach($todas as $p){
+                        // Verificamos si es una Categoría PADRE (según tu columna categoria_padre_id)
+                        if($p['categoria_padre_id'] == NULL || $p['categoria_padre_id'] == "" || $p['categoria_padre_id'] == "0"){
+                            
+                            // Título del Grupo (Padre)
+                            echo '<p class="menu-label has-text-weight-bold has-background-link-light p-2 mb-1 mt-2" style="border-radius: 4px;">
+                                    <i class="fas fa-folder-open"></i> '.strtoupper($p['categoria_nombre']).'
+                                  </p>';
+                            
+                            echo '<div class="pl-2">'; // Contenedor para dar sangría a los hijos
+                            
+                            // Buscamos los HIJOS de este padre
+                            $tiene_hijos = false;
+                            foreach($todas as $h){
+                                if($h['categoria_padre_id'] == $p['categoria_id']){
+                                    $tiene_hijos = true;
+                                    echo '<button type="button" class="button is-fullwidth is-small is-outlined is-link mb-1" 
+                                            onclick="cargar_por_categoria_compra('.$h['categoria_id'].')">
+                                            <i class="fas fa-arrow-right"></i> &nbsp; '.$h['categoria_nombre'].'
+                                          </button>';
+                                }
+                            }
+
+                            if(!$tiene_hijos){
+                                echo '<p class="is-size-7 has-text-grey-light ml-4"><i>Sin subcategorías</i></p>';
+                            }
+
+                            echo '</div>';
+                        }
+                    }
+                } else {
+                    echo '<p class="has-text-centered">No hay categorías registradas</p>';
+                }
+            ?>
+        </div>
+    </div>
+</div>
         <div class="column">
             <div class="card">
                 <header class="card-header">
