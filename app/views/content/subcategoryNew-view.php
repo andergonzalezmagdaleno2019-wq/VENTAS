@@ -23,7 +23,7 @@
             </div>
             <div class="column">
                 <div class="control">
-                    <label>Categoría Padre</label><br>
+                    <label>Categoría Principal</label><br>
                     <div class="select is-fullwidth">
                         <select name="categoria_padre_id" required>
     <option value="" selected="">Seleccione una opción</option>

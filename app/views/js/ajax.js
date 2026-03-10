@@ -146,8 +146,18 @@ function alertas_ajax(alerta, contenedorActual){
                 });
             }
         });
-    }else if(alerta.tipo == "redireccionar"){
-        window.location.href = alerta.url;
+}else if(alerta.tipo == "redireccionar"){
+        // Agregué el Swal.fire para que el usuario vea el éxito antes de irse
+        Swal.fire({ 
+            icon: alerta.icono, 
+            title: alerta.titulo, 
+            text: alerta.texto, 
+            confirmButtonText: 'Aceptar' 
+        }).then((result) => {
+            if(result.isConfirmed){ 
+                window.location.href = alerta.url; 
+            }
+        });
     }
 }
 

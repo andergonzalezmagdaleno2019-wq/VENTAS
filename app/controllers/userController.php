@@ -34,8 +34,20 @@
                 }
             }
 
-            # Verificando longitud de la clave #
-            if(strlen($clave1) < 7){
+        /*== Validando formato de email ==*/
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $alerta = [
+                "tipo" => "simple",
+                "titulo" => "Email inválido",
+                "texto" => "El formato del correo electrónico no es correcto (debe incluir @ y un dominio)",
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
+
+        # Verificando longitud de la clave #
+        if(strlen($clave1) < 7){
                 $alerta=[
                     "tipo"=>"simple",
                     "titulo"=>"Error en Clave",
@@ -286,16 +298,32 @@
                 if($check_email->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El EMAIL ya existe","icono"=>"error"]; return json_encode($alerta); exit(); }
             }
 
-                        # Verificando longitud de la clave #
-            if(strlen($clave1) < 7){
-                $alerta=[
-                    "tipo"=>"simple",
-                    "titulo"=>"Error en Clave",
-                    "texto"=>"La contraseña es demasiado corta. Debe tener al menos 7 caracteres.",
-                    "icono"=>"error"
-                ]; 
-                return json_encode($alerta); exit();
+        /*== Validando formato de email ==*/
+        if ($email != "") {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $alerta = [
+                    "tipo" => "simple",
+                    "titulo" => "Email inválido",
+                    "texto" => "El formato del correo electrónico no es correcto (debe incluir @ y un dominio)",
+                    "icono" => "error"
+                ];
+                return json_encode($alerta);
+                exit();
             }
+        }
+        # Verificando longitud de la clave (solo si el usuario escribió algo) #
+        if ($clave1 != "") {
+            if (strlen($clave1) < 7) {
+                $alerta = [
+                    "tipo" => "simple",
+                    "titulo" => "Error en Clave",
+                    "texto" => "La nueva contraseña es demasiado corta. Debe tener al menos 7 caracteres.",
+                    "icono" => "error"
+                ];
+                return json_encode($alerta);
+                exit();
+            }
+        }
 
             if($clave1!="" || $clave2!=""){
                 if($clave1!=$clave2){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Las contraseñas no coinciden","icono"=>"error"]; return json_encode($alerta); exit(); }
@@ -322,7 +350,7 @@
                     $_SESSION['apellido']=$apellido;
                     $_SESSION['usuario']=$usuario;
                 }
-                $alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"Usuario actualizado correctamente","icono"=>"success"];
+                $alerta=["tipo"=>"redireccionar","titulo"=>"Éxito","texto"=>"Usuario actualizado correctamente","icono"=>"success","url" => APP_URL."userList/"];
             }else{
                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo actualizar el usuario","icono"=>"error"];
             }

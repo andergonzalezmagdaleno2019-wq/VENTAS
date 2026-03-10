@@ -88,17 +88,27 @@ class clientController extends mainModel
 			exit();
 		}
 
-		# Verificando email #
+		/*== Verificando email ==*/
 		if ($email != "") {
-			if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				$check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
-				if ($check_email->rowCount() > 0) {
-					$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El EMAIL que acaba de ingresar ya se encuentra registrado", "icono" => "error"];
-					return json_encode($alerta);
-					exit();
-				}
-			} else {
-				$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "Ha ingresado un correo electrónico no valido", "icono" => "error"];
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				$alerta = [
+					"tipo" => "simple",
+					"titulo" => "Ocurrió un error inesperado",
+					"texto" => "Ha ingresado un correo electrónico no válido (falta el @ o el dominio)",
+					"icono" => "error"
+				];
+				return json_encode($alerta);
+				exit();
+			}
+
+			$check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
+			if ($check_email->rowCount() > 0) {
+				$alerta = [
+					"tipo" => "simple",
+					"titulo" => "Ocurrió un error inesperado",
+					"texto" => "El EMAIL que acaba de ingresar ya se encuentra registrado",
+					"icono" => "error"
+				];
 				return json_encode($alerta);
 				exit();
 			}
@@ -308,6 +318,35 @@ class clientController extends mainModel
 			exit();
 		}
 
+		/*== Validando formato de email ==*/
+		if ($email != "") {
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				$alerta = [
+					"tipo" => "simple",
+					"titulo" => "Error de Email",
+					"texto" => "El formato del correo electrónico no es válido",
+					"icono" => "error"
+				];
+				return json_encode($alerta);
+				exit();
+			}
+
+			/*== Verificando disponibilidad del email (solo si cambió) ==*/
+			if ($email != $datos['cliente_email']) {
+				$check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
+				if ($check_email->rowCount() > 0) {
+					$alerta = [
+						"tipo" => "simple",
+						"titulo" => "Email en uso",
+						"texto" => "El correo electrónico ingresado ya pertenece a otro cliente",
+						"icono" => "error"
+					];
+					return json_encode($alerta);
+					exit();
+				}
+			}
+		}
+
 		# PROCESANDO TELÉFONO #
 		$telefono = "";
 		if ($telefono_numero != "") {
@@ -347,7 +386,7 @@ class clientController extends mainModel
 			/*== AUDITORIA ==*/
 			$this->guardarBitacora("Clientes", "Actualización", "Se actualizaron los datos del cliente: " . $nombre . " " . $apellido);
 
-			$alerta = ["tipo" => "recargar", "titulo" => "Cliente actualizado", "texto" => "Los datos del cliente se actualizaron correctamente", "icono" => "success"];
+			$alerta = ["tipo" => "redireccionar", "titulo" => "Cliente actualizado", "texto" => "Los datos del cliente se actualizaron correctamente", "icono" => "success","url" => APP_URL."clientList/"];
 		} else {
 			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No hemos podido actualizar los datos del cliente, por favor intente nuevamente", "icono" => "error"];
 		}

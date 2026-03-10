@@ -335,16 +335,25 @@
 
 			$condicion=["condicion_campo"=>"categoria_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
-			if($this->actualizarDatos("categoria",$categoria_datos_up,$condicion)){
+			// Lógica dinámica para mensajes y redirección. Asi se muestran los mensajes de forma correcta tanto para categorías como para subcategorías sin necesidad de crear un controlador aparte para cada tipo.
+            $tipo_txt = (isset($_POST['tipo_elemento']) && $_POST['tipo_elemento'] == "subcategoria") ? "Subcategoría" : "Categoría";
+            $url_listado = ($tipo_txt == "Subcategoría") ? "subcategorylist/" : "categoryList/";
+
+            if($this->actualizarDatos("categoria",$categoria_datos_up,$condicion)){
                 /*== AUDITORIA ==*/
-                $this->guardarBitacora("Categorías", "Actualización", "Se actualizaron los datos de la categoría: ".$nombre);
+                $this->guardarBitacora("Categorías", "Actualización", "Se actualizaron los datos de la ".$tipo_txt.": ".$nombre);
 
-				$alerta=["tipo"=>"recargar","titulo"=>"Categoría actualizada","texto"=>"Los datos de la categoría se actualizaron correctamente","icono"=>"success"];
-			}else{
-				$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos podido actualizar los datos de la categoría, por favor intente nuevamente","icono"=>"error"];
-			}
+                $alerta=[
+                    "tipo"=>"redireccionar",
+                    "titulo"=>$tipo_txt." actualizada",
+                    "texto"=>"Los datos de la ".strtolower($tipo_txt)." se actualizaron correctamente",
+                    "icono"=>"success",
+                    "url"=>APP_URL.$url_listado
+                ];
+            }else{
+                $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos podido actualizar los datos, por favor intente nuevamente","icono"=>"error"];
+            }
 
-			return json_encode($alerta);
-		}
-
+            return json_encode($alerta);
 	}
+}

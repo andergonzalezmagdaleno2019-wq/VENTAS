@@ -9,7 +9,7 @@
 				"cashierNew","cashierList","cashierSearch","cashierUpdate",
 				"userNew","userList","userUpdate","userSearch","userPhoto",
 				"clientNew","clientList","clientSearch","clientUpdate",
-				"categoryNew","categoryList","categorySearch","categoryUpdate","subcategoryNew","subcategorylist","productNew","productList","productSearch","productUpdate","productPhoto","productCategory", "inventoryReport",
+				"categoryNew","categoryList","categorySearch","categoryUpdate","subcategoryNew","subcategorylist","subcategoryUpdate","productNew","productList","productSearch","productUpdate","productPhoto","productCategory", "inventoryReport",
 				"companyNew",
 				"saleNew","saleList","saleSearch","saleDetail", "saleReport",
 				"logOut","backup",

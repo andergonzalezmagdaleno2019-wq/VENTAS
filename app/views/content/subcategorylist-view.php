@@ -51,7 +51,7 @@
                     </td>
 
                     <td>
-                        <a href="'.APP_URL.'categoryUpdate/'.$rows['categoria_id'].'/" class="button is-success is-rounded is-small" title="Actualizar">
+                        <a href="'.APP_URL.'subcategoryUpdate/'.$rows['categoria_id'].'/" class="button is-success is-rounded is-small" title="Actualizar">
                             <i class="fas fa-sync fa-fw"></i>
                         </a>
                     </td>
