@@ -71,4 +71,20 @@ document.addEventListener('DOMContentLoaded', () => {
       closeAllModals();
     }
   });
+  
+    /* Capitalizar la primera letra de los inputs automáticamente */
+  document.addEventListener('input', (e) => {
+
+      if (e.target.matches('.input') || e.target.matches('.textarea')) {
+          
+          // EXCEPCIÓN: No capitalizar en campos de email o password (Login/Registro)
+          if (e.target.type === 'email' || e.target.type === 'password') return;
+
+          let valor = e.target.value;
+          if (valor.length > 0) {
+
+              e.target.value = valor.charAt(0).toUpperCase() + valor.slice(1);
+          }
+      }
+  });
 });

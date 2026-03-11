@@ -405,7 +405,7 @@
                             <div class="column is-12">
                                 <div class="field has-addons">
                                     <div class="control is-expanded">
-                                        <input class="input" type="text" id="input_codigo" placeholder="Escribe nombre, marca o modelo...">
+                                        <input class="input" type="text" id="input_codigo" placeholder="Escribe nombre, marca o modelo..." autocomplete="off">
                                     </div>
                                     <div class="control">
                                         <button type="button" class="button is-link" onclick="buscar_codigo()">

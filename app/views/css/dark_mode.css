@@ -403,3 +403,9 @@ body.dark-mode .notification.is-danger div.message-header {
 .dark-mode .message-header {
     color: inherit !important;
 }
+
+/* Forzar visualmente la mayúscula en campos de texto de Bulma */
+.input:not([type="email"]):not([type="password"]),
+.textarea {
+    text-transform: capitalize;
+}
