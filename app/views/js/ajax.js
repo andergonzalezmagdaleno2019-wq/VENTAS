@@ -112,12 +112,18 @@ function procesarDatosDeCaja(contenedor) {
     // 2. Validar campos obligatorios
     let camposObligatorios = contenedor.querySelectorAll('[required]');
     let todoValido = true;
+
     camposObligatorios.forEach(campo => {
+
+        let elementoAResaltar = (campo.tagName === "SELECT") ? campo.parentElement : campo;
+
         if(!campo.value.trim()){
             todoValido = false;
-            campo.classList.add("is-danger"); 
+            elementoAResaltar.classList.add("is-danger"); 
         } else {
-            campo.classList.remove("is-danger");
+            elementoAResaltar.classList.remove("is-danger");
+            // Limpieza adicional para el select interno si fuera necesario
+            if(campo.tagName === "SELECT") campo.classList.remove("is-danger");
         }
     });
 

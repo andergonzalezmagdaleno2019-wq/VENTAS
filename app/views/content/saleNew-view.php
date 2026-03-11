@@ -422,36 +422,53 @@
                 </div>
             </div>
             <script>
-                //Funcion para cargar productos por categoria
                 function cargar_por_categoria(id) {
                     let filtroMarca = document.querySelector('#filtro_marca');
                     let filtroModelo = document.querySelector('#filtro_modelo');
                     let inputBusqueda = document.querySelector('#input_codigo');
                     let categoriaVariable = document.querySelector('#id_categoria_variable');
+                    const urlAjax = '<?php echo APP_URL; ?>app/ajax/ventaAjax.php';
 
-                    if (filtroMarca) filtroMarca.value = "";
-                    if (filtroModelo) filtroModelo.value = "";
+                    // 1. Limpieza de campos
                     if (inputBusqueda) inputBusqueda.value = "";
-
-                    // 2. Guardamos el ID de la subcategoría en el input oculto que acabas de crear
                     if (categoriaVariable) categoriaVariable.value = id;
 
-                    // 3. Enviamos la petición al servidor para cargar los productos
-                    let datos = new FormData();
-                    datos.append("categoria_id", id);
-                    datos.append("modulo_venta", "buscar_por_categoria");
+                    // --- PARTE A: Cargar Marcas y Modelos para los Selects ---
+                    let datosFiltros = new FormData();
+                    datosFiltros.append("modulo_venta", "obtener_filtros_categoria");
+                    datosFiltros.append("categoria_id", id);
 
-                    fetch('<?php echo APP_URL; ?>app/ajax/ventaAjax.php', {
-                            method: 'POST',
-                            body: datos
-                        })
-                        .then(respuesta => respuesta.text())
-                        .then(respuesta => {
-                            let tabla_productos = document.querySelector('#tabla_productos');
-                            if (tabla_productos) {
-                                tabla_productos.innerHTML = respuesta;
-                            }
-                        });
+                    fetch(urlAjax, { method: 'POST', body: datosFiltros })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (filtroMarca) {
+                            filtroMarca.innerHTML = '<option value="">Todas las Marcas</option>';
+                            data.marcas.forEach(m => {
+                                if(m) filtroMarca.innerHTML += `<option value="${m}">${m}</option>`;
+                            });
+                        }
+                        if (filtroModelo) {
+                            filtroModelo.innerHTML = '<option value="">Todos los Modelos</option>';
+                            data.modelos.forEach(mo => {
+                                if(mo) filtroModelo.innerHTML += `<option value="${mo}">${mo}</option>`;
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Error al cargar filtros:', error));
+
+                    // --- PARTE B: Cargar la tabla de productos (Tu lógica original) ---
+                    let datosTabla = new FormData();
+                    datosTabla.append("categoria_id", id);
+                    datosTabla.append("modulo_venta", "buscar_por_categoria");
+
+                    fetch(urlAjax, { method: 'POST', body: datosTabla })
+                    .then(respuesta => respuesta.text())
+                    .then(respuesta => {
+                        let tabla_productos = document.querySelector('#tabla_productos');
+                        if (tabla_productos) {
+                            tabla_productos.innerHTML = respuesta;
+                        }
+                    });
                 }
 
                 // Búsqueda en vivo: debounce
@@ -601,6 +618,7 @@
     /*----------  Buscar codigo  ----------*/
     function buscar_codigo() {
         let input_codigo = document.querySelector('#input_codigo').value.trim();
+        let categoria_id = document.querySelector('#id_categoria_variable').value;
         let marca = document.querySelector('#filtro_marca').value;
         let modelo = document.querySelector('#filtro_modelo').value;
 
@@ -609,6 +627,7 @@
 
             let datos = new FormData();
             datos.append("buscar_codigo", input_codigo);
+            datos.append("categoria_id", categoria_id); // Enviamos categoría seleccionada
             datos.append("filtro_marca", marca); // Enviamos marca
             datos.append("filtro_modelo", modelo); // Enviamos modelo
             datos.append("modulo_venta", "buscar_codigo");

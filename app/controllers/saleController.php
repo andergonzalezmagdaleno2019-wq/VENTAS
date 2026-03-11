@@ -5,15 +5,17 @@
 
 	class saleController extends mainModel{
 
-/*---------- Controlador buscar codigo de producto ----------*/
+    /*---------- Controlador buscar codigo de producto ----------*/
     public function buscarCodigoVentaControlador()
     {
-        // Limpiamos los 3 posibles campos de búsqueda
+        // 1. Limpiamos los 4 campos recibidos por POST
         $producto = $this->limpiarCadena($_POST['buscar_codigo']);
+        $id_categoria = (isset($_POST['categoria_id'])) ? $this->limpiarCadena($_POST['categoria_id']) : "";
         $marca = isset($_POST['filtro_marca']) ? $this->limpiarCadena($_POST['filtro_marca']) : "";
         $modelo = isset($_POST['filtro_modelo']) ? $this->limpiarCadena($_POST['filtro_modelo']) : "";
 
-        // Ahora validamos que AL MENOS uno de los tres tenga contenido
+        // 2. Validación: Solo mostramos error si los filtros de búsqueda están vacíos
+        // (La categoría no cuenta como filtro de búsqueda manual, sino como contexto)
         if ($producto == "" && $marca == "" && $modelo == "") {
             return '<article class="message is-warning mt-4 mb-4">
             <div class="message-header"><p>¡Ocurrió un error inesperado!</p></div>
@@ -25,10 +27,15 @@
             exit();
         }
 
-        // Iniciamos la consulta base
+        // 3. Base de la consulta
         $consulta_sql = "SELECT * FROM producto WHERE producto_estado='Activo'";
 
-        // Agregamos filtros dinámicos según lo que el usuario haya usado
+        // 4. Filtro de Categoría OBLIGATORIO (Si existe)
+        if ($id_categoria != "") {
+            $consulta_sql .= " AND categoria_id = '$id_categoria'";
+        }
+
+        // 5. Filtros dinámicos adicionales
         if ($producto != "") {
             $consulta_sql .= " AND (producto_nombre LIKE '%$producto%' OR producto_codigo LIKE '%$producto%')";
         }
@@ -43,7 +50,7 @@
 
         $consulta_sql .= " ORDER BY producto_nombre ASC";
 
-        // Ejecutamos la consulta final
+        // 6. Ejecución de la consulta (Continúa tu código igual...)
         $datos_productos = $this->ejecutarConsulta($consulta_sql);
 
         if ($datos_productos->rowCount() >= 1) {

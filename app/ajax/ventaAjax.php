@@ -10,6 +10,25 @@
 
 		$insVenta = new saleController();
 
+		/*--------- Obtener marcas y modelos por categoría ---------*/
+		if($_POST['modulo_venta'] == "obtener_filtros_categoria"){
+			$id_cat = $insVenta->limpiarCadena($_POST['categoria_id']);
+			
+			// Consultamos marcas únicas de esa categoría
+			$query_marcas = $insVenta->seleccionarDatos("Normal", "producto WHERE categoria_id='$id_cat' GROUP BY producto_marca", "producto_marca", 0);
+			$marcas = $query_marcas->fetchAll(PDO::FETCH_COLUMN);
+
+			// Consultamos modelos únicos de esa categoría
+			$query_modelos = $insVenta->seleccionarDatos("Normal", "producto WHERE categoria_id='$id_cat' GROUP BY producto_modelo", "producto_modelo", 0);
+			$modelos = $query_modelos->fetchAll(PDO::FETCH_COLUMN);
+
+			echo json_encode([
+				"marcas" => $marcas,
+				"modelos" => $modelos
+			]);
+			exit(); // Importante para que no siga ejecutando el resto del script
+		}
+
 		/*--------- Buscar producto por codigo ---------*/
 		if($_POST['modulo_venta']=="buscar_codigo"){
 			echo $insVenta->buscarCodigoVentaControlador();

@@ -17,13 +17,13 @@
 						pattern="[0-9]{1,13}"
 						maxlength="13"
 						placeholder="Solo números (máx. 13)"
-						required>
+						required autocomplete="off">
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
 					<label>Nombre <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="producto_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required>
+					<input class="input" type="text" name="producto_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required autocomplete="off">
 				</div>
 			</div>
 		</div>
@@ -32,13 +32,15 @@
 			<div class="column">
 				<div class="control">
 					<label>Marca</label>
-					<input class="input" type="text" name="producto_marca" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{1,30}" maxlength="30">
+					<input class="input" type="text" name="producto_marca" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ()/\- ]{4,50}" maxlength="30" style="text-transform: uppercase"
+					oninput="this.value = this.value.toUpperCase()" 
+					autocomplete="off">
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
 					<label>Modelo</label>
-					<input class="input" type="text" name="producto_modelo" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{1,30}" maxlength="30">
+					<input class="input" type="text" name="producto_modelo" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{1,30}" maxlength="30" autocomplete="off">
 				</div>
 			</div>
 		</div>
@@ -47,7 +49,9 @@
 			<div class="column">
 				<div class="control">
 					<label>Costo de Compra (Neto) $</label>
-					<input class="input" type="text" name="producto_costo" id="producto_costo" pattern="[0-9.]{1,25}" maxlength="25" required value="0.00">
+					<input class="input" type="text" name="producto_costo" id="producto_costo" 
+						pattern="[0-9.]{1,25}" maxlength="25" required 
+						placeholder="0.00" autocomplete="off">
 					<p class="help is-info has-text-weight-bold" id="costo_bs_label">Bs. 0.00</p>
 				</div>
 			</div>
@@ -77,7 +81,7 @@
 			<div class="column">
 				<div class="control">
 					<label>Stock Inicial (Cantidad) <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="producto_stock" pattern="[0-9]{1,25}" maxlength="25" required>
+					<input class="input" type="text" name="producto_stock" pattern="[0-9]{1,25}" maxlength="25" required autocomplete="off">
 				</div>
 			</div>
 			<div class="column">

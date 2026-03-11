@@ -13,7 +13,7 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nombre <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="categoria_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{4,50}" maxlength="50" required >
+				  	<input class="input" type="text" name="categoria_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{4,50}" maxlength="50" required autocomplete="off">
 				</div>
 		  	</div>
 		  	<div class="column">
