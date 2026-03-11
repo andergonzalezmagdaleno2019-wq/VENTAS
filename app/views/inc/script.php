@@ -43,24 +43,21 @@
                 iconTheme.classList.replace("fa-sun", "fa-moon");
             }
 
-            /* --- PARCHE PARA LIMPIAR EL "FANTASMA" NEGRO --- */
-            
-            // 1. Vaciamos el cuerpo de la tabla de búsqueda
             let listaProductos = document.getElementById('lista-productos-filtrados');
             if (listaProductos) {
                 listaProductos.innerHTML = ""; 
             }
 
-            // 2. Si tienes mensajes de error (amarillos/negros), los borramos
+
             document.querySelectorAll('.modal .message').forEach(msg => msg.remove());
 
-            // 3. Opcional: Limpiar el input para que el usuario empiece de cero con el nuevo modo
+ 
             let inputBusqueda = document.getElementById('buscar_codigo');
             if (inputBusqueda) {
                 inputBusqueda.value = "";
             }
 
-            /* ---------------------------------------------- */
+
         });
     }
 </script>

@@ -9,26 +9,30 @@
 
 		<input type="hidden" name="modulo_cliente" value="registrar">
 
-		<div class="columns">
-			<div class="column">
-				<div class="control">
-					<label>Tipo de documento <?php echo CAMPO_OBLIGATORIO; ?></label><br>
-					<div class="select">
-						<select name="cliente_tipo_documento">
-							<option value="" selected="">Seleccione una opción</option>
-							<?php
-							echo $insLogin->generarSelect(DOCUMENTOS_USUARIOS, "VACIO");
-							?>
-						</select>
+			<div class="columns">
+				<div class="column is-3">
+					<div class="control">
+						<label>Tipo de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
+						<div class="select is-fullwidth" id="contenedor-tipo-doc">
+							<select name="cliente_tipo_documento" id="cliente_tipo_documento" required>
+								<option value="" selected="">Seleccione una opción</option>
+								<?php
+									echo $insLogin->generarSelect(DOCUMENTOS_USUARIOS, "VACIO");
+								?>
+							</select>
+						</div>
+					</div>
+				</div>
+
+				<div class="column">
+					<div class="control">
+						<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
+						<input class="input" type="text" name="cliente_numero_documento"
+							pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" 
+							placeholder="Ej: V-12345678 o 12345678-9" required>
 					</div>
 				</div>
 			</div>
-			<div class="control">
-				<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
-				<input class="input" type="text" name="cliente_numero_documento"
-					pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" placeholder="Ej: V-12345678 o 12345678-9" required>
-			</div>
-		</div>
 		<div class="columns">
 			<div class="column">
 				<div class="control">
@@ -69,8 +73,8 @@
 					<label>Teléfono <?php echo CAMPO_OBLIGATORIO; ?></label>
 					<div class="field has-addons">
 						<p class="control">
-							<span class="select">
-								<select name="cliente_telefono_codigo">
+							<span class="select" id="contenedor-cod-tel">
+								<select name="cliente_telefono_codigo" id="cliente_telefono_codigo" required>
 									<option value="" selected>Cód.</option>
 									<?php
 									echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO");

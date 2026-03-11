@@ -300,3 +300,50 @@ body.dark-mode textarea::-ms-input-placeholder {
 body.dark-mode .input:focus::placeholder {
     color: #ffffff !important;
 }
+
+/* --- PARCHE DEFINITIVO PARA LA ALERTA EN MODO OSCURO --- */
+
+/* Usamos un selector súper específico para forzar el cambio */
+body.dark-mode .notification.is-danger,
+body.dark-mode div.notification.is-danger,
+body.dark-mode .message.is-danger {
+    /* Fondo oscuro y transparente */
+    background-color: rgba(255, 69, 58, 0.1) !important; 
+    
+    /* Borde fino y sutil */
+    border: 1px solid #ff453a !important; 
+    
+    /* Texto rojo claro y legible */
+    color: #ffcccc !important; 
+    
+    /* Eliminamos sombras brillantes */
+    box-shadow: none !important;
+}
+
+/* Forzamos que el título de la alerta también cambie de color */
+body.dark-mode .notification.is-danger strong,
+body.dark-mode .notification.is-danger span.message-header,
+body.dark-mode .notification.is-danger div.message-header {
+    color: #ff8080 !important;
+}
+
+
+/* Alerta Roja (Contraseña incorrecta) */
+.dark-mode .notification.is-danger,
+.dark-mode .message.is-danger {
+    background-color: #2a0f10 !important; 
+    border: 1px solid #f14668 !important; 
+    color: #ffb3b3 !important;
+}
+
+/* Alerta Amarilla (Correo no existe / Atención) */
+.dark-mode .notification.is-warning,
+.dark-mode .message.is-warning {
+    background-color: #281852 !important; 
+    border: 1px solid #daff35 !important; 
+    color: #fff48d !important;
+}
+.dark-mode .notification strong,
+.dark-mode .message-header {
+    color: inherit !important;
+}

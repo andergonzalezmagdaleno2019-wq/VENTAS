@@ -27,14 +27,14 @@
 		<div class="columns">
 			<div class="column">
 				<div class="control">
-					<label>Teléfono de contacto del proveedor<?php echo CAMPO_OBLIGATORIO; ?></label>
+					<label>Teléfono de contacto del proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
 					<div class="field has-addons">
 						<p class="control">
-							<span class="select">
-								<select name="proveedor_telefono_codigo">
+							<span class="select" id="cont-cod-prov">
+								<select name="proveedor_telefono_codigo" id="prov_cod_tel" required>
 									<option value="" selected>Cód.</option>
 									<?php
-									echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO");
+										echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO");
 									?>
 								</select>
 							</span>
