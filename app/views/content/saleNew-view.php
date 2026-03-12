@@ -502,9 +502,9 @@
         </header>
         <section class="modal-card-body">
             <div class="field mt-6 mb-6">
-                <label class="label">Documento, Nombre, Apellido, Teléfono</label>
+                <label class="label">Documento, Nombre, Apellido</label>
                 <div class="control">
-                    <input class="input" type="text" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{1,30}" name="input_cliente" id="input_cliente" maxlength="30">
+                    <input class="input" type="text" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{1,30}" name="input_cliente" id="input_cliente" maxlength="30" autocomplete="off">
                 </div>
             </div>
             <div class="container" id="tabla_clientes"></div>
@@ -722,14 +722,26 @@
                 });
 
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Ocurrió un error inesperado',
-                text: 'Debes de introducir el Numero de documento, Nombre, Apellido o Teléfono del cliente',
-                confirmButtonText: 'Aceptar'
-            });
+            let tabla_clientes = document.querySelector('#tabla_clientes');
+            if(tabla_clientes) {
+                tabla_clientes.innerHTML = "";
+            }
         }
     }
+
+    /* Búsqueda automática de cliente */
+    document.addEventListener('DOMContentLoaded', function() {
+        let timerCliente = null;
+        let inputCliente = document.querySelector('#input_cliente');
+        if (inputCliente) {
+            inputCliente.addEventListener('keyup', function(e) {
+                clearTimeout(timerCliente);
+                timerCliente = setTimeout(function() {
+                    buscar_cliente();
+                }, 300);
+            });
+        }
+    });
 
     /*----------  Agregar cliente  ----------*/
     function agregar_cliente(id) {

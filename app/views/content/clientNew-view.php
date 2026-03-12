@@ -29,7 +29,7 @@
 						<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
 						<input class="input" type="text" name="cliente_numero_documento"
 							pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" 
-							placeholder="Ej: V-12345678 o 12345678-9" required>
+							placeholder="Ej: V-12345678 o 12345678-9" required autocomplete="off">
 					</div>
 				</div>
 			</div>
@@ -37,13 +37,13 @@
 			<div class="column">
 				<div class="control">
 					<label>Nombres <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_nombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
+					<input class="input" type="text" name="cliente_nombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required autocomplete="off">
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
 					<label>Apellidos <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_apellido" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
+					<input class="input" type="text" name="cliente_apellido" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required autocomplete="off">
 				</div>
 			</div>
 		</div>
@@ -51,19 +51,19 @@
 			<div class="column">
 				<div class="control">
 					<label>Estado, provincia o departamento <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_provincia" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required>
+					<input class="input" type="text" name="cliente_provincia" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required autocomplete="off">
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
-					<label>Ciudad o pueblo <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_ciudad" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required>
+					<label>Ciudad o municipio <?php echo CAMPO_OBLIGATORIO; ?></label>
+					<input class="input" type="text" name="cliente_ciudad" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required autocomplete="off">
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
 					<label>Calle o dirección de casa <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_direccion" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}" maxlength="70" required>
+					<input class="input" type="text" name="cliente_direccion" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}" maxlength="70" required autocomplete="off">
 				</div>
 			</div>
 		</div>
@@ -85,7 +85,7 @@
 						<p class="control is-expanded">
 							<input class="input" type="text" name="cliente_telefono"
 								pattern="[0-9]{7}" maxlength="7"
-								placeholder="1234567" required>
+								placeholder="1234567" required autocomplete="off">
 						</p>
 					</div>
 				</div>
@@ -93,7 +93,7 @@
 			<div class="column">
 				<div class="control">
 					<label>Email <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="email" name="cliente_email" maxlength="70" required>
+					<input class="input" type="email" name="cliente_email" maxlength="70" required autocomplete="off">
 				</div>
 			</div>
 		</div>

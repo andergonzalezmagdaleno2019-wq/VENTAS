@@ -49,6 +49,14 @@
 				<div class="has-text-weight-bold">Cliente</div>
 				<span class="has-text-link"><?php echo $datos_venta['cliente_nombre']." ".$datos_venta['cliente_apellido']; ?></span>
 			</div>
+			<div class="full-width sale-details text-condensedLight">
+				<div class="has-text-weight-bold">Método de Pago</div>
+				<span class="has-text-link"><?php echo isset($datos_venta['venta_metodo_pago']) ? $datos_venta['venta_metodo_pago'] : 'N/A'; ?></span>
+			</div>
+			<div class="full-width sale-details text-condensedLight">
+				<div class="has-text-weight-bold">Referencia</div>
+				<span class="has-text-link"><?php echo (isset($datos_venta['venta_referencia']) && $datos_venta['venta_referencia'] != "") ? $datos_venta['venta_referencia'] : 'N/A'; ?></span>
+			</div>
 		</div>
 
 		<div class="column">
