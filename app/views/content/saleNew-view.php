@@ -502,15 +502,9 @@
         </header>
         <section class="modal-card-body">
             <div class="field mt-6 mb-6">
-<<<<<<< HEAD
-                <label class="label">Documento, Nombre, Apellido</label>
-                <div class="control">
-                    <input class="input" type="text" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{1,30}" name="input_cliente" id="input_cliente" maxlength="30" autocomplete="off">
-=======
                 <label class="label">Documento, Nombre y Apellido</label>
                 <div class="control">
                     <input class="input" type="text" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{1,30}" name="input_cliente" id="input_cliente" maxlength="30">
->>>>>>> correccion/paii
                 </div>
             </div>
             <div class="container" id="tabla_clientes"></div>
