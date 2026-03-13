@@ -13,13 +13,13 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nombre del Proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="proveedor_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required >
+				  	<input class="input" type="text" name="proveedor_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required autocomplete="off">
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
 					<label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="proveedor_rif" pattern="[0-9\-]{1,15}" maxlength="15" placeholder="Ej: 12345678-9" required >
+				  	<input class="input" type="text" name="proveedor_rif" pattern="[0-9\-]{1,15}" maxlength="15" placeholder="Ej: 12345678-9" required autocomplete="off">
 				</div>
 		  	</div>
 
@@ -42,7 +42,7 @@
 						<p class="control is-expanded">
 							<input class="input" type="text" name="proveedor_telefono"
 								pattern="[0-9]{7}" maxlength="7"
-								placeholder="1234567" required>
+								placeholder="1234567" required autocomplete="off">
 						</p>
 					</div>
 				</div>
@@ -50,7 +50,7 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Dirección</label>
-				  	<input class="input" type="text" name="proveedor_direccion" maxlength="200" >
+				  	<input class="input" type="text" name="proveedor_direccion" maxlength="200" autocomplete="off">
 				</div>
 		  	</div>
 		</div>

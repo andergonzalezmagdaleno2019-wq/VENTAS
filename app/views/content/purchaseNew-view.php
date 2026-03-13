@@ -69,7 +69,7 @@
                     <form action="" method="POST" autocomplete="off" id="form-buscar-compra">
                         <div class="field has-addons">
                             <div class="control is-expanded">
-                                <input class="input" type="text" name="buscar_producto" id="buscar_producto" placeholder="Nombre o código del producto" required>
+                                <input class="input" type="text" name="buscar_producto" id="buscar_producto" placeholder="Nombre o código del producto" required autocomplete="off">
                             </div>
                             <div class="control">
                                 <button type="submit" class="button is-info"><i class="fas fa-search"></i></button>

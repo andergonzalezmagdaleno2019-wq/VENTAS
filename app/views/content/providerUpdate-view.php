@@ -25,7 +25,7 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nombre del Proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="proveedor_nombre" value="<?php echo $datos['proveedor_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,\- ]{3,70}" maxlength="70" required >
+				  	<input class="input" type="text" name="proveedor_nombre" value="<?php echo $datos['proveedor_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,\- ]{3,70}" maxlength="70" required autocomplete="off">
 				</div>
 		  	</div>
             <div class="column">
@@ -36,7 +36,7 @@
        					value="<?php echo $datos['proveedor_rif']; ?>" 
        					pattern="[0-9\-]{1,15}"
        					maxlength="15" 
-       					required >
+       					required autocomplete="off">
 					</div>
 		  	</div>
 		</div>
@@ -45,13 +45,13 @@
             <div class="column is-4">
 		    	<div class="control">
 					<label>Teléfono <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="proveedor_telefono" value="<?php echo isset($datos['proveedor_telefono']) ? $datos['proveedor_telefono'] : ''; ?>" pattern="[0-9()+]{8,20}" maxlength="20" required >
+				  	<input class="input" type="text" name="proveedor_telefono" value="<?php echo isset($datos['proveedor_telefono']) ? $datos['proveedor_telefono'] : ''; ?>" pattern="[0-9()+]{8,20}" maxlength="20" required autocomplete="off">
 				</div>
 		  	</div>
 		  	<div class="column is-8">
 		    	<div class="control">
 					<label>Dirección</label>
-				  	<input class="input" type="text" name="proveedor_direccion" value="<?php echo isset($datos['proveedor_direccion']) ? $datos['proveedor_direccion'] : ''; ?>" maxlength="200" >
+				  	<input class="input" type="text" name="proveedor_direccion" value="<?php echo isset($datos['proveedor_direccion']) ? $datos['proveedor_direccion'] : ''; ?>" maxlength="200" autocomplete="off">
 				</div>
 		  	</div>
 		</div>

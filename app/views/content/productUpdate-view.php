@@ -39,13 +39,13 @@
 					<label>Código de barra <?php echo CAMPO_OBLIGATORIO; ?></label>
 				  	<input class="input" type="text" name="producto_codigo" value="<?php echo $datos['producto_codigo']; ?>" pattern="[0-9]{1,13}" 
            				maxlength="13" 
-           				required>
+           				required autocomplete="off">
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nombre <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="producto_nombre" value="<?php echo $datos['producto_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required >
+				  	<input class="input" type="text" name="producto_nombre" value="<?php echo $datos['producto_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required autocomplete="off">
 				</div>
 		  	</div>
 		</div>
@@ -54,13 +54,13 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Marca</label>
-				  	<input class="input" type="text" name="producto_marca" value="<?php echo $datos['producto_marca']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{1,30}" maxlength="30" >
+				  	<input class="input" type="text" name="producto_marca" value="<?php echo $datos['producto_marca']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{1,30}" maxlength="30" autocomplete="off">
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
 					<label>Modelo</label>
-				  	<input class="input" type="text" name="producto_modelo" value="<?php echo $datos['producto_modelo']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{1,30}" maxlength="30" >
+				  	<input class="input" type="text" name="producto_modelo" value="<?php echo $datos['producto_modelo']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{1,30}" maxlength="30" autocomplete="off">
 				</div>
 		  	</div>
 		</div>
@@ -69,7 +69,7 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Costo de Compra (Neto) $ <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="producto_costo" id="producto_costo_up" value="<?php echo $datos['producto_costo']; ?>" pattern="[0-9.]{1,25}" maxlength="25" required >
+				  	<input class="input" type="text" name="producto_costo" id="producto_costo_up" value="<?php echo $datos['producto_costo']; ?>" pattern="[0-9.]{1,25}" maxlength="25" required autocomplete="off">
                     <p class="help is-info has-text-weight-bold" id="costo_bs_label_up">Bs. 0.00</p>
 				</div>
 		  	</div>
@@ -98,7 +98,7 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Stock Actual <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="producto_stock" value="<?php echo $datos['producto_stock']; ?>" pattern="[0-9]{1,25}" maxlength="25" required >
+				  	<input class="input" type="text" name="producto_stock" value="<?php echo $datos['producto_stock']; ?>" pattern="[0-9]{1,25}" maxlength="25" required autocomplete="off">
 				</div>
 		  	</div>
             <div class="column">
