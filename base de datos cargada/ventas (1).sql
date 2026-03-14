@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-03-2026 a las 23:59:46
+-- Tiempo de generación: 14-03-2026 a las 05:51:03
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -79,7 +79,11 @@ INSERT INTO `bitacora` (`bitacora_id`, `usuario_id`, `bitacora_fecha`, `bitacora
 (35, 1, '2026-03-11', '06:34:28 pm', 'Categorías', 'Registro', 'Se registró la categoría: Periféricos'),
 (36, 1, '2026-03-11', '06:34:47 pm', 'Categorías', 'Registro', 'Se registró la categoría: Audífonos'),
 (37, 1, '2026-03-11', '06:35:31 pm', 'Productos', 'Registro', 'Se registró el producto: Audífonos Argom Tech Dynamic 63 ARG-HS-0063 USB con Micrófono (Cód: 4021947928125)'),
-(38, 1, '2026-03-11', '06:37:00 pm', 'Productos', 'Registro', 'Se registró el producto: Audífonos In-Ear Genius HS-M320 con Micrófono y Conector 3.5mm (Cód: 2398782173109)');
+(38, 1, '2026-03-11', '06:37:00 pm', 'Productos', 'Registro', 'Se registró el producto: Audífonos In-Ear Genius HS-M320 con Micrófono y Conector 3.5mm (Cód: 2398782173109)'),
+(39, 1, '2026-03-13', '11:07:54 pm', 'Productos', 'Registro', 'Se registró el producto: Arasdfad (Inicia con stock 0)'),
+(40, 1, '2026-03-13', '11:08:08 pm', 'Productos', 'Actualización', 'Datos actualizados del producto: 1321321'),
+(41, 1, '2026-03-13', '11:23:19 pm', 'Proveedores', 'Registro', 'Se registró el proveedor: Conputodo (RIF: 71281237-2)'),
+(42, 1, '2026-03-14', '12:33:53 am', 'Productos', 'Registro', 'Se registró el producto: Laptop lenovo (Inicia con stock 0)');
 
 -- --------------------------------------------------------
 
@@ -171,8 +175,18 @@ CREATE TABLE `compra` (
   `compra_total` decimal(30,2) NOT NULL,
   `compra_tasa_bcv` decimal(20,2) NOT NULL DEFAULT 0.00,
   `usuario_id` int(7) NOT NULL,
-  `proveedor_id` int(11) NOT NULL
+  `proveedor_id` int(11) NOT NULL,
+  `compra_estado` varchar(20) DEFAULT 'Pendiente',
+  `compra_nota_interna` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `compra`
+--
+
+INSERT INTO `compra` (`compra_id`, `compra_codigo`, `compra_fecha`, `compra_total`, `compra_tasa_bcv`, `usuario_id`, `proveedor_id`, `compra_estado`, `compra_nota_interna`) VALUES
+(4, 'COM-000001', '2026-03-14', 250.00, 0.00, 1, 1, 'Completado', ''),
+(5, 'COM-000005', '2026-03-14', 1440.00, 0.00, 1, 1, 'Parcial', '');
 
 -- --------------------------------------------------------
 
@@ -182,11 +196,19 @@ CREATE TABLE `compra` (
 
 CREATE TABLE `compra_detalle` (
   `compra_detalle_id` int(11) NOT NULL,
-  `compra_codigo` varchar(50) NOT NULL,
+  `compra_id` int(11) NOT NULL,
   `producto_id` int(20) NOT NULL,
   `compra_detalle_cantidad` int(10) NOT NULL,
   `compra_detalle_precio` decimal(30,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `compra_detalle`
+--
+
+INSERT INTO `compra_detalle` (`compra_detalle_id`, `compra_id`, `producto_id`, `compra_detalle_cantidad`, `compra_detalle_precio`) VALUES
+(2, 4, 23, 10, 25.00),
+(3, 5, 24, 12, 120.00);
 
 -- --------------------------------------------------------
 
@@ -263,7 +285,9 @@ INSERT INTO `producto` (`producto_id`, `producto_codigo`, `producto_nombre`, `pr
 (19, '2498234826394', 'Case Gamer GameMax Vista Mid-Tower Panoramic Glass Dual Chamber ARGB', 0, '', 0.00, 0.00, 'GAMEMAX', 'Vista MB / Vista White', 'Activo', '', 11, 95.00, 5, 100, 114.00, 10, 'Unidad'),
 (20, '5394729649821', 'Case Gamer GameMax Diamond COC Black Mid-Tower ARGB', 0, '', 0.00, 0.00, 'GAMEMAX', 'Diamond COC', 'Activo', '', 11, 55.00, 5, 100, 66.00, 10, 'Unidad'),
 (21, '4021947928125', 'Audífonos Argom Tech Dynamic 63 ARG-HS-0063 USB con Micrófono', 0, '', 0.00, 0.00, 'ARGOM TECH', 'Dynamic 63 (ARG-HS-0063)', 'Activo', '', 13, 20.00, 5, 100, 24.00, 10, 'Unidad'),
-(22, '2398782173109', 'Audífonos In-Ear Genius HS-M320 con Micrófono y Conector 3.5mm', 0, '', 0.00, 0.00, 'GENIUS', 'HS-M320', 'Activo', '', 13, 10.00, 5, 100, 12.00, 10, 'Unidad');
+(22, '2398782173109', 'Audífonos In-Ear Genius HS-M320 con Micrófono y Conector 3.5mm', 0, '', 0.00, 0.00, 'GENIUS', 'HS-M320', 'Activo', '', 13, 10.00, 5, 100, 12.00, 10, 'Unidad'),
+(23, '5234523423424', '1321321', 0, '', 0.00, 0.00, 'ASDASDA', '34131231dasd', 'Activo', '', 2, 25.00, 5, 100, 30.00, 10, 'Unidad'),
+(24, '5465467456456', 'Laptop lenovo', 0, '', 0.00, 0.00, 'LENOVO', 'I5 5600f', 'Activo', '', 2, 120.00, 5, 100, 144.00, 7, 'Unidad');
 
 -- --------------------------------------------------------
 
@@ -278,6 +302,59 @@ CREATE TABLE `proveedor` (
   `proveedor_telefono` varchar(20) DEFAULT NULL,
   `proveedor_direccion` varchar(200) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `proveedor`
+--
+
+INSERT INTO `proveedor` (`proveedor_id`, `proveedor_nombre`, `proveedor_rif`, `proveedor_telefono`, `proveedor_direccion`) VALUES
+(1, 'Conputodo', '71281237-2', '2236789', '');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `recepcion`
+--
+
+CREATE TABLE `recepcion` (
+  `recepcion_id` int(11) NOT NULL,
+  `compra_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `recepcion_fecha` date NOT NULL,
+  `recepcion_nota` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `recepcion`
+--
+
+INSERT INTO `recepcion` (`recepcion_id`, `compra_id`, `usuario_id`, `recepcion_fecha`, `recepcion_nota`) VALUES
+(1, 4, 1, '2026-03-14', NULL),
+(2, 4, 1, '2026-03-14', NULL),
+(3, 4, 1, '2026-03-14', NULL),
+(4, 4, 1, '2026-03-14', NULL),
+(5, 5, 1, '2026-03-14', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `recepcion_detalle`
+--
+
+CREATE TABLE `recepcion_detalle` (
+  `recepcion_detalle_id` int(11) NOT NULL,
+  `recepcion_id` int(11) NOT NULL,
+  `producto_id` int(11) NOT NULL,
+  `cantidad_recibida` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `recepcion_detalle`
+--
+
+INSERT INTO `recepcion_detalle` (`recepcion_detalle_id`, `recepcion_id`, `producto_id`, `cantidad_recibida`) VALUES
+(3, 3, 23, 10),
+(4, 5, 24, 7);
 
 -- --------------------------------------------------------
 
@@ -406,7 +483,8 @@ ALTER TABLE `compra`
 --
 ALTER TABLE `compra_detalle`
   ADD PRIMARY KEY (`compra_detalle_id`),
-  ADD KEY `producto_id` (`producto_id`);
+  ADD KEY `producto_id` (`producto_id`),
+  ADD KEY `fk_detalle_compra` (`compra_id`);
 
 --
 -- Indices de la tabla `empresa`
@@ -426,6 +504,22 @@ ALTER TABLE `producto`
 --
 ALTER TABLE `proveedor`
   ADD PRIMARY KEY (`proveedor_id`);
+
+--
+-- Indices de la tabla `recepcion`
+--
+ALTER TABLE `recepcion`
+  ADD PRIMARY KEY (`recepcion_id`),
+  ADD KEY `compra_id` (`compra_id`),
+  ADD KEY `usuario_id` (`usuario_id`);
+
+--
+-- Indices de la tabla `recepcion_detalle`
+--
+ALTER TABLE `recepcion_detalle`
+  ADD PRIMARY KEY (`recepcion_detalle_id`),
+  ADD KEY `recepcion_id` (`recepcion_id`),
+  ADD KEY `producto_id` (`producto_id`);
 
 --
 -- Indices de la tabla `rol`
@@ -467,7 +561,7 @@ ALTER TABLE `venta_detalle`
 -- AUTO_INCREMENT de la tabla `bitacora`
 --
 ALTER TABLE `bitacora`
-  MODIFY `bitacora_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `bitacora_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT de la tabla `caja`
@@ -491,13 +585,13 @@ ALTER TABLE `cliente`
 -- AUTO_INCREMENT de la tabla `compra`
 --
 ALTER TABLE `compra`
-  MODIFY `compra_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `compra_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `compra_detalle`
 --
 ALTER TABLE `compra_detalle`
-  MODIFY `compra_detalle_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `compra_detalle_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `empresa`
@@ -509,13 +603,25 @@ ALTER TABLE `empresa`
 -- AUTO_INCREMENT de la tabla `producto`
 --
 ALTER TABLE `producto`
-  MODIFY `producto_id` int(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `producto_id` int(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT de la tabla `proveedor`
 --
 ALTER TABLE `proveedor`
-  MODIFY `proveedor_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `proveedor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `recepcion`
+--
+ALTER TABLE `recepcion`
+  MODIFY `recepcion_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT de la tabla `recepcion_detalle`
+--
+ALTER TABLE `recepcion_detalle`
+  MODIFY `recepcion_detalle_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `rol`
@@ -562,13 +668,28 @@ ALTER TABLE `compra`
 -- Filtros para la tabla `compra_detalle`
 --
 ALTER TABLE `compra_detalle`
-  ADD CONSTRAINT `compra_detalle_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`);
+  ADD CONSTRAINT `compra_detalle_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`),
+  ADD CONSTRAINT `fk_detalle_compra` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `producto`
 --
 ALTER TABLE `producto`
   ADD CONSTRAINT `producto_ibfk_2` FOREIGN KEY (`categoria_id`) REFERENCES `categoria` (`categoria_id`);
+
+--
+-- Filtros para la tabla `recepcion`
+--
+ALTER TABLE `recepcion`
+  ADD CONSTRAINT `recepcion_ibfk_1` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`),
+  ADD CONSTRAINT `recepcion_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`);
+
+--
+-- Filtros para la tabla `recepcion_detalle`
+--
+ALTER TABLE `recepcion_detalle`
+  ADD CONSTRAINT `recepcion_detalle_ibfk_1` FOREIGN KEY (`recepcion_id`) REFERENCES `recepcion` (`recepcion_id`),
+  ADD CONSTRAINT `recepcion_detalle_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`);
 
 --
 -- Filtros para la tabla `usuario`

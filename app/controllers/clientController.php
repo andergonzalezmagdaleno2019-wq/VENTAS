@@ -7,120 +7,115 @@ use app\models\mainModel;
 class clientController extends mainModel
 {
 
-	/*----------  Controlador registrar cliente  ----------*/
-	public function registrarClienteControlador()
-	{
+    /*----------  Controlador registrar cliente  ----------*/
+    public function registrarClienteControlador()
+    {
 
-		# Almacenando datos#
-		$tipo_documento = $this->limpiarCadena($_POST['cliente_tipo_documento']);
-		$numero_documento = $this->limpiarCadena($_POST['cliente_numero_documento']);
-		$nombre = $this->limpiarCadena($_POST['cliente_nombre']);
-		$apellido = $this->limpiarCadena($_POST['cliente_apellido']);
+        # Almacenando datos#
+        $tipo_documento = $this->limpiarCadena($_POST['cliente_tipo_documento']);
+        $numero_documento = $this->limpiarCadena($_POST['cliente_numero_documento']);
+        $nombre = $this->limpiarCadena($_POST['cliente_nombre']);
+        $apellido = $this->limpiarCadena($_POST['cliente_apellido']);
 
-		$provincia = $this->limpiarCadena($_POST['cliente_provincia']);
-		$ciudad = $this->limpiarCadena($_POST['cliente_ciudad']);
-		$direccion = $this->limpiarCadena($_POST['cliente_direccion']);
+        $provincia = $this->limpiarCadena($_POST['cliente_provincia']);
+        $ciudad = $this->limpiarCadena($_POST['cliente_ciudad']);
+        $direccion = $this->limpiarCadena($_POST['cliente_direccion']);
 
-		$telefono_prefijo = $this->limpiarCadena($_POST['cliente_telefono_codigo']);
-		$telefono_numero = $this->limpiarCadena($_POST['cliente_telefono']);
-		$email = $this->limpiarCadena($_POST['cliente_email']);
-		# Verificando campos obligatorios #
-		if ($numero_documento == "" || $nombre == "" || $apellido == "" || $provincia == "" || $ciudad == "" || $direccion == "") {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
+        $telefono_prefijo = $this->limpiarCadena($_POST['cliente_telefono_codigo']);
+        $telefono_numero = $this->limpiarCadena($_POST['cliente_telefono']);
+        $email = $this->limpiarCadena($_POST['cliente_email']);
+
+        # Verificando campos obligatorios #
+        if ($tipo_documento == "" || $numero_documento == "" || $nombre == "" || $apellido == "" || $provincia == "" || $ciudad == "" || $direccion == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
+
+        /*== VALIDACIÓN: Nombre (Solo letras) ==*/
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $nombre)){
+            $alerta=["tipo"=>"simple","titulo"=>"Nombre no válido","texto"=>"El nombre '$nombre' no es válido. Solo se permiten letras.","icono"=>"error"];
+            return json_encode($alerta); exit();
+        }
+
+        /*== VALIDACIÓN: Apellido (Solo letras) ==*/
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $apellido)){
+            $alerta=["tipo"=>"simple","titulo"=>"Apellido no válido","texto"=>"El apellido '$apellido' no es válido. Solo se permiten letras.","icono"=>"error"];
+            return json_encode($alerta); exit();
+        }
+
+        /*== VALIDACIÓN: Cédula (Solo números y longitud específica) ==*/
+        if(!preg_match("/^[0-9]{7,10}$/", $numero_documento)){
+            $msj_dni = (is_numeric($numero_documento)) 
+                ? "La cédula debe tener entre 7 y 10 dígitos (escribiste ".strlen($numero_documento).")." 
+                : "La cédula '$numero_documento' no es válida. Solo debe incluir números.";
+            
+            $alerta=["tipo"=>"simple","titulo"=>"Error en Documento","texto"=>$msj_dni,"icono"=>"error"];
+            return json_encode($alerta); exit();
+        }
+
+# Verificando formato de Provincia, Ciudad y Dirección #
+
+/*== VALIDACIÓN: Provincia/Estado ==*/
+if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $provincia)){
+    $msj_provincia = (preg_match("/[0-9]/", $provincia)) 
+        ? "El estado/provincia '$provincia' no puede contener números." 
+        : "El estado/provincia debe tener entre 4 y 30 letras (escribiste ".strlen($provincia).").";
+
+    $alerta = ["tipo" => "simple", "titulo" => "Provincia no válida", "texto" => $msj_provincia, "icono" => "error"];
+    return json_encode($alerta);
+}
+
+		/*== VALIDACIÓN: Ciudad ==*/
+		if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $ciudad)){
+			$msj_ciudad = (preg_match("/[0-9]/", $ciudad)) 
+				? "La ciudad '$ciudad' no puede contener números." 
+				: "La ciudad debe tener entre 4 y 30 letras (escribiste ".strlen($ciudad).").";
+
+			$alerta = ["tipo" => "simple", "titulo" => "Ciudad no válida", "texto" => $msj_ciudad, "icono" => "error"];
 			return json_encode($alerta);
-			exit();
 		}
 
-		# Verificando integridad de los datos #
-		if ($this->verificarDatos("[a-zA-Z0-9-]{7,30}", $numero_documento)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El NUMERO DE DOCUMENTO no coincide con el formato solicitado", "icono" => "error"];
+		/*== VALIDACIÓN: Dirección ==*/
+		if(!preg_match("/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}$/", $direccion)){
+			$alerta = [
+				"tipo" => "simple", 
+				"titulo" => "Dirección no válida", 
+				"texto" => "La dirección contiene caracteres no permitidos o no cumple con la longitud (4 a 70 caracteres).", 
+				"icono" => "error"
+			];
 			return json_encode($alerta);
-			exit();
 		}
 
-		if ($this->verificarDatos("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}", $nombre)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El NOMBRE no coincide con el formato solicitado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        # VALIDACIÓN DE TELÉFONO #
+        $telefono = "";
+        if ($telefono_numero != "") {
+            if ($this->verificarDatos("[0-9]{7,10}", $telefono_numero)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El TELEFONO debe contener solo números (7 a 10 dígitos)", "icono" => "error"];
+                return json_encode($alerta); exit();
+            }
+            $telefono = $telefono_prefijo . $telefono_numero;
+        }
 
-		if ($this->verificarDatos("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}", $apellido)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El APELLIDO no coincide con el formato solicitado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        # Verificando Duplicados (Email y Documento) #
+        if ($email != "") {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Email inválido", "texto" => "Formato de correo incorrecto", "icono" => "error"];
+                return json_encode($alerta); exit();
+            }
 
-		if ($this->verificarDatos("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}", $provincia)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El ESTADO, PROVINCIA O DEPARTAMENTO no coincide con el formato solicitado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+            $check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
+            if ($check_email->rowCount() > 0) {
+                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El EMAIL ya está registrado", "icono" => "error"];
+                return json_encode($alerta); exit();
+            }
+        }
 
-		if ($this->verificarDatos("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}", $ciudad)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "La CIUDAD O PUEBLO no coincide con el formato solicitado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-
-		if ($this->verificarDatos("[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}", $direccion)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "La DIRECCION O CALLE no coincide con el formato solicitado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-
-		# VALIDACIÓN DE TELÉFONO CORREGIDA #
-		$telefono = "";
-		if ($telefono_numero != "") {
-			// Validamos que el número tenga exactamente 7 dígitos numéricos
-			if ($this->verificarDatos("[0-9]{7}", $telefono_numero)) {
-				$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El TELEFONO no coincide con el formato solicitado (Deben ser 7 números)", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-			// Unimos el código y el número para guardarlo en la base de datos
-			$telefono = $telefono_prefijo . $telefono_numero;
-		}
-
-		# Comprobando tipo de documento #
-		if (!in_array($tipo_documento, DOCUMENTOS_USUARIOS)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El TIPO DE DOCUMENTO no es correcto o no lo ha seleccionado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-
-		/*== Verificando email ==*/
-		if ($email != "") {
-			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				$alerta = [
-					"tipo" => "simple",
-					"titulo" => "Ocurrió un error inesperado",
-					"texto" => "Ha ingresado un correo electrónico no válido (falta el @ o el dominio)",
-					"icono" => "error"
-				];
-				return json_encode($alerta);
-				exit();
-			}
-
-			$check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
-			if ($check_email->rowCount() > 0) {
-				$alerta = [
-					"tipo" => "simple",
-					"titulo" => "Ocurrió un error inesperado",
-					"texto" => "El EMAIL que acaba de ingresar ya se encuentra registrado",
-					"icono" => "error"
-				];
-				return json_encode($alerta);
-				exit();
-			}
-		}
-
-		# Comprobando documento #
-		$check_documento = $this->ejecutarConsulta("SELECT cliente_id FROM cliente WHERE cliente_tipo_documento='$tipo_documento' AND cliente_numero_documento='$numero_documento'");
-		if ($check_documento->rowCount() > 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El número y tipo de documento ingresado ya se encuentra registrado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        $check_documento = $this->ejecutarConsulta("SELECT cliente_id FROM cliente WHERE cliente_tipo_documento='$tipo_documento' AND cliente_numero_documento='$numero_documento'");
+        if ($check_documento->rowCount() > 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número y tipo de documento ingresado ya se encuentra registrado", "icono" => "error"];
+            return json_encode($alerta); exit();
+        }
 
 		$cliente_datos_reg = [
 			["campo_nombre" => "cliente_tipo_documento", "campo_marcador" => ":TipoDocumento", "campo_valor" => $tipo_documento],
@@ -140,7 +135,7 @@ class clientController extends mainModel
 			/*== AUDITORIA ==*/
 			$this->guardarBitacora("Clientes", "Registro", "Se registró el cliente: " . $nombre . " " . $apellido);
 
-			$alerta = ["tipo" => "limpiar", "titulo" => "Cliente registrado", "texto" => "El cliente " . $nombre . " " . $apellido . " se registro con exito", "icono" => "success"];
+			$alerta = ["tipo" => "redireccionar", "titulo" => "Cliente registrado", "texto" => "El cliente " . $nombre . " " . $apellido . " se registro con exito", "icono" => "success", "url" => APP_URL . "clientList/"];
 		} else {
 			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No se pudo registrar el cliente, por favor intente nuevamente", "icono" => "error"];
 		}
@@ -266,131 +261,152 @@ class clientController extends mainModel
 	}
 
 
-	/*----------  Controlador actualizar cliente  ----------*/
-	public function actualizarClienteControlador()
-	{
+/*----------  Controlador actualizar cliente  ----------*/
+    public function actualizarClienteControlador()
+    {
+        $id = $this->limpiarCadena($_POST['cliente_id']);
 
-		$id = $this->limpiarCadena($_POST['cliente_id']);
+        // Verificando que el cliente exista
+        $datos = $this->ejecutarConsulta("SELECT * FROM cliente WHERE cliente_id='$id'");
+        if ($datos->rowCount() <= 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No hemos encontrado el cliente en el sistema", "icono" => "error"];
+            return json_encode($alerta);
+        } else {
+            $datos = $datos->fetch();
+        }
 
-		$datos = $this->ejecutarConsulta("SELECT * FROM cliente WHERE cliente_id='$id'");
-		if ($datos->rowCount() <= 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No hemos encontrado el cliente en el sistema", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		} else {
-			$datos = $datos->fetch();
-		}
+        # Almacenando datos del formulario #
+        $tipo_documento = $this->limpiarCadena($_POST['cliente_tipo_documento']);
+        $numero_documento = $this->limpiarCadena($_POST['cliente_numero_documento']);
+        $nombre = $this->limpiarCadena($_POST['cliente_nombre']);
+        $apellido = $this->limpiarCadena($_POST['cliente_apellido']);
 
-		$tipo_documento = $this->limpiarCadena($_POST['cliente_tipo_documento']);
-		$numero_documento = $this->limpiarCadena($_POST['cliente_numero_documento']);
-		$nombre = $this->limpiarCadena($_POST['cliente_nombre']);
-		$apellido = $this->limpiarCadena($_POST['cliente_apellido']);
+        $provincia = $this->limpiarCadena($_POST['cliente_provincia']);
+        $ciudad = $this->limpiarCadena($_POST['cliente_ciudad']);
+        $direccion = $this->limpiarCadena($_POST['cliente_direccion']);
 
-		$provincia = $this->limpiarCadena($_POST['cliente_provincia']);
-		$ciudad = $this->limpiarCadena($_POST['cliente_ciudad']);
-		$direccion = $this->limpiarCadena($_POST['cliente_direccion']);
+        $telefono_prefijo = $this->limpiarCadena($_POST['cliente_telefono_codigo']);
+        $telefono_numero = $this->limpiarCadena($_POST['cliente_telefono']);
+        $email = $this->limpiarCadena($_POST['cliente_email']);
 
-		$telefono_prefijo = $this->limpiarCadena($_POST['cliente_telefono_codigo']);
-		$telefono_numero = $this->limpiarCadena($_POST['cliente_telefono']);
-		$email = $this->limpiarCadena($_POST['cliente_email']);
+        # Verificando campos obligatorios #
+        if ($tipo_documento == "" || $numero_documento == "" || $nombre == "" || $apellido == "" || $provincia == "" || $ciudad == "" || $direccion == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
+            return json_encode($alerta);
+        }
 
-		if ($numero_documento == "" || $nombre == "" || $apellido == "" || $provincia == "" || $ciudad == "" || $direccion == "") {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-		# Verificando integridad de los datos (Documento, Nombre y Apellido) #
-		if ($this->verificarDatos("[a-zA-Z0-9\-]{7,30}", $numero_documento)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El NUMERO DE DOCUMENTO no coincide con el formato solicitado. Se permiten letras, números y guiones.", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        /*== VALIDACIÓN: Nombre (Solo letras) ==*/
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $nombre)){
+            $alerta=["tipo"=>"simple","titulo"=>"Nombre no válido","texto"=>"El nombre '$nombre' no es válido. Solo se permiten letras.","icono"=>"error"];
+            return json_encode($alerta);
+        }
 
-		if ($this->verificarDatos("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}", $nombre)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El NOMBRE no coincide con el formato solicitado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        /*== VALIDACIÓN: Apellido (Solo letras) ==*/
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $apellido)){
+            $alerta=["tipo"=>"simple","titulo"=>"Apellido no válido","texto"=>"El apellido '$apellido' no es válido. Solo se permiten letras.","icono"=>"error"];
+            return json_encode($alerta);
+        }
 
-		if ($this->verificarDatos("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}", $apellido)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El APELLIDO no coincide con el formato solicitado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        /*== VALIDACIÓN: Cédula (Solo números y longitud específica) ==*/
+        if(!preg_match("/^[0-9]{7,10}$/", $numero_documento)){
+            $msj_dni = (is_numeric($numero_documento)) 
+                ? "La cédula debe tener entre 7 y 10 dígitos (escribiste ".strlen($numero_documento).")." 
+                : "La cédula '$numero_documento' no es válida. Solo debe incluir números.";
+            
+            $alerta=["tipo"=>"simple","titulo"=>"Error en Documento","texto"=>$msj_dni,"icono"=>"error"];
+            return json_encode($alerta);
+        }
 
-		/*== Validando formato de email ==*/
-		if ($email != "") {
-			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				$alerta = [
-					"tipo" => "simple",
-					"titulo" => "Error de Email",
-					"texto" => "El formato del correo electrónico no es válido",
-					"icono" => "error"
-				];
-				return json_encode($alerta);
-				exit();
-			}
+		/*== VALIDACIÓN: Provincia/Estado ==*/
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $provincia)){
+            $msj_provincia = (preg_match("/[0-9]/", $provincia)) 
+                ? "El estado/provincia '$provincia' no puede contener números." 
+                : "El estado/provincia debe tener entre 4 y 30 letras (escribiste ".strlen($provincia).").";
 
-			/*== Verificando disponibilidad del email (solo si cambió) ==*/
-			if ($email != $datos['cliente_email']) {
-				$check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
-				if ($check_email->rowCount() > 0) {
-					$alerta = [
-						"tipo" => "simple",
-						"titulo" => "Email en uso",
-						"texto" => "El correo electrónico ingresado ya pertenece a otro cliente",
-						"icono" => "error"
-					];
-					return json_encode($alerta);
-					exit();
-				}
-			}
-		}
+            $alerta = ["tipo" => "simple", "titulo" => "Provincia no válida", "texto" => $msj_provincia, "icono" => "error"];
+            return json_encode($alerta);
+        }
 
-		# PROCESANDO TELÉFONO #
-		$telefono = "";
-		if ($telefono_numero != "") {
-			// se verifica que sean exactamente 7 dígitos
-			if ($this->verificarDatos("[0-9]{7}", $telefono_numero)) {
-				$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El TELEFONO debe tener 7 dígitos numéricos", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-			// Unimos el código con el número
-			$telefono = $telefono_prefijo . $telefono_numero;
-		}
-		if ($tipo_documento != $datos['cliente_tipo_documento'] || $numero_documento != $datos['cliente_numero_documento']) {
-			$check_documento = $this->ejecutarConsulta("SELECT cliente_id FROM cliente WHERE cliente_tipo_documento='$tipo_documento' AND cliente_numero_documento='$numero_documento'");
-			if ($check_documento->rowCount() > 0) {
-				$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "El número y tipo de documento ingresado ya se encuentra registrado en el sistema", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-		}
+        /*== VALIDACIÓN: Ciudad ==*/
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $ciudad)){
+            $msj_ciudad = (preg_match("/[0-9]/", $ciudad)) 
+                ? "La ciudad '$ciudad' no puede contener números." 
+                : "La ciudad debe tener entre 4 y 30 letras (escribiste ".strlen($ciudad).").";
 
-		$cliente_datos_up = [
-			["campo_nombre" => "cliente_tipo_documento", "campo_marcador" => ":TipoDocumento", "campo_valor" => $tipo_documento],
-			["campo_nombre" => "cliente_numero_documento", "campo_marcador" => ":NumeroDocumento", "campo_valor" => $numero_documento],
-			["campo_nombre" => "cliente_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
-			["campo_nombre" => "cliente_apellido", "campo_marcador" => ":Apellido", "campo_valor" => $apellido],
-			["campo_nombre" => "cliente_provincia", "campo_marcador" => ":Provincia", "campo_valor" => $provincia],
-			["campo_nombre" => "cliente_ciudad", "campo_marcador" => ":Ciudad", "campo_valor" => $ciudad],
-			["campo_nombre" => "cliente_direccion", "campo_marcador" => ":Direccion", "campo_valor" => $direccion],
-			["campo_nombre" => "cliente_telefono", "campo_marcador" => ":Telefono", "campo_valor" => $telefono],
-			["campo_nombre" => "cliente_email", "campo_marcador" => ":Email", "campo_valor" => $email]
-		];
+            $alerta = ["tipo" => "simple", "titulo" => "Ciudad no válida", "texto" => $msj_ciudad, "icono" => "error"];
+            return json_encode($alerta);
+        }
 
-		$condicion = ["condicion_campo" => "cliente_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
+        /*== VALIDACIÓN: Dirección ==*/
+        if(!preg_match("/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}$/", $direccion)){
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Dirección no válida", 
+                "texto" => "La dirección contiene caracteres no permitidos o longitud incorrecta (4 a 70 caracteres).", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+        }
 
-		if ($this->actualizarDatos("cliente", $cliente_datos_up, $condicion)) {
-			/*== AUDITORIA ==*/
-			$this->guardarBitacora("Clientes", "Actualización", "Se actualizaron los datos del cliente: " . $nombre . " " . $apellido);
+        /*== Validando formato de email ==*/
+        if ($email != "") {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Error de Email", "texto" => "El formato del correo electrónico no es válido", "icono" => "error"];
+                return json_encode($alerta);
+            }
 
-			$alerta = ["tipo" => "redireccionar", "titulo" => "Cliente actualizado", "texto" => "Los datos del cliente se actualizaron correctamente", "icono" => "success","url" => APP_URL."clientList/"];
-		} else {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No hemos podido actualizar los datos del cliente, por favor intente nuevamente", "icono" => "error"];
-		}
+            if ($email != $datos['cliente_email']) {
+                $check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
+                if ($check_email->rowCount() > 0) {
+                    $alerta = ["tipo" => "simple", "titulo" => "Email en uso", "texto" => "El correo electrónico ya pertenece a otro cliente", "icono" => "error"];
+                    return json_encode($alerta);
+                }
+            }
+        }
 
-		return json_encode($alerta);
-	}
+        # PROCESANDO TELÉFONO #
+        $telefono = "";
+        if ($telefono_numero != "") {
+            if ($this->verificarDatos("[0-9]{7,10}", $telefono_numero)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El TELEFONO debe contener solo números (7 a 10 dígitos)", "icono" => "error"];
+                return json_encode($alerta);
+            }
+            $telefono = $telefono_prefijo . $telefono_numero;
+        }
+
+        # Verificando si el documento cambió y si el nuevo ya existe #
+        if ($tipo_documento != $datos['cliente_tipo_documento'] || $numero_documento != $datos['cliente_numero_documento']) {
+            $check_documento = $this->ejecutarConsulta("SELECT cliente_id FROM cliente WHERE cliente_tipo_documento='$tipo_documento' AND cliente_numero_documento='$numero_documento'");
+            if ($check_documento->rowCount() > 0) {
+                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número y tipo de documento ya se encuentra registrado", "icono" => "error"];
+                return json_encode($alerta);
+            }
+        }
+
+        # Preparando datos para actualizar #
+        $cliente_datos_up = [
+            ["campo_nombre" => "cliente_tipo_documento", "campo_marcador" => ":TipoDocumento", "campo_valor" => $tipo_documento],
+            ["campo_nombre" => "cliente_numero_documento", "campo_marcador" => ":NumeroDocumento", "campo_valor" => $numero_documento],
+            ["campo_nombre" => "cliente_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
+            ["campo_nombre" => "cliente_apellido", "campo_marcador" => ":Apellido", "campo_valor" => $apellido],
+            ["campo_nombre" => "cliente_provincia", "campo_marcador" => ":Provincia", "campo_valor" => $provincia],
+            ["campo_nombre" => "cliente_ciudad", "campo_marcador" => ":Ciudad", "campo_valor" => $ciudad],
+            ["campo_nombre" => "cliente_direccion", "campo_marcador" => ":Direccion", "campo_valor" => $direccion],
+            ["campo_nombre" => "cliente_telefono", "campo_marcador" => ":Telefono", "campo_valor" => $telefono],
+            ["campo_nombre" => "cliente_email", "campo_marcador" => ":Email", "campo_valor" => $email]
+        ];
+
+        $condicion = ["condicion_campo" => "cliente_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
+
+        if ($this->actualizarDatos("cliente", $cliente_datos_up, $condicion)) {
+            /*== AUDITORIA ==*/
+            $this->guardarBitacora("Clientes", "Actualización", "Se actualizaron los datos del cliente: " . $nombre . " " . $apellido);
+
+            $alerta = ["tipo" => "redireccionar", "titulo" => "Cliente actualizado", "texto" => "Los datos del cliente se actualizaron correctamente", "icono" => "success", "url" => APP_URL."clientList/"];
+        } else {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No hemos podido actualizar los datos del cliente, por favor intente nuevamente", "icono" => "error"];
+        }
+
+        return json_encode($alerta);
+    }
 }

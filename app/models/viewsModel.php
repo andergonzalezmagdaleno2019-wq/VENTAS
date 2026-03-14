@@ -14,7 +14,7 @@
 				"saleNew","saleList","saleSearch","saleDetail", "saleReport",
 				"logOut","backup",
 				"providerNew", "providerList", "providerUpdate",
-				"purchaseNew", "purchaseList", "purchaseReport", "purchaseSearch", "auditList",
+				"purchaseNew", "purchaseList", "purchase_reception", "purchaseDetail", "purchaseReceptionDetail","purchaseReport", "purchaseSearch", "auditList",
 			];
 
 			if(in_array($vista, $listaBlanca)){

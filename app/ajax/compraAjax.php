@@ -27,6 +27,17 @@
         if($_POST['modulo_compra']=="buscar_por_categoria"){
             echo $insCompra->buscarPorCategoriaCompraControlador();
         }
+
+        /*---------- Registrar Recepción de Mercancía ----------*/
+        if($_POST['modulo_compra']=="registrar_recepcion"){
+            // Instanciamos el controlador si no se ha hecho arriba
+            if(!isset($insCompra)){
+                $insCompra = new purchaseController();
+            }
+            
+            // Llamamos al controlador que procesará la entrada de las PC
+            echo $insCompra->registrarRecepcionControlador();
+        }
 	}else{
 		session_destroy();
 		header("Location: ".APP_URL."login/");

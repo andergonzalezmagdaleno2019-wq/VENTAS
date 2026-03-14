@@ -55,7 +55,7 @@
 				
 				<div class="control">
 				<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
-				<input class="input" type="text" name="cliente_numero_documento" value="<?php echo $datos['cliente_numero_documento']; ?>" pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" placeholder="Ej: V-12345678 o 12345678-9" required autocomplete="off">
+				<input class="input" type="text" name="cliente_numero_documento" value="<?php echo $datos['cliente_numero_documento']; ?>" pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" placeholder="Ej: V-12345678 o 12345678-9" required>
 			</div>
 			
 				</div>
@@ -64,13 +64,13 @@
 				<div class="column">
 					<div class="control">
 						<label>Nombres <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" name="cliente_nombre" value="<?php echo $datos['cliente_nombre']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required autocomplete="off">
+						<input class="input" type="text" name="cliente_nombre" value="<?php echo $datos['cliente_nombre']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
 					</div>
 				</div>
 				<div class="column">
 					<div class="control">
 						<label>Apellidos <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" name="cliente_apellido" value="<?php echo $datos['cliente_apellido']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required autocomplete="off">
+						<input class="input" type="text" name="cliente_apellido" value="<?php echo $datos['cliente_apellido']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
 					</div>
 				</div>
 			</div>
@@ -78,19 +78,19 @@
 				<div class="column">
 					<div class="control">
 						<label>Estado o Departamento <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" name="cliente_provincia" value="<?php echo $datos['cliente_provincia']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required autocomplete="off">
+						<input class="input" type="text" name="cliente_provincia" value="<?php echo $datos['cliente_provincia']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required>
 					</div>
 				</div>
 				<div class="column">
 					<div class="control">
 						<label>Ciudad o provincia <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" name="cliente_ciudad" value="<?php echo $datos['cliente_ciudad']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required autocomplete="off">
+						<input class="input" type="text" name="cliente_ciudad" value="<?php echo $datos['cliente_ciudad']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required>
 					</div>
 				</div>
 				<div class="column">
 					<div class="control">
 						<label>Calle o dirección de casa <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" name="cliente_direccion" value="<?php echo $datos['cliente_direccion']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}" maxlength="70" required autocomplete="off">
+						<input class="input" type="text" name="cliente_direccion" value="<?php echo $datos['cliente_direccion']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}" maxlength="70" required>
 					</div>
 				</div>
 			</div>
@@ -112,7 +112,7 @@
 							<p class="control is-expanded">
 								<input class="input" type="text" name="cliente_telefono"
 									value="<?php echo $numero_db; ?>"
-									pattern="[0-9]{7}" maxlength="7" autocomplete="off">
+									pattern="[0-9]{7}" maxlength="7">
 							</p>
 						</div>
 					</div>

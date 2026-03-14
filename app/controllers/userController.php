@@ -8,6 +8,9 @@
         /*----------  Controlador registrar usuario  ----------*/
         public function registrarUsuarioControlador(){
 
+            // Capturamos los datos (incluyendo tipo de documento y cédula)
+            $tipo_doc=$this->limpiarCadena($_POST['usuario_tipo_documento']);
+            $dni=$this->limpiarCadena($_POST['usuario_dni']);
             $nombre=$this->limpiarCadena($_POST['usuario_nombre']);
             $apellido=$this->limpiarCadena($_POST['usuario_apellido']);
             $usuario=$this->limpiarCadena($_POST['usuario_usuario']);
@@ -18,42 +21,76 @@
             
             $rol = isset($_POST['usuario_rol']) ? $this->limpiarCadena($_POST['usuario_rol']) : 2;
 
-            if($nombre=="" || $apellido=="" || $usuario=="" || $clave1=="" || $clave2==""){
+            /*== Verificando campos obligatorios ==*/
+            if($tipo_doc=="" || $dni=="" || $nombre=="" || $apellido=="" || $usuario=="" || $clave1=="" || $clave2==""){
                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
             }
 
+            /*== VALIDACIÓN: Nombre (Solo letras, sin números ni caracteres raros) ==*/
+            if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $nombre)){
+                $alerta=[
+                    "tipo"=>"simple",
+                    "titulo"=>"Nombre no válido",
+                    "texto"=>"El nombre '$nombre' contiene caracteres no permitidos o es muy corto. Solo se permiten letras.",
+                    "icono"=>"error"
+                ]; 
+                return json_encode($alerta); exit();
+            }
+
+            /*== VALIDACIÓN: Apellido (Solo letras, sin números ni caracteres raros) ==*/
+            if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $apellido)){
+                $alerta=[
+                    "tipo"=>"simple",
+                    "titulo"=>"Apellido no válido",
+                    "texto"=>"El apellido '$apellido' contiene números o caracteres especiales. Por favor, use solo letras.",
+                    "icono"=>"error"
+                ]; 
+                return json_encode($alerta); exit();
+            }
+
+            /*== VALIDACIÓN: Cédula (Solo números, entre 7 y 10 caracteres) ==*/
+            if(!preg_match("/^[0-9]{7,10}$/", $dni)){
+                // Personalizamos el mensaje según lo que escribió el usuario
+                $msj_dni = (is_numeric($dni)) 
+                    ? "La cédula debe tener entre 7 y 10 dígitos (escribiste ".strlen($dni).")." 
+                    : "La cédula '$dni' no es válida. No debe incluir letras, puntos ni guiones, solo números.";
+
+                $alerta=[
+                    "tipo"=>"simple",
+                    "titulo"=>"Error en Documento",
+                    "texto"=>$msj_dni,
+                    "icono"=>"error"
+                ]; 
+                return json_encode($alerta); exit();
+            }
+
+            /*== Verificando DNI repetido ==*/
+            $check_dni=$this->ejecutarConsulta("SELECT usuario_dni FROM usuario WHERE usuario_dni='$dni'");
+            if($check_dni->rowCount()>0){
+                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El número de CÉDULA ya se encuentra registrado","icono"=>"error"]; return json_encode($alerta); exit();
+            }
+
+            /*== Verificando Usuario repetido ==*/
             $check_usuario=$this->ejecutarConsulta("SELECT usuario_usuario FROM usuario WHERE usuario_usuario='$usuario'");
             if($check_usuario->rowCount()>0){
                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El USUARIO ya se encuentra registrado","icono"=>"error"]; return json_encode($alerta); exit();
             }
 
+            /*== Verificando Email ==*/
             if($email!=""){
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $alerta = ["tipo" => "simple", "titulo" => "Email inválido", "texto" => "Formato de correo incorrecto", "icono" => "error"];
+                    return json_encode($alerta); exit();
+                }
                 $check_email=$this->ejecutarConsulta("SELECT usuario_email FROM usuario WHERE usuario_email='$email'");
                 if($check_email->rowCount()>0){
                     $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El EMAIL ya se encuentra registrado","icono"=>"error"]; return json_encode($alerta); exit();
                 }
             }
 
-        /*== Validando formato de email ==*/
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $alerta = [
-                "tipo" => "simple",
-                "titulo" => "Email inválido",
-                "texto" => "El formato del correo electrónico no es correcto (debe incluir @ y un dominio)",
-                "icono" => "error"
-            ];
-            return json_encode($alerta);
-            exit();
-        }
-
-        # Verificando longitud de la clave #
-        if(strlen($clave1) < 7){
-                $alerta=[
-                    "tipo"=>"simple",
-                    "titulo"=>"Error en Clave",
-                    "texto"=>"La contraseña es demasiado corta. Debe tener al menos 7 caracteres.",
-                    "icono"=>"error"
-                ]; 
+            /*== Verificando Claves ==*/
+            if(strlen($clave1) < 7){
+                $alerta=["tipo"=>"simple","titulo"=>"Error en Clave","texto"=>"La contraseña debe tener al menos 7 caracteres.","icono"=>"error"]; 
                 return json_encode($alerta); exit();
             }
 
@@ -63,25 +100,25 @@
                 $clave=password_hash($clave1,PASSWORD_BCRYPT,["cost"=>10]);
             }
 
+            /*== Gestión de Foto ==*/
             $img_dir="../views/fotos/";
             $foto="";
             if(isset($_FILES['usuario_foto']) && $_FILES['usuario_foto']['name']!="" && $_FILES['usuario_foto']['size']>0){
-                if(!file_exists($img_dir)){ if(!mkdir($img_dir,0777)){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Error al crear directorio","icono"=>"error"]; return json_encode($alerta); exit(); } }
+                if(!file_exists($img_dir)){ mkdir($img_dir,0777); }
                 if(mime_content_type($_FILES['usuario_foto']['tmp_name'])!="image/jpeg" && mime_content_type($_FILES['usuario_foto']['tmp_name'])!="image/png"){
                     $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Formato de imagen no permitido","icono"=>"error"]; return json_encode($alerta); exit();
                 }
                 $foto=str_ireplace(" ","_",$nombre)."_".rand(0,100);
-                switch(mime_content_type($_FILES['usuario_foto']['tmp_name'])){
-                    case 'image/jpeg': $foto=$foto.".jpg"; break;
-                    case 'image/png': $foto=$foto.".png"; break;
-                }
-                chmod($img_dir,0777);
+                $foto=(mime_content_type($_FILES['usuario_foto']['tmp_name'])=='image/jpeg') ? $foto.".jpg" : $foto.".png";
                 if(!move_uploaded_file($_FILES['usuario_foto']['tmp_name'],$img_dir.$foto)){
                     $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo subir la imagen","icono"=>"error"]; return json_encode($alerta); exit();
                 }
             }
 
+            /*== Preparando datos para el registro ==*/
             $usuario_datos_reg=[
+                ["campo_nombre"=>"usuario_tipo_documento","campo_marcador"=>":Tipo","campo_valor"=>$tipo_doc],
+                ["campo_nombre"=>"usuario_dni","campo_marcador"=>":Dni","campo_valor"=>$dni],
                 ["campo_nombre"=>"usuario_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
                 ["campo_nombre"=>"usuario_apellido","campo_marcador"=>":Apellido","campo_valor"=>$apellido],
                 ["campo_nombre"=>"usuario_usuario","campo_marcador"=>":Usuario","campo_valor"=>$usuario],
@@ -93,6 +130,7 @@
                 ["campo_nombre"=>"usuario_estado","campo_marcador"=>":Estado","campo_valor"=>"Activo"]
             ];
 
+            /*== Ejecutando el registro ==*/
             $registrar_usuario=$this->guardarDatos("usuario",$usuario_datos_reg);
 
             if($registrar_usuario->rowCount()==1){
@@ -271,9 +309,15 @@
 
             $id=$this->limpiarCadena($_POST['usuario_id']);
             $datos=$this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_id='$id'");
-            if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado","icono"=>"error"]; return json_encode($alerta); exit(); }
+            if($datos->rowCount()<=0){ 
+                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado","icono"=>"error"]; 
+                return json_encode($alerta); exit(); 
+            }
             $datos=$datos->fetch();
 
+            // Capturamos los nuevos campos de identidad y los de siempre
+            $tipo_doc=$this->limpiarCadena($_POST['usuario_tipo_documento']);
+            $dni=$this->limpiarCadena($_POST['usuario_dni']);
             $nombre=$this->limpiarCadena($_POST['usuario_nombre']);
             $apellido=$this->limpiarCadena($_POST['usuario_apellido']);
             $usuario=$this->limpiarCadena($_POST['usuario_usuario']);
@@ -284,55 +328,74 @@
             
             $rol = isset($_POST['usuario_rol']) ? $this->limpiarCadena($_POST['usuario_rol']) : $datos['rol_id'];
 
-            if($nombre=="" || $apellido=="" || $usuario==""){
+            /*== Verificando campos obligatorios ==*/
+            if($tipo_doc=="" || $dni=="" || $nombre=="" || $apellido=="" || $usuario==""){
                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
             }
 
+            /*== VALIDACIÓN: Nombre (Solo letras) ==*/
+            if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $nombre)){
+                $alerta=["tipo"=>"simple","titulo"=>"Nombre no válido","texto"=>"El nombre '$nombre' contiene caracteres no permitidos. Solo se permiten letras.","icono"=>"error"];
+                return json_encode($alerta); exit();
+            }
+
+            /*== VALIDACIÓN: Apellido (Solo letras) ==*/
+            if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $apellido)){
+                $alerta=["tipo"=>"simple","titulo"=>"Apellido no válido","texto"=>"El apellido '$apellido' contiene caracteres no permitidos. Solo se permiten letras.","icono"=>"error"];
+                return json_encode($alerta); exit();
+            }
+
+            /*== VALIDACIÓN: Cédula (Solo números y longitud) ==*/
+            if(!preg_match("/^[0-9]{7,10}$/", $dni)){
+                $msj_dni = (is_numeric($dni)) 
+                    ? "La cédula debe tener entre 7 y 10 dígitos (escribiste ".strlen($dni).")." 
+                    : "La cédula '$dni' no es válida. No debe incluir letras ni símbolos.";
+                
+                $alerta=["tipo"=>"simple","titulo"=>"Error en Documento","texto"=>$msj_dni,"icono"=>"error"];
+                return json_encode($alerta); exit();
+            }
+
+            /*== Verificando DNI repetido (Excluyendo al usuario actual) ==*/
+            if($datos['usuario_dni']!=$dni){
+                $check_dni=$this->ejecutarConsulta("SELECT usuario_dni FROM usuario WHERE usuario_dni='$dni'");
+                if($check_dni->rowCount()>0){ 
+                    $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El número de CÉDULA ya se encuentra registrado","icono"=>"error"]; 
+                    return json_encode($alerta); exit(); 
+                }
+            }
+
+            /*== Verificando Usuario repetido ==*/
             if($datos['usuario_usuario']!=$usuario){
                 $check_usuario=$this->ejecutarConsulta("SELECT usuario_usuario FROM usuario WHERE usuario_usuario='$usuario'");
                 if($check_usuario->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El USUARIO ya existe","icono"=>"error"]; return json_encode($alerta); exit(); }
             }
 
+            /*== Verificando Email ==*/
             if($email!="" && $datos['usuario_email']!=$email){
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $alerta = ["tipo" => "simple", "titulo" => "Email inválido", "texto" => "Formato de correo incorrecto", "icono" => "error"];
+                    return json_encode($alerta); exit();
+                }
                 $check_email=$this->ejecutarConsulta("SELECT usuario_email FROM usuario WHERE usuario_email='$email'");
                 if($check_email->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El EMAIL ya existe","icono"=>"error"]; return json_encode($alerta); exit(); }
             }
 
-        /*== Validando formato de email ==*/
-        if ($email != "") {
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $alerta = [
-                    "tipo" => "simple",
-                    "titulo" => "Email inválido",
-                    "texto" => "El formato del correo electrónico no es correcto (debe incluir @ y un dominio)",
-                    "icono" => "error"
-                ];
-                return json_encode($alerta);
-                exit();
-            }
-        }
-        # Verificando longitud de la clave (solo si el usuario escribió algo) #
-        if ($clave1 != "") {
-            if (strlen($clave1) < 7) {
-                $alerta = [
-                    "tipo" => "simple",
-                    "titulo" => "Error en Clave",
-                    "texto" => "La nueva contraseña es demasiado corta. Debe tener al menos 7 caracteres.",
-                    "icono" => "error"
-                ];
-                return json_encode($alerta);
-                exit();
-            }
-        }
-
+            /*== Gestión de Claves ==*/
             if($clave1!="" || $clave2!=""){
+                if (strlen($clave1) < 7) {
+                    $alerta = ["tipo" => "simple", "titulo" => "Error en Clave", "texto" => "La nueva contraseña debe tener al menos 7 caracteres.", "icono" => "error"];
+                    return json_encode($alerta); exit();
+                }
                 if($clave1!=$clave2){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Las contraseñas no coinciden","icono"=>"error"]; return json_encode($alerta); exit(); }
                 else{ $clave=password_hash($clave1,PASSWORD_BCRYPT,["cost"=>10]); }
             }else{
                 $clave=$datos['usuario_clave'];
             }
 
+            /*== Preparando Array de Actualización ==*/
             $usuario_datos_up=[
+                ["campo_nombre"=>"usuario_tipo_documento","campo_marcador"=>":Tipo","campo_valor"=>$tipo_doc],
+                ["campo_nombre"=>"usuario_dni","campo_marcador"=>":Dni","campo_valor"=>$dni],
                 ["campo_nombre"=>"usuario_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
                 ["campo_nombre"=>"usuario_apellido","campo_marcador"=>":Apellido","campo_valor"=>$apellido],
                 ["campo_nombre"=>"usuario_usuario","campo_marcador"=>":Usuario","campo_valor"=>$usuario],

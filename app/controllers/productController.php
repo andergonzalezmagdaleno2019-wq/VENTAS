@@ -7,53 +7,67 @@ use app\models\mainModel;
 class productController extends mainModel
 {
 
-	/*----------  Controlador registrar producto  ----------*/
-	public function registrarProductoControlador()
-	{
+    /*----------  Controlador registrar producto  ----------*/
+    public function registrarProductoControlador()
+    {
 
-		$codigo = $this->limpiarCadena($_POST['producto_codigo']);
-		$nombre = $this->limpiarCadena($_POST['producto_nombre']);
-		$marca = $this->limpiarCadena($_POST['producto_marca']);
-		$modelo = $this->limpiarCadena($_POST['producto_modelo']);
+        $codigo = $this->limpiarCadena($_POST['producto_codigo']);
+        $nombre = $this->limpiarCadena($_POST['producto_nombre']);
+        $marca = $this->limpiarCadena($_POST['producto_marca']);
+        $modelo = $this->limpiarCadena($_POST['producto_modelo']);
 
-		$precio = $this->limpiarCadena($_POST['producto_precio']);
-		$costo = $this->limpiarCadena($_POST['producto_costo']);
+        $precio = $this->limpiarCadena($_POST['producto_precio']);
+        $costo = $this->limpiarCadena($_POST['producto_costo']);
 
-		$stock = $this->limpiarCadena($_POST['producto_stock']);
-		$stock_min = $this->limpiarCadena($_POST['producto_stock_min']);
-		$stock_max = $this->limpiarCadena($_POST['producto_stock_max']);
+        // Ya no recibimos stock por POST, definimos 0 por defecto
+        $stock = 0; 
+        $stock_min = $this->limpiarCadena($_POST['producto_stock_min']);
+        $stock_max = $this->limpiarCadena($_POST['producto_stock_max']);
 
-		$categoria = $this->limpiarCadena($_POST['producto_categoria']);
-		$unidad = $this->limpiarCadena($_POST['producto_unidad']);
+        $categoria = $this->limpiarCadena($_POST['producto_categoria']);
+        $unidad = $this->limpiarCadena($_POST['producto_unidad']);
 
-		/*---------- NUEVAS VALIDACIONES DE INTEGRIDAD ----------*/
-		# Validando Código de Barras (Solo números, máx 13) #
-		if ($this->verificarDatos("[0-9]{1,13}", $codigo)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error en Código", "texto" => "El código de barras solo permite números (máx. 13)", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        /*---------- NUEVAS VALIDACIONES DE INTEGRIDAD ----------*/
+        # Validando Código de Barras (Solo números, máx 13) #
+        if ($this->verificarDatos("[0-9]{1,13}", $codigo)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Código", "texto" => "El código de barras solo permite números (máx. 13)", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		# Validando Costo y Precio (Números con punto decimal) #
-		if ($this->verificarDatos("[0-9.]{1,25}", $costo)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error en Costo", "texto" => "El costo de compra no tiene un formato válido", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+		# Validando que el nombre no sea solo números #
+        if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Nombre Inválido", 
+                "texto" => "El nombre del producto debe contener  letras (no puede ser solo números)", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
 
-		if ($this->verificarDatos("[0-9.]{1,25}", $precio)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error en Precio", "texto" => "El precio de venta no tiene un formato válido", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        # Validando Costo y Precio (Números con punto decimal) #
+        if ($this->verificarDatos("[0-9.]{1,25}", $costo)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Costo", "texto" => "El costo de compra no tiene un formato válido", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		if ($codigo == "" || $nombre == "" || $precio == "" || $stock == "" || $categoria == "" || $unidad == "" || $costo == "" || $stock_min ==  "" || $stock_max == "") {
-			$alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        if ($this->verificarDatos("[0-9.]{1,25}", $precio)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Precio", "texto" => "El precio de venta no tiene un formato válido", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		if ((float)$costo <= 0 || (float)$precio <= 0) {
+        // Se quitó $stock de la validación de campos vacíos
+        if ($codigo == "" || $nombre == "" || $precio == "" || $categoria == "" || $unidad == "" || $costo == "" || $stock_min ==  "" || $stock_max == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
+
+        if ((float)$costo <= 0 || (float)$precio <= 0) {
             $alerta = [
                 "tipo" => "simple", 
                 "titulo" => "Error de Precio/Costo", 
@@ -64,8 +78,8 @@ class productController extends mainModel
             exit();
         }
 
-		/*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
-		if ((int)$stock_max <= 0) {
+        /*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
+        if ((int)$stock_max <= 0) {
             $alerta = [
                 "tipo" => "simple", 
                 "titulo" => "Límite de Stock Inválido", 
@@ -76,7 +90,7 @@ class productController extends mainModel
             exit();
         }
 
-		if ((int)$stock_min >= (int)$stock_max) {
+        if ((int)$stock_min >= (int)$stock_max) {
             $alerta = [
                 "tipo" => "simple", 
                 "titulo" => "Lógica de Stock Incorrecta", 
@@ -87,77 +101,76 @@ class productController extends mainModel
             exit();
         }
 
-		$check_codigo = $this->ejecutarConsulta("SELECT producto_codigo FROM producto WHERE producto_codigo='$codigo'");
-		if ($check_codigo->rowCount() > 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El código ya existe", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        $check_codigo = $this->ejecutarConsulta("SELECT producto_codigo FROM producto WHERE producto_codigo='$codigo'");
+        if ($check_codigo->rowCount() > 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El código ya existe", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		$img_dir = "../views/productos/";
-		$foto = "";
-		if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['name'] != "" && $_FILES['producto_foto']['size'] > 0) {
-			if (!file_exists($img_dir)) {
-				if (!mkdir($img_dir, 0777)) {
-					$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Error al crear directorio", "icono" => "error"];
-					return json_encode($alerta);
-					exit();
-				}
-			}
-			if (mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/jpeg" && mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/png") {
-				$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Formato de imagen no permitido", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-			$foto = str_ireplace(" ", "_", $nombre) . "_" . rand(0, 100);
-			switch (mime_content_type($_FILES['producto_foto']['tmp_name'])) {
-				case 'image/jpeg':
-					$foto = $foto . ".jpg";
-					break;
-				case 'image/png':
-					$foto = $foto . ".png";
-					break;
-			}
-			chmod($img_dir, 0777);
-			if (!move_uploaded_file($_FILES['producto_foto']['tmp_name'], $img_dir . $foto)) {
-				$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo subir la imagen", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-		}
+        /*---------- PROCESAMIENTO DE IMAGEN ----------*/
+        $img_dir = "../views/productos/";
+        $foto = "";
+        if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['name'] != "" && $_FILES['producto_foto']['size'] > 0) {
+            if (!file_exists($img_dir)) {
+                if (!mkdir($img_dir, 0777)) {
+                    $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Error al crear directorio", "icono" => "error"];
+                    return json_encode($alerta);
+                    exit();
+                }
+            }
+            if (mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/jpeg" && mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/png") {
+                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Formato de imagen no permitido", "icono" => "error"];
+                return json_encode($alerta);
+                exit();
+            }
+            $foto = str_ireplace(" ", "_", $nombre) . "_" . rand(0, 100);
+            switch (mime_content_type($_FILES['producto_foto']['tmp_name'])) {
+                case 'image/jpeg':
+                    $foto = $foto . ".jpg";
+                    break;
+                case 'image/png':
+                    $foto = $foto . ".png";
+                    break;
+            }
+            chmod($img_dir, 0777);
+            if (!move_uploaded_file($_FILES['producto_foto']['tmp_name'], $img_dir . $foto)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo subir la imagen", "icono" => "error"];
+                return json_encode($alerta);
+                exit();
+            }
+        }
 
-		$producto_datos_reg = [
-			["campo_nombre" => "producto_codigo", "campo_marcador" => ":Codigo", "campo_valor" => $codigo],
-			["campo_nombre" => "producto_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
-			["campo_nombre" => "producto_marca", "campo_marcador" => ":Marca", "campo_valor" => $marca],
-			["campo_nombre" => "producto_modelo", "campo_marcador" => ":Modelo", "campo_valor" => $modelo],
-			["campo_nombre" => "producto_precio", "campo_marcador" => ":Precio", "campo_valor" => $precio],
-			["campo_nombre" => "producto_costo", "campo_marcador" => ":Costo", "campo_valor" => $costo],
-			["campo_nombre" => "producto_stock", "campo_marcador" => ":Stock", "campo_valor" => $stock],
-			["campo_nombre" => "producto_stock_min", "campo_marcador" => ":StockMin", "campo_valor" => $stock_min],
-			["campo_nombre" => "producto_stock_max", "campo_marcador" => ":StockMax", "campo_valor" => $stock_max],
-			["campo_nombre" => "producto_estado", "campo_marcador" => ":Estado", "campo_valor" => "Activo"],
-			["campo_nombre" => "producto_foto", "campo_marcador" => ":Foto", "campo_valor" => $foto],
-			["campo_nombre" => "categoria_id", "campo_marcador" => ":Categoria", "campo_valor" => $categoria],
-			["campo_nombre" => "producto_unidad", "campo_marcador" => ":Unidad", "campo_valor" => $unidad]
-		];
+        $producto_datos_reg = [
+            ["campo_nombre" => "producto_codigo", "campo_marcador" => ":Codigo", "campo_valor" => $codigo],
+            ["campo_nombre" => "producto_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
+            ["campo_nombre" => "producto_marca", "campo_marcador" => ":Marca", "campo_valor" => $marca],
+            ["campo_nombre" => "producto_modelo", "campo_marcador" => ":Modelo", "campo_valor" => $modelo],
+            ["campo_nombre" => "producto_precio", "campo_marcador" => ":Precio", "campo_valor" => $precio],
+            ["campo_nombre" => "producto_costo", "campo_marcador" => ":Costo", "campo_valor" => $costo],
+            ["campo_nombre" => "producto_stock", "campo_marcador" => ":Stock", "campo_valor" => $stock],
+            ["campo_nombre" => "producto_stock_min", "campo_marcador" => ":StockMin", "campo_valor" => $stock_min],
+            ["campo_nombre" => "producto_stock_max", "campo_marcador" => ":StockMax", "campo_valor" => $stock_max],
+            ["campo_nombre" => "producto_estado", "campo_marcador" => ":Estado", "campo_valor" => "Activo"],
+            ["campo_nombre" => "producto_foto", "campo_marcador" => ":Foto", "campo_valor" => $foto],
+            ["campo_nombre" => "categoria_id", "campo_marcador" => ":Categoria", "campo_valor" => $categoria],
+            ["campo_nombre" => "producto_unidad", "campo_marcador" => ":Unidad", "campo_valor" => $unidad]
+        ];
 
-		$registrar_producto = $this->guardarDatos("producto", $producto_datos_reg);
+        $registrar_producto = $this->guardarDatos("producto", $producto_datos_reg);
 
-		if ($registrar_producto->rowCount() == 1) {
-			$this->guardarBitacora("Productos", "Registro", "Se registró el producto: " . $nombre . " (Cód: " . $codigo . ")");
-			$alerta = ["tipo" => "redireccionar", "titulo" => "Éxito", "texto" => "Producto registrado", "icono" => "success", "url" => APP_URL."productList/"];
-		} else {
-			if (is_file($img_dir . $foto)) {
-				chmod($img_dir . $foto, 0777);
-				unlink($img_dir . $foto);
-			}
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar", "icono" => "error"];
-		}
-		return json_encode($alerta);
-	}
-
-
+        if ($registrar_producto->rowCount() == 1) {
+            $this->guardarBitacora("Productos", "Registro", "Se registró el producto: " . $nombre . " (Inicia con stock 0)");
+            $alerta = ["tipo" => "redireccionar", "titulo" => "Éxito", "texto" => "Producto registrado con éxito (Stock inicial: 0)", "icono" => "success", "url" => APP_URL."productList/"];
+        } else {
+            if (is_file($img_dir . $foto)) {
+                chmod($img_dir . $foto, 0777);
+                unlink($img_dir . $foto);
+            }
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar", "icono" => "error"];
+        }
+        return json_encode($alerta);
+    }
 	/*----------  Controlador listar productos (TABLA CON PRECIOS EN BS Y ALERTAS CORREGIDAS) ----------*/
 	public function listarProductoControlador($pagina, $registros, $url, $categoria_id, $busqueda)
 	{
@@ -370,218 +383,120 @@ class productController extends mainModel
 		return json_encode($alerta);
 	}
 
-	/*----------  Controlador actualizar producto  ----------*/
-	public function actualizarProductoControlador()
-	{
-		$id = $this->limpiarCadena($_POST['producto_id']);
-		$datos = $this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='$id'");
-		if ($datos->rowCount() <= 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Producto no encontrado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-		$datos = $datos->fetch();
+/*----------  Controlador actualizar producto  ----------*/
+    public function actualizarProductoControlador()
+    {
+        $id = $this->limpiarCadena($_POST['producto_id']);
 
-		$codigo = $this->limpiarCadena($_POST['producto_codigo']);
-		$nombre = $this->limpiarCadena($_POST['producto_nombre']);
-		$marca = $this->limpiarCadena($_POST['producto_marca']);
-		$modelo = $this->limpiarCadena($_POST['producto_modelo']);
-		$precio = $this->limpiarCadena($_POST['producto_precio']);
-		$costo = $this->limpiarCadena($_POST['producto_costo']);
-		$stock = $this->limpiarCadena($_POST['producto_stock']);
-		$stock_min = $this->limpiarCadena($_POST['producto_stock_min']);
-		$stock_max = $this->limpiarCadena($_POST['producto_stock_max']);
-		$categoria = $this->limpiarCadena($_POST['producto_categoria']);
-		$unidad = $this->limpiarCadena($_POST['producto_unidad']);
+        $datos = $this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='$id'");
+        if ($datos->rowCount() <= 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Producto no encontrado", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
+        $datos = $datos->fetch();
 
-				/*---------- NUEVAS VALIDACIONES DE INTEGRIDAD ----------*/
-		# Validando Código de Barras (Solo números, máx 13) #
-		if ($this->verificarDatos("[0-9]{1,13}", $codigo)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error en Código", "texto" => "El código de barras solo permite números (máx. 13)", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        $codigo = $this->limpiarCadena($_POST['producto_codigo']);
+        $nombre = $this->limpiarCadena($_POST['producto_nombre']);
+        $marca = $this->limpiarCadena($_POST['producto_marca']);
+        $modelo = $this->limpiarCadena($_POST['producto_modelo']);
+        $precio = $this->limpiarCadena($_POST['producto_precio']);
+        $costo = $this->limpiarCadena($_POST['producto_costo']);
+        
+        // El stock ya no se recibe por POST, mantenemos el que ya tiene la BD
+        $stock = $datos['producto_stock']; 
 
-		# Validando Costo y Precio (Números con punto decimal) #
-		if ($this->verificarDatos("[0-9.]{1,25}", $costo)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error en Costo", "texto" => "El costo de compra no tiene un formato válido", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        $stock_min = $this->limpiarCadena($_POST['producto_stock_min']);
+        $stock_max = $this->limpiarCadena($_POST['producto_stock_max']);
+        $categoria = $this->limpiarCadena($_POST['producto_categoria']);
+        $unidad = $this->limpiarCadena($_POST['producto_unidad']);
 
-		if ($this->verificarDatos("[0-9.]{1,25}", $precio)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error en Precio", "texto" => "El precio de venta no tiene un formato válido", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        /*---------- NUEVAS VALIDACIONES DE INTEGRIDAD ----------*/
 
-		if ($codigo == "" || $nombre == "" || $precio == "" || $stock == "" || $categoria == "" || $unidad == "") {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Faltan campos obligatorios", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-
-		if ((float)$costo <= 0 || (float)$precio <= 0) {
-            $alerta = [
-                "tipo" => "simple", 
-                "titulo" => "Error de Precio/Costo", 
-                "texto" => "El costo de compra y el precio de venta deben ser mayores a 0", 
-                "icono" => "error"
-            ];
+        # Validando que el nombre no sea solo números #
+        if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre debe contener letras", "icono" => "error"];
             return json_encode($alerta);
             exit();
         }
 
-		/*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
-		if ((int)$stock_max <= 0) {
-            $alerta = [
-                "tipo" => "simple", 
-                "titulo" => "Límite de Stock Inválido", 
-                "texto" => "El Stock Máximo (Límite) debe ser mayor a 0", 
-                "icono" => "error"
-            ];
+        # Validando Código de Barras (Solo números, máx 13) #
+        if ($this->verificarDatos("[0-9]{1,13}", $codigo)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Código", "texto" => "El código de barras solo permite números (máx. 13)", "icono" => "error"];
             return json_encode($alerta);
             exit();
         }
 
-		if ((int)$stock_min >= (int)$stock_max) {
-            $alerta = [
-                "tipo" => "simple", 
-                "titulo" => "Lógica de Stock Incorrecta", 
-                "texto" => "El Stock Mínimo (Alerta) no puede ser mayor o igual al Stock Máximo", 
-                "icono" => "error"
-            ];
+        # Validando Costo y Precio #
+        if ($this->verificarDatos("[0-9.]{1,25}", $costo)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Costo", "texto" => "El costo de compra no tiene un formato válido", "icono" => "error"];
             return json_encode($alerta);
             exit();
         }
 
-		if ($datos['producto_codigo'] != $codigo) {
-			$check_codigo = $this->ejecutarConsulta("SELECT producto_codigo FROM producto WHERE producto_codigo='$codigo'");
-			if ($check_codigo->rowCount() > 0) {
-				$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El código ya existe", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-		}
+        if ($this->verificarDatos("[0-9.]{1,25}", $precio)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Precio", "texto" => "El precio de venta no tiene un formato válido", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		$producto_datos_up = [
-			["campo_nombre" => "producto_codigo", "campo_marcador" => ":Codigo", "campo_valor" => $codigo],
-			["campo_nombre" => "producto_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
-			["campo_nombre" => "producto_marca", "campo_marcador" => ":Marca", "campo_valor" => $marca],
-			["campo_nombre" => "producto_modelo", "campo_marcador" => ":Modelo", "campo_valor" => $modelo],
-			["campo_nombre" => "producto_precio", "campo_marcador" => ":Precio", "campo_valor" => $precio],
-			["campo_nombre" => "producto_costo", "campo_marcador" => ":Costo", "campo_valor" => $costo],
-			["campo_nombre" => "producto_stock", "campo_marcador" => ":Stock", "campo_valor" => $stock],
-			["campo_nombre" => "producto_stock_min", "campo_marcador" => ":StockMin", "campo_valor" => $stock_min],
-			["campo_nombre" => "producto_stock_max", "campo_marcador" => ":StockMax", "campo_valor" => $stock_max],
-			["campo_nombre" => "categoria_id", "campo_marcador" => ":Categoria", "campo_valor" => $categoria],
-			["campo_nombre" => "producto_unidad", "campo_marcador" => ":Unidad", "campo_valor" => $unidad]
-		];
+        // Se quitó $stock de la validación de vacíos
+        if ($codigo == "" || $nombre == "" || $precio == "" || $categoria == "" || $unidad == "" || $costo == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Faltan campos obligatorios", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		$condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
+        if ((float)$costo <= 0 || (float)$precio <= 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error de Precio/Costo", "texto" => "El costo y precio deben ser mayores a 0", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
-			$this->guardarBitacora("Productos", "Actualización", "Datos actualizados del producto: " . $nombre);
-			$alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "Producto actualizado", "icono" => "success"];
-		} else {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo actualizar", "icono" => "error"];
-		}
-		return json_encode($alerta);
-	}
+        /*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
+        if ((int)$stock_max <= 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Límite de Stock Inválido", "texto" => "El Stock Máximo debe ser mayor a 0", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-	public function actualizarFotoProductoControlador()
-	{
-		$id = $this->limpiarCadena($_POST['producto_id']);
-		$datos = $this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='$id'");
-		if ($datos->rowCount() <= 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Producto no encontrado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-		$datos = $datos->fetch();
-		$img_dir = "../views/productos/";
-		if (!isset($_FILES['producto_foto']) || $_FILES['producto_foto']['name'] == "" || $_FILES['producto_foto']['size'] <= 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Seleccione una foto", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-		if (!file_exists($img_dir)) {
-			if (!mkdir($img_dir, 0777)) {
-				$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Error directorio", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-		}
-		if (mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/jpeg" && mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/png") {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Formato incorrecto", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
+        if ((int)$stock_min >= (int)$stock_max) {
+            $alerta = ["tipo" => "simple", "titulo" => "Lógica de Stock Incorrecta", "texto" => "El Stock Mínimo no puede ser mayor o igual al Máximo", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
 
-		if ($datos['producto_foto'] != "") {
-			$foto = explode(".", $datos['producto_foto']);
-			$foto = $foto[0];
-		} else {
-			$foto = str_ireplace(" ", "_", $datos['producto_nombre']) . "_" . rand(0, 100);
-		}
-		switch (mime_content_type($_FILES['producto_foto']['tmp_name'])) {
-			case 'image/jpeg':
-				$foto = $foto . ".jpg";
-				break;
-			case 'image/png':
-				$foto = $foto . ".png";
-				break;
-		}
-		chmod($img_dir, 0777);
-		if (!move_uploaded_file($_FILES['producto_foto']['tmp_name'], $img_dir . $foto)) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Error al subir imagen", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-		if (is_file($img_dir . $datos['producto_foto']) && $datos['producto_foto'] != $foto) {
-			chmod($img_dir . $datos['producto_foto'], 0777);
-			unlink($img_dir . $datos['producto_foto']);
-		}
+        if ($datos['producto_codigo'] != $codigo) {
+            $check_codigo = $this->ejecutarConsulta("SELECT producto_codigo FROM producto WHERE producto_codigo='$codigo'");
+            if ($check_codigo->rowCount() > 0) {
+                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El código ya existe", "icono" => "error"];
+                return json_encode($alerta);
+                exit();
+            }
+        }
 
-		$producto_datos_up = [["campo_nombre" => "producto_foto", "campo_marcador" => ":Foto", "campo_valor" => $foto]];
-		$condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
-		if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
-			$this->guardarBitacora("Productos", "Actualización de Foto", "Se cambió la foto del producto: " . $datos['producto_nombre']);
-			$alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "Foto actualizada", "icono" => "success"];
-		} else {
-			$alerta = ["tipo" => "recargar", "titulo" => "Alerta", "texto" => "No se pudo actualizar BD", "icono" => "warning"];
-		}
-		return json_encode($alerta);
-	}
+        $producto_datos_up = [
+            ["campo_nombre" => "producto_codigo", "campo_marcador" => ":Codigo", "campo_valor" => $codigo],
+            ["campo_nombre" => "producto_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
+            ["campo_nombre" => "producto_marca", "campo_marcador" => ":Marca", "campo_valor" => $marca],
+            ["campo_nombre" => "producto_modelo", "campo_marcador" => ":Modelo", "campo_valor" => $modelo],
+            ["campo_nombre" => "producto_precio", "campo_marcador" => ":Precio", "campo_valor" => $precio],
+            ["campo_nombre" => "producto_costo", "campo_marcador" => ":Costo", "campo_valor" => $costo],
+            ["campo_nombre" => "producto_stock", "campo_marcador" => ":Stock", "campo_valor" => $stock],
+            ["campo_nombre" => "producto_stock_min", "campo_marcador" => ":StockMin", "campo_valor" => $stock_min],
+            ["campo_nombre" => "producto_stock_max", "campo_marcador" => ":StockMax", "campo_valor" => $stock_max],
+            ["campo_nombre" => "categoria_id", "campo_marcador" => ":Categoria", "campo_valor" => $categoria],
+            ["campo_nombre" => "producto_unidad", "campo_marcador" => ":Unidad", "campo_valor" => $unidad]
+        ];
 
-	public function eliminarFotoProductoControlador()
-	{
-		$id = $this->limpiarCadena($_POST['producto_id']);
-		$datos = $this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='$id'");
-		if ($datos->rowCount() <= 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Producto no encontrado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-		$datos = $datos->fetch();
-		$img_dir = "../views/productos/";
-		chmod($img_dir, 0777);
-		if (is_file($img_dir . $datos['producto_foto'])) {
-			chmod($img_dir . $datos['producto_foto'], 0777);
-			if (!unlink($img_dir . $datos['producto_foto'])) {
-				$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Error al borrar archivo", "icono" => "error"];
-				return json_encode($alerta);
-				exit();
-			}
-		}
-		$producto_datos_up = [["campo_nombre" => "producto_foto", "campo_marcador" => ":Foto", "campo_valor" => ""]];
-		$condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
-		if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
-			$this->guardarBitacora("Productos", "Eliminación de Foto", "Se eliminó la foto del producto: " . $datos['producto_nombre']);
-			$alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "Foto eliminada", "icono" => "success"];
-		} else {
-			$alerta = ["tipo" => "recargar", "titulo" => "Alerta", "texto" => "Foto borrada, error en BD", "icono" => "warning"];
-		}
-		return json_encode($alerta);
-	}
-}
+        $condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
+
+        if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
+            $this->guardarBitacora("Productos", "Actualización", "Datos actualizados del producto: " . $nombre);
+            $alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "Producto actualizado con éxito", "icono" => "success"];
+        } else {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo actualizar o no hubo cambios", "icono" => "error"];
+        }
+        return json_encode($alerta);
+    }
+}	
