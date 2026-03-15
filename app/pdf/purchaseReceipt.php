@@ -59,17 +59,18 @@
 
             $pdf->SetFont('Arial','',10);
             $pdf->SetTextColor(39,39,51);
-            $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","RIF: ".$datos_empresa['empresa_rif']),0,0,'L');
+            $rif_empresa = isset($datos_empresa['empresa_rif']) ? $datos_empresa['empresa_rif'] : "";
+            $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","RIF: ".$rif_empresa),0,0,'L');
             $pdf->Ln(5);
             $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_empresa['empresa_direccion']),0,0,'L');
             $pdf->Ln(5);
             $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Teléfono: ".$datos_empresa['empresa_telefono']),0,0,'L');
             $pdf->Ln(10);
 
-            // TÍTULO: COMPROBANTE DE RECEPCIÓN
+            // TÍTULO: FACTURA DE COMPRA RECIBIDA
             $pdf->SetFont('Arial','B',14);
             $pdf->SetTextColor(39,39,51);
-            $pdf->Cell(0,10,iconv("UTF-8", "ISO-8859-1//TRANSLIT","COMPROBANTE DE RECEPCIÓN"),0,1,'C');
+            $pdf->Cell(0,10,iconv("UTF-8", "ISO-8859-1//TRANSLIT","FACTURA DE COMPRA RECIBIDA"),0,1,'C');
             $pdf->Ln(2);
 
             // Información de la Recepción
@@ -103,21 +104,25 @@
             $pdf->SetTextColor(97,97,97); $pdf->Cell(109,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_compra['proveedor_direccion']),0,0);
             $pdf->Ln(9);
 
-            // Encabezado de Tabla
+            // Encabezado de Tabla (CON COSTOS RECUPERADOS)
             $pdf->SetFillColor(23,83,201);
             $pdf->SetDrawColor(23,83,201);
             $pdf->SetTextColor(255,255,255);
-            $pdf->Cell(145,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Descripción del Producto'),1,0,'C',true);
-            $pdf->Cell(36,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Cant. Recibida'),1,0,'C',true);
+            $pdf->Cell(85,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Descripción del Producto'),1,0,'C',true);
+            $pdf->Cell(25,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Recibida'),1,0,'C',true);
+            $pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Costo Unit.'),1,0,'C',true);
+            $pdf->Cell(36,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Subtotal'),1,0,'C',true);
             $pdf->Ln(8);
 
             // Detalles de la Recepción
             $pdf->SetFont('Arial','',9);
             $pdf->SetTextColor(39,39,51);
 
-            $detalles = $ins_compra->ejecutarConsulta("SELECT rd.*, p.producto_nombre, p.producto_marca, p.producto_modelo 
+            // Buscamos el precio real de la compra_detalle
+            $detalles = $ins_compra->ejecutarConsulta("SELECT rd.*, p.producto_nombre, p.producto_marca, p.producto_modelo, cd.compra_detalle_precio 
                 FROM recepcion_detalle rd 
                 INNER JOIN producto p ON rd.producto_id=p.producto_id 
+                INNER JOIN compra_detalle cd ON rd.producto_id=cd.producto_id AND cd.compra_id='$id'
                 WHERE rd.recepcion_id='$re_id'");
             
             $detalles_filas = $detalles->fetchAll();
@@ -128,17 +133,21 @@
                     $marca_modelo = trim(($item['producto_marca'] ?? "") . " " . ($item['producto_modelo'] ?? ""));
                     if($marca_modelo != ""){ $descripcion .= " - " . $marca_modelo; }
 
+                    // Obtenemos cantidades y calculamos subtotales
+                    $cantidad = (isset($item['cantidad_recibida'])) ? $item['cantidad_recibida'] : 0;
+                    $precio_unitario = (isset($item['compra_detalle_precio'])) ? $item['compra_detalle_precio'] : 0;
+                    $subtotal_item = $cantidad * $precio_unitario;
+
                     $x_pos = $pdf->GetX();
                     $y_pos = $pdf->GetY();
-                    $pdf->MultiCell(145,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$descripcion),'L B','L');
+                    $pdf->MultiCell(85,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$descripcion),'L B','L');
                     $new_y = $pdf->GetY();
                     $h_row = $new_y - $y_pos;
-                    $pdf->SetXY($x_pos + 145, $y_pos);
-
-                    // Verificación de nombre de columna
-                    $cantidad = (isset($item['cantidad_recibida'])) ? $item['cantidad_recibida'] : "Error Col";
+                    $pdf->SetXY($x_pos + 85, $y_pos);
                     
-                    $pdf->Cell(36,$h_row,$cantidad,'L R B',0,'C');
+                    $pdf->Cell(25,$h_row,$cantidad,'L R B',0,'C');
+                    $pdf->Cell(35,$h_row,"$" . number_format($precio_unitario,2,'.',','),'L R B',0,'C');
+                    $pdf->Cell(36,$h_row,"$" . number_format($subtotal_item,2,'.',','),'L R B',0,'R');
                     $pdf->Ln($h_row);
                 }
             } else {
@@ -146,19 +155,31 @@
                 $pdf->Cell(181,10,iconv("UTF-8", "ISO-8859-1//TRANSLIT","No se encontraron productos en el detalle (ID: $re_id)"),1,1,'C');
             }
 
-            // Sección de Observaciones y Firmas
-            if($pdf->GetY() > 200){ $pdf->AddPage(); }
-            
-            $pdf->Ln(10);
-            $pdf->SetTextColor(39,39,51);
-            $pdf->SetFont('Arial','B',10);
-            $pdf->Cell(0,7,"OBSERVACIONES:",0,1);
-            $pdf->SetFont('Arial','I',10);
-            $pdf->SetTextColor(97,97,97);
-            $obs = ($recepcion['recepcion_nota'] != "") ? $recepcion['recepcion_nota'] : "Sin observaciones.";
-            $pdf->MultiCell(0,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$obs),1,'L');
+            // TOTALES DE LA FACTURA
+            $pdf->Ln(5);
+            $pdf->SetFont('Arial','B',11);
+            $pdf->SetTextColor(39,39,51); 
+            $pdf->Cell(145,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'TOTAL FACTURADO ($): '),0,0,'R');
+            $pdf->Cell(36,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT","$" . number_format($datos_compra['compra_total'],2,'.',',')),0,0,'R');
 
-            // Espacio para firmas
+            $tasa_bcv = (isset($datos_compra['compra_tasa_bcv']) && $datos_compra['compra_tasa_bcv'] > 0) ? $datos_compra['compra_tasa_bcv'] : 0;
+            if($tasa_bcv > 0){
+                $total_bs = $datos_compra['compra_total'] * $tasa_bcv;
+                $pdf->Ln(7);
+                $pdf->SetFont('Arial','B',10);
+                $pdf->Cell(145,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'TASA BCV OFICIAL: '),0,0,'R');
+                $pdf->Cell(36,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Bs. '.number_format($tasa_bcv, 2, ',', '.')),0,0,'R');
+
+                $pdf->Ln(7);
+                $pdf->SetFont('Arial','B',11);
+                $pdf->SetTextColor(32,100,210);
+                $pdf->Cell(145,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'TOTAL FACTURADO (Bs): '),0,0,'R');
+                $pdf->Cell(36,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Bs. '.number_format($total_bs, 2, ',', '.')),0,0,'R');
+            }
+
+            // Espacio para firmas (Limpio)
+            if($pdf->GetY() > 220){ $pdf->AddPage(); }
+            
             $pdf->Ln(25);
             $pdf->SetTextColor(39,39,51);
             $pdf->Cell(85,0,'',1,0);
@@ -171,10 +192,10 @@
 
             $pdf->SetFont('Arial','',8);
             $pdf->SetY(-20);
-            $pdf->Cell(0,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","*** Este documento certifica la entrada física de mercancía al inventario. ***"),0,0,'C');
+            $pdf->Cell(0,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","*** Este documento certifica la entrada física de mercancía al inventario con sus respectivos costos. ***"),0,0,'C');
 
             ob_end_clean();
-            $pdf->Output("I","Recepcion_".$datos_compra['compra_codigo'].".pdf",true);
+            $pdf->Output("I","Factura_Recibida_".$datos_compra['compra_codigo'].".pdf",true);
 
         } else {
             echo "No hay recepciones registradas para esta compra.";
@@ -182,3 +203,4 @@
     } else {
         echo "Error: Compra no encontrada.";
     }
+?>

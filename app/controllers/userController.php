@@ -250,7 +250,7 @@
             return $tabla;
         }
 
-        /*----------  Controlador eliminar usuario  ----------*/
+       /*----------  Controlador eliminar usuario (BLINDADO) ----------*/
         public function eliminarUsuarioControlador(){
             $id=$this->limpiarCadena($_POST['usuario_id']);
             if($id==1){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se puede eliminar el usuario principal","icono"=>"error"]; return json_encode($alerta); exit(); }
@@ -259,23 +259,30 @@
             if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado","icono"=>"error"]; return json_encode($alerta); exit(); }
             $datos=$datos->fetch();
 
+            /* AUDITORÍA 1: ¿Tiene ventas? */
             $check_ventas=$this->ejecutarConsulta("SELECT usuario_id FROM venta WHERE usuario_id='$id' LIMIT 1");
-            if($check_ventas->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se puede eliminar, tiene ventas asociadas","icono"=>"error"]; return json_encode($alerta); exit(); }
+            if($check_ventas->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Acción Denegada","texto"=>"No se puede eliminar este usuario porque tiene VENTAS registradas en el sistema. Sugerencia: Proceda a Inhabilitarlo.","icono"=>"warning"]; return json_encode($alerta); exit(); }
 
+            /* AUDITORÍA 2: ¿Tiene compras registradas? */
+            $check_compras=$this->ejecutarConsulta("SELECT usuario_id FROM compra WHERE usuario_id='$id' LIMIT 1");
+            if($check_compras->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Acción Denegada","texto"=>"No se puede eliminar este usuario porque ha registrado ÓRDENES DE COMPRA. Sugerencia: Proceda a Inhabilitarlo.","icono"=>"warning"]; return json_encode($alerta); exit(); }
+
+            /* AUDITORÍA 3: ¿Recibió camiones (recepciones)? */
+            $check_recepcion=$this->ejecutarConsulta("SELECT usuario_id FROM recepcion WHERE usuario_id='$id' LIMIT 1");
+            if($check_recepcion->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Acción Denegada","texto"=>"No se puede eliminar porque este usuario ha recibido MERCANCÍA en el almacén. Sugerencia: Proceda a Inhabilitarlo.","icono"=>"warning"]; return json_encode($alerta); exit(); }
             
-            // IMPORTANTE: Mantenemos el historial de auditoría pasándolo al usuario principal (Admin)
+            // Mantenemos el historial de auditoría pasándolo al usuario principal (Admin)
             $this->ejecutarConsulta("UPDATE bitacora SET usuario_id='1' WHERE usuario_id='$id'");
 
             $eliminarUsuario=$this->eliminarRegistro("usuario","usuario_id",$id);
             if($eliminarUsuario->rowCount()==1){
                 if(is_file("../views/fotos/".$datos['usuario_foto'])){ chmod("../views/fotos/".$datos['usuario_foto'],0777); unlink("../views/fotos/".$datos['usuario_foto']); }
-                $alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"Usuario eliminado","icono"=>"success"];
+                $alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"Usuario eliminado del sistema","icono"=>"success"];
             }else{
-                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo eliminar","icono"=>"error"];
+                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo eliminar de la base de datos","icono"=>"error"];
             }
             return json_encode($alerta);
         }
-
         /*----------  Controlador inhabilitar usuario  ----------*/
         public function inhabilitarUsuarioControlador(){
             $id = $this->limpiarCadena($_POST['usuario_id']);

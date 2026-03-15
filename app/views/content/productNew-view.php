@@ -92,6 +92,17 @@
             </div>
         </div>
 
+        <div class="columns" id="div_unidades_caja" style="display: none;">
+            <div class="column is-half">
+                <div class="notification is-primary is-light p-3">
+                    <label class="has-text-weight-bold"><i class="fas fa-box-open"></i> &nbsp; Unidades por Caja <?php echo CAMPO_OBLIGATORIO; ?></label>
+                    <div class="control mt-2">
+                        <input class="input" type="number" name="producto_unidades_caja" id="producto_unidades_caja" value="1" min="1" pattern="[0-9]{1,10}" placeholder="Ej: 24">
+                    </div>
+                    <p class="help is-dark">Indique cuántas unidades individuales contiene esta caja.</p>
+                </div>
+            </div>
+        </div>
         <div class="control">
             <label>Categoría / Subcategoría</label><br>
             <div class="select is-fullwidth">
@@ -108,7 +119,8 @@
                                 echo '<optgroup label="📂 '.$p['categoria_nombre'].'">';
                                 foreach($todas as $h){
                                     if($h['categoria_padre_id'] == $p['categoria_id']){
-                                        echo '<option value="'.$h['categoria_id'].'">'.$h['categoria_nombre'].'</option>';
+                                        $mis_unidades = isset($h['categoria_unidades']) ? $h['categoria_unidades'] : "Unidad";
+                                        echo '<option value="'.$h['categoria_id'].'" data-unidades="'.$mis_unidades.'">'.$h['categoria_nombre'].'</option>';
                                     }
                                 }
                                 echo '</optgroup>';
@@ -177,6 +189,51 @@
                 inputPrecio.value = "0.00";
                 costoBsLabel.innerText = "Bs. 0.00";
                 precioBsLabel.innerText = "Bs. 0.00";
+            }
+        });
+
+        // --- FILTRADO INTELIGENTE DE UNIDADES ---
+        const selectCategoria = document.querySelector('select[name="producto_categoria"]');
+        const selectUnidad = document.querySelector('select[name="producto_unidad"]');
+        
+        const opcionesUnidadOriginales = Array.from(selectUnidad.options).map(opt => ({value: opt.value, text: opt.text}));
+
+        selectCategoria.addEventListener('change', function() {
+            let selectedOption = this.options[this.selectedIndex];
+            let unidadesPermitidas = selectedOption.getAttribute('data-unidades');
+            
+            selectUnidad.innerHTML = '<option value="" selected="">Seleccione una opción</option>';
+
+            if (unidadesPermitidas) {
+                let arrayPermitidas = unidadesPermitidas.split(',');
+                
+                opcionesUnidadOriginales.forEach(opt => {
+                    if(opt.value !== "" && arrayPermitidas.includes(opt.value)) {
+                        let nuevaOpcion = document.createElement('option');
+                        nuevaOpcion.value = opt.value;
+                        nuevaOpcion.text = opt.text;
+                        selectUnidad.appendChild(nuevaOpcion);
+                    }
+                });
+            }
+        });
+
+        // --- MOSTRAR/OCULTAR UNIDADES POR CAJA ---
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.name === 'producto_unidad') {
+                const divUnidadesCaja = document.getElementById('div_unidades_caja');
+                const inputUnidadesCaja = document.getElementById('producto_unidades_caja');
+                
+                if (e.target.value === "Caja") {
+                    divUnidadesCaja.style.display = "flex";
+                    inputUnidadesCaja.value = "";
+                    inputUnidadesCaja.setAttribute("required", "true");
+                    inputUnidadesCaja.focus();
+                } else {
+                    divUnidadesCaja.style.display = "none";
+                    inputUnidadesCaja.value = "1";
+                    inputUnidadesCaja.removeAttribute("required");
+                }
             }
         });
     </script>

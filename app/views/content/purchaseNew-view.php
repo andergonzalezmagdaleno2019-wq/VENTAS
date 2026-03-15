@@ -19,16 +19,10 @@
                             $todas = $datos_cat->fetchAll();
                             foreach($todas as $p){
                                 if($p['categoria_padre_id'] == NULL || $p['categoria_padre_id'] == "" || $p['categoria_padre_id'] == "0"){
-                                    // Verificar si tiene hijos
                                     $tiene_hijos = false;
                                     foreach($todas as $h){
-                                        if($h['categoria_padre_id'] == $p['categoria_id']){
-                                            $tiene_hijos = true;
-                                            break;
-                                        }
+                                        if($h['categoria_padre_id'] == $p['categoria_id']){ $tiene_hijos = true; break; }
                                     }
-                                    
-                                    // Si tiene hijos, mostramos como acordeón
                                     if($tiene_hijos) {
                                         echo '<div class="mb-2">';
                                         echo '<button class="button is-fullwidth has-text-left p-2 mb-1 acordeon-btn" style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;" onclick="toggleAcordeon(this)">
@@ -41,19 +35,14 @@
                                         echo '<div class="acordeon-contenido" style="display: none; padding-left: 15px;">';
                                         foreach($todas as $h){
                                             if($h['categoria_padre_id'] == $p['categoria_id']){
-                                                echo '<button type="button" class="button is-fullwidth is-small is-outlined is-link mb-1" 
-                                                        onclick="cargar_por_categoria_compra('.$h['categoria_id'].')">
+                                                echo '<button type="button" class="button is-fullwidth is-small is-outlined is-link mb-1" onclick="cargar_por_categoria_compra('.$h['categoria_id'].')">
                                                         <i class="fas fa-arrow-right"></i> &nbsp; '.$h['categoria_nombre'].'
                                                       </button>';
                                             }
                                         }
-                                        echo '</div>';
-                                        echo '</div>';
+                                        echo '</div></div>';
                                     } else {
-                                        // Si no tiene hijos, mostramos solo el botón de categoría padre
-                                        echo '<button type="button" class="button is-fullwidth has-text-left p-2 mb-2" 
-                                                style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;"
-                                                onclick="cargar_por_categoria_compra('.$p['categoria_id'].')">
+                                        echo '<button type="button" class="button is-fullwidth has-text-left p-2 mb-2" style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;" onclick="cargar_por_categoria_compra('.$p['categoria_id'].')">
                                                 <span style="display: flex; align-items: center;">
                                                     <i class="fas fa-folder" style="margin-right: 8px;"></i>
                                                     <span style="flex-grow: 1; font-weight: bold;">'.mb_strtoupper($p['categoria_nombre'], 'UTF-8').'</span>
@@ -74,7 +63,7 @@
             <div class="card">
                 <header class="card-header">
                     <p class="card-header-title">
-                        <i class="fas fa-search"></i> &nbsp; Buscar producto a comprar
+                        <i class="fas fa-search"></i> &nbsp; Buscar producto a pedir
                     </p>
                 </header>
                 <div class="card-content">
@@ -117,43 +106,36 @@
                         </div>
                         
                         <div class="column is-8 has-text-right pt-2">
-                            <?php 
-                                $total = 0;
-                                if(isset($_SESSION['datos_compra'])){
-                                    foreach($_SESSION['datos_compra'] as $prod){ $total += $prod['subtotal']; }
-                                }
-                            ?>
-                            <h4 class="title is-4 has-text-grey-dark mb-1">Total: $<?php echo number_format($total, 2); ?></h4>
-                            <h3 class="title is-3 has-text-link mt-0" id="total_compra_bs_label">Calculando Bs...</h3>
+                            <h3 class="title is-4 has-text-link mt-0"><i class="fas fa-clipboard-list"></i> Orden Pendiente por Valorar</h3>
                         </div>
                     </div>
 
                     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth mt-4">
                         <thead>
                             <tr class="has-background-link-light">
-                                <th>Producto</th>
-                                <th class="has-text-centered">Cant.</th>
-                                <th class="has-text-centered">Costo Unit.</th>
-                                <th class="has-text-centered">Subtotal</th>
-                                <th class="has-text-centered">Acción</th>
+                                <th>Producto Pedido</th>
+                                <th class="has-text-centered" style="width: 150px;">Último Costo (Ref)</th>
+                                <th class="has-text-centered" style="width: 180px;">Cantidad a Solicitar</th>
+                                <th class="has-text-centered" style="width: 100px;">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
                                 if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){
                                     foreach($_SESSION['datos_compra'] as $detalle){
+                                        
+                                        // Tu lógica visual para el costo
+                                        $costo_ref_txt = (isset($detalle['costo_referencia']) && $detalle['costo_referencia'] > 0) ? "$".number_format($detalle['costo_referencia'], 2) : '<span class="has-text-grey-light">N/A</span>';
+
                                         echo '<tr>
-                                            <td>'.$detalle['producto_nombre'].'</td>
-                                            <td class="has-text-centered">'.$detalle['compra_cantidad'].'</td>
-                                            <td class="has-text-centered">
-                                                <strong>$'.$detalle['compra_costo'].'</strong><br>
-                                                <span class="is-size-7 has-text-grey precio-bcv-cart" data-usd="'.$detalle['compra_costo'].'">Calculando Bs...</span>
+                                            <td style="vertical-align: middle;"><strong>'.$detalle['producto_nombre'].'</strong></td>
+                                            
+                                            <td class="has-text-centered has-text-grey" style="vertical-align: middle;">
+                                                '.$costo_ref_txt.'
                                             </td>
-                                            <td class="has-text-centered">
-                                                <strong>$'.number_format($detalle['subtotal'],2).'</strong><br>
-                                                <span class="is-size-7 has-text-link has-text-weight-bold precio-bcv-cart" data-usd="'.$detalle['subtotal'].'">Calculando Bs...</span>
-                                            </td>
-                                            <td class="has-text-centered">
+
+                                            <td class="has-text-centered is-size-5" style="vertical-align: middle;">'.$detalle['compra_cantidad'].' Unid.</td>
+                                            <td class="has-text-centered" style="vertical-align: middle;">
                                                 <button type="button" class="button is-danger is-small is-rounded" onclick="eliminarDelCarrito('.$detalle['producto_id'].')">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </button>
@@ -161,51 +143,49 @@
                                         </tr>';
                                     }
                                 }else{
-                                    echo '<tr class="has-text-centered"><td colspan="5">No hay productos agregados a esta compra</td></tr>';
+                                    echo '<tr class="has-text-centered"><td colspan="4">Aún no hay productos en esta orden de compra</td></tr>';
                                 }
                             ?>
                         </tbody>
                     </table>
 
                     <?php if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){ ?>
-                    
                     <hr>
                     <div class="columns">
                         <div class="column is-4">
                             <div class="field">
-                                <label class="label"><i class="fas fa-money-bill-wave"></i> Abono Inicial ($)</label>
+                                <label class="label"><i class="fas fa-money-bill-wave"></i> Anticipo a Proveedor ($)</label>
                                 <div class="control">
-                                    <input class="input" type="number" step="0.01" name="compra_pago_inicial" value="0.00" min="0" max="<?php echo $total; ?>">
+                                    <input class="input" type="number" step="0.01" name="compra_pago_inicial" value="0.00" min="0">
                                 </div>
-                                <p class="help">Si se paga el total, la orden quedará como "Pagada".</p>
+                                <p class="help">¿Le adelantaste dinero al proveedor?</p>
                             </div>
                         </div>
                         <div class="column is-4">
                             <div class="field">
-                                <label class="label"><i class="fas fa-calendar-alt"></i> Fecha de Vencimiento</label>
+                                <label class="label"><i class="fas fa-calendar-alt"></i> Fecha límite de pago</label>
                                 <div class="control">
                                     <input class="input" type="date" name="compra_fecha_vencimiento" value="<?php echo date("Y-m-d"); ?>" required>
                                 </div>
-                                <p class="help">¿Cuándo debe terminar de pagarse?</p>
+                                <p class="help">¿Cuándo se debe pagar la factura final?</p>
                             </div>
                         </div>
                         <div class="column is-4">
                             <div class="field">
                                 <label class="label"><i class="fas fa-sticky-note"></i> Nota Interna</label>
                                 <div class="control">
-                                    <input class="input" type="text" name="compra_nota" placeholder="Ej: Factura #123">
+                                    <input class="input" type="text" name="compra_nota" placeholder="Ej: Pedido urgente por WhatsApp">
                                 </div>
                             </div>
                         </div>
                     </div>
                     <p class="has-text-centered mt-5">
                         <button type="submit" class="button is-success is-large is-rounded shadow-sm">
-                            <i class="fas fa-save"></i> &nbsp; PROCESAR COMPRA
+                            <i class="fas fa-paper-plane"></i> &nbsp; GENERAR ORDEN DE COMPRA
                         </button>
                     </p>
                     <?php } ?>
 
-                    <input type="hidden" id="compra_total_hidden" value="<?php echo number_format($total, 2, '.', ''); ?>">
                     <input type="hidden" name="compra_tasa_bcv" id="compra_tasa_bcv" value="0">
                 </div>
             </form>
@@ -213,7 +193,7 @@
             <?php if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){ ?>
             <div class="has-text-centered mt-2">
                 <button type="button" class="button is-danger is-outlined is-small" onclick="vaciarCarritoCompleto()">
-                    Vaciar lista de compra
+                    Vaciar Orden
                 </button>
             </div>
             <?php } ?>
@@ -221,34 +201,24 @@
     </div>
 
     <script>
-        // Función para el acordeón
         function toggleAcordeon(boton) {
-            // Encontrar el contenedor de contenido que sigue al botón
             let contenido = boton.nextElementSibling;
             let icono = boton.querySelector('.acordeon-icono');
-            
             if (contenido.style.display === 'none' || contenido.style.display === '') {
                 contenido.style.display = 'block';
-                if (icono) {
-                    icono.style.transform = 'rotate(180deg)';
-                    icono.style.transition = 'transform 0.3s ease';
-                }
+                if (icono) { icono.style.transform = 'rotate(180deg)'; icono.style.transition = 'transform 0.3s ease'; }
             } else {
                 contenido.style.display = 'none';
-                if (icono) {
-                    icono.style.transform = 'rotate(0deg)';
-                    icono.style.transition = 'transform 0.3s ease';
-                }
+                if (icono) { icono.style.transform = 'rotate(0deg)'; icono.style.transition = 'transform 0.3s ease'; }
             }
         }
 
         const resultadoBusqueda = document.getElementById('resultados_busqueda');
 
-        // Función para eliminar un producto específico
         function eliminarDelCarrito(id){
             Swal.fire({
                 title: '¿Quieres quitar este producto?',
-                text: "Se eliminará de la lista actual",
+                text: "Se eliminará de la orden",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, eliminar',
@@ -258,24 +228,17 @@
                     let datos = new FormData();
                     datos.append('modulo_compra', 'eliminar_producto_carrito');
                     datos.append('producto_id', id);
-
-                    fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', {
-                        method: 'POST',
-                        body: datos
-                    })
+                    fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', { method: 'POST', body: datos })
                     .then(respuesta => respuesta.json())
-                    .then(respuesta => {
-                        return alertas_ajax(respuesta);
-                    });
+                    .then(respuesta => { return alertas_ajax(respuesta); });
                 }
             });
         }
 
-        // Función para vaciar todo el carrito
         function vaciarCarritoCompleto(){
             Swal.fire({
                 title: '¿Estás seguro?',
-                text: "Se quitarán todos los productos de la compra",
+                text: "Se quitarán todos los productos de la orden",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -285,15 +248,9 @@
                 if (result.isConfirmed) {
                     let datos = new FormData();
                     datos.append('modulo_compra', 'vaciar');
-
-                    fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', {
-                        method: 'POST',
-                        body: datos
-                    })
+                    fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', { method: 'POST', body: datos })
                     .then(respuesta => respuesta.json())
-                    .then(respuesta => {
-                        return alertas_ajax(respuesta);
-                    });
+                    .then(respuesta => { return alertas_ajax(respuesta); });
                 }
             });
         }
@@ -349,44 +306,16 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            let tasa_bcv = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
-            document.querySelectorAll('.precio-bcv-cart').forEach(function(el) {
-                let usd = parseFloat(el.getAttribute('data-usd')) || 0;
-                if(tasa_bcv > 0){
-                    let formatBs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2 }).format(usd * tasa_bcv);
-                    el.innerHTML = `Bs. ${formatBs}`;
-                } else { el.innerHTML = `<span class="has-text-danger">Sin BCV</span>`; }
-            });
-
-            let total_dolares = document.querySelector('#compra_total_hidden');
-            if(total_dolares){
-                let total_num = parseFloat(total_dolares.value) || 0;
-                let label = document.querySelector('#total_compra_bs_label');
-                if(tasa_bcv > 0 && total_num > 0) {
-                    label.innerHTML = `Bs. ${new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2 }).format(total_num * tasa_bcv)}`;
-                } else { label.innerHTML = `Bs. 0.00`; }
-            }
-        });
-
-            document.querySelector("form[name='formpurchase']").addEventListener('submit', function(e){
-                e.preventDefault(); // <--- CRUCIAL: Detiene el envío doble
-
-                // 1. Asignamos la tasa al campo oculto antes de leer los datos
+        let formPurchase = document.querySelector("form[name='formpurchase']");
+        if(formPurchase){
+            formPurchase.addEventListener('submit', function(e){
+                e.preventDefault();
                 let tasa = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
                 document.querySelector('#compra_tasa_bcv').value = tasa;
-
-                // 2. Capturamos los datos del formulario
                 let datos = new FormData(this);
-
-                // 3. Enviamos por Fetch
-                fetch(this.getAttribute("action"), {
-                    method: this.getAttribute("method"),
-                    body: datos
-                })
+                fetch(this.getAttribute("action"), { method: this.getAttribute("method"), body: datos })
                 .then(respuesta => respuesta.json())
                 .then(respuesta => {
-                    // Manejo de la respuesta especial para el PDF
                     if(respuesta.tipo == "confirmar"){
                         Swal.fire({
                             title: respuesta.titulo,
@@ -399,15 +328,11 @@
                             if (result.isConfirmed) {
                                 window.open(respuesta.url, '_blank');
                                 location.reload();
-                            } else {
-                                location.reload();
-                            }
+                            } else { location.reload(); }
                         });
-                    } else {
-                        // Si es un error o alerta normal, usamos la función del sistema
-                        return alertas_ajax(respuesta);
-                    }
+                    } else { return alertas_ajax(respuesta); }
                 });
             });
+        }
     </script>
 </div>

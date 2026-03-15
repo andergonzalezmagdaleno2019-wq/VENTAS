@@ -14,6 +14,9 @@
 
 		if($datos->rowCount()==1){
 			$datos=$datos->fetch();
+            
+            // --- NUEVO: Preparar las unidades actuales convirtiéndolas en un array ---
+            $unidades_actuales = isset($datos['categoria_unidades']) ? explode(",", $datos['categoria_unidades']) : [];
 	?>
 
 	<h2 class="title has-text-centered"><?php echo $datos['categoria_nombre']." (".$datos['categoria_ubicacion'].")"; ?></h2>
@@ -37,7 +40,26 @@
 				</div>
 		  	</div>
 		</div>
-		<p class="has-text-centered">
+
+        <div class="columns">
+            <div class="column is-full">
+                <label>Tipos de producto permitidos <?php echo CAMPO_OBLIGATORIO; ?></label>
+                <div class="control mt-2">
+                    <?php 
+                    // Recorremos todos los tipos posibles
+                    foreach(PRODUCTO_UNIDAD as $unidad){ 
+                        // Si el tipo actual está guardado en la BD para esta categoría, lo marcamos
+                        $chequeado = in_array($unidad, $unidades_actuales) ? 'checked' : '';
+                    ?>
+                        <label class="checkbox mr-4 has-text-weight-bold is-size-6">
+                            <input type="checkbox" name="categoria_unidades[]" value="<?php echo $unidad; ?>" <?php echo $chequeado; ?>> <?php echo $unidad; ?>
+                        </label>
+                    <?php } ?>
+                </div>
+                <p class="help is-info">Agrega o quita los tipos de cómo se puede vender esta categoría.</p>
+            </div>
+        </div>
+        <p class="has-text-centered">
 			<button type="submit" class="button is-success is-rounded"><i class="fas fa-sync-alt"></i> &nbsp; Actualizar</button>
 		</p>
 		<p class="has-text-centered pt-6">

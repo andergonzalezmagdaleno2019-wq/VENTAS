@@ -171,13 +171,20 @@
 			return $tabla;
 		}
 
-		/*----------  Controlador eliminar proveedor  ----------*/
+		/*----------  Controlador eliminar proveedor (BLINDADO) ----------*/
 		public function eliminarProveedorControlador(){
 			$id=$this->limpiarCadena($_POST['proveedor_id']);
 
 		    $datos=$this->ejecutarConsulta("SELECT * FROM proveedor WHERE proveedor_id='$id'");
 		    if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Proveedor no encontrado","icono"=>"error"]; return json_encode($alerta); exit(); }
             $datos = $datos->fetch();
+
+            /* AUDITORÍA: Validar que el proveedor NO tenga Compras asociadas */
+            $check_compras = $this->ejecutarConsulta("SELECT proveedor_id FROM compra WHERE proveedor_id='$id' LIMIT 1");
+            if($check_compras->rowCount() > 0){
+                $alerta=["tipo"=>"simple","titulo"=>"Error de Integridad","texto"=>"No se puede eliminar el proveedor porque tiene Órdenes de Compra o Facturas asociadas en el sistema.","icono"=>"error"]; 
+                return json_encode($alerta); exit();
+            }
 
 		    $eliminarProveedor=$this->eliminarRegistro("proveedor","proveedor_id",$id);
 		    if($eliminarProveedor->rowCount()==1){

@@ -23,6 +23,20 @@
 				</div>
 		  	</div>
 		</div>
+		<div class="columns">
+            <div class="column is-full">
+                <label>Tipos de producto permitidos <?php echo CAMPO_OBLIGATORIO; ?></label>
+                <div class="control mt-2">
+                    <?php foreach(PRODUCTO_UNIDAD as $unidad){ ?>
+                        <label class="checkbox mr-4 has-text-weight-bold is-size-6">
+                            <input type="checkbox" name="categoria_unidades[]" value="<?php echo $unidad; ?>"> <?php echo $unidad; ?>
+                        </label>
+                    <?php } ?>
+                </div>
+                <p class="help is-info">Selecciona cómo se puede vender esta categoría (Ej: Unidad, Kilogramo...)</p>
+            </div>
+        </div>
+        <p class="has-text-centered"></p>
 		<p class="has-text-centered">
 			<button type="reset" class="button is-link is-light is-rounded"><i class="fas fa-paint-roller"></i> &nbsp; Limpiar</button>
 			<button type="submit" class="button is-info is-rounded"><i class="far fa-save"></i> &nbsp; Guardar</button>

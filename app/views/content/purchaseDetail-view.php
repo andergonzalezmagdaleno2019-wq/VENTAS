@@ -4,7 +4,6 @@
 
     /*---------- Obtener el ID de la URL ----------*/
     $url = explode("/", $_GET['views']);
-    // Extraemos el ID del segundo segmento de la URL (ejemplo: purchaseDetail/4/)
     $compra_id = (isset($url[1]) && $url[1] != "") ? $insCompra->limpiarCadena($url[1]) : 0;
 
     if($compra_id == 0){
@@ -27,6 +26,9 @@
 ?>
 
 <div class="container pb-6 pt-6">
+    
+    <?php include "./app/views/inc/btn_back.php"; ?>
+
     <h1 class="title">Detalle de Compra</h1>
     <h2 class="subtitle">Orden: <strong><?php echo $datos_compra['compra_codigo']; ?></strong></h2>
 
@@ -38,29 +40,36 @@
             </div>
             <div class="column">
                 <p><strong>Registrado por:</strong> <?php echo $datos_compra['usuario_nombre']." ".$datos_compra['usuario_apellido']; ?></p>
-                <p><strong>Estado:</strong> 
+                <p><strong>Estado Físico:</strong> 
                     <?php
                         $color = "is-info";
                         if($datos_compra['compra_estado'] == "Completado") $color = "is-success";
                         if($datos_compra['compra_estado'] == "Parcial") $color = "is-warning";
                     ?>
-                    <span class="tag <?php echo $color; ?>"><?php echo $datos_compra['compra_estado']; ?></span>
+                    <span class="tag <?php echo $color; ?> is-light"><?php echo $datos_compra['compra_estado']; ?></span>
+                </p>
+                <p><strong>Estado de Pago:</strong> 
+                    <?php
+                        $color_pago = "is-danger";
+                        if($datos_compra['compra_estado_pago'] == "Pagado") $color_pago = "is-success";
+                        if($datos_compra['compra_estado_pago'] == "Parcial") $color_pago = "is-warning";
+                    ?>
+                    <span class="tag <?php echo $color_pago; ?> is-light"><?php echo $datos_compra['compra_estado_pago']; ?></span>
                 </p>
             </div>
         </div>
 
         <table class="table is-bordered is-striped is-hoverable is-fullwidth mt-4">
             <thead>
-                <tr class="has-background-grey-lighter">
-                    <th>Producto</th>
-                    <th class="has-text-centered">Cantidad Pedida</th>
-                    <th class="has-text-centered">Precio Unitario</th>
-                    <th class="has-text-centered">Subtotal</th>
+                <tr class="has-background-link-dark">
+                    <th class="has-text-white">Producto</th>
+                    <th class="has-text-centered has-text-white">Cantidad Pedida</th>
+                    <th class="has-text-centered has-text-white">Precio Unitario</th>
+                    <th class="has-text-centered has-text-white">Subtotal</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                    // Usamos compra_detalle_cantidad para evitar el error de "Undefined array key"
                     $detalles = $insCompra->ejecutarConsulta("SELECT cd.*, p.producto_nombre 
                         FROM compra_detalle cd 
                         INNER JOIN producto p ON cd.producto_id = p.producto_id 
@@ -68,24 +77,36 @@
                     
                     $detalles_array = $detalles->fetchAll();
                     foreach($detalles_array as $items){
+                        
+                        // LÓGICA INTELIGENTE DE PRECIOS
+                        $precio_unitario = $items['compra_detalle_precio'];
+                        $subtotal_item = $items['compra_detalle_cantidad'] * $precio_unitario;
+
+                        if($precio_unitario > 0){
+                            $txt_precio = MONEDA_SIMBOLO.number_format($precio_unitario, 2, '.', ',');
+                            $txt_subtotal = MONEDA_SIMBOLO.number_format($subtotal_item, 2, '.', ',');
+                        } else {
+                            $txt_precio = '<span class="has-text-grey-light is-italic">POR DEFINIR</span>';
+                            $txt_subtotal = '<span class="has-text-grey-light is-italic">POR DEFINIR</span>';
+                        }
                 ?>
                 <tr>
-                    <td><?php echo $items['producto_nombre']; ?></td>
-                    <td class="has-text-centered"><?php echo $items['compra_detalle_cantidad']; ?></td>
-                    <td class="has-text-centered"><?php echo MONEDA_SIMBOLO.number_format($items['compra_detalle_precio'], 2, '.', ','); ?></td>
-                    <td class="has-text-centered"><?php echo MONEDA_SIMBOLO.number_format($items['compra_detalle_cantidad'] * $items['compra_detalle_precio'], 2, '.', ','); ?></td>
+                    <td style="vertical-align: middle;"><?php echo $items['producto_nombre']; ?></td>
+                    <td class="has-text-centered is-size-5" style="vertical-align: middle;"><?php echo $items['compra_detalle_cantidad']; ?></td>
+                    <td class="has-text-centered" style="vertical-align: middle;"><?php echo $txt_precio; ?></td>
+                    <td class="has-text-centered has-text-weight-bold" style="vertical-align: middle;"><?php echo $txt_subtotal; ?></td>
                 </tr>
                 <?php } ?>
             </tbody>
         </table>
 
-        <div class="has-text-right">
-            <h4 class="title is-4">TOTAL: <?php echo MONEDA_SIMBOLO.number_format($datos_compra['compra_total'], 2, '.', ','); ?></h4>
+        <div class="has-text-right mt-5">
+            <?php if($datos_compra['compra_total'] > 0){ ?>
+                <h4 class="title is-4 has-text-link">TOTAL FACTURA: <?php echo MONEDA_SIMBOLO.number_format($datos_compra['compra_total'], 2, '.', ','); ?></h4>
+            <?php } else { ?>
+                <h4 class="title is-4 has-text-grey">TOTAL FACTURA: <span class="is-italic">POR DEFINIR</span></h4>
+            <?php } ?>
         </div>
-        
-        <hr>
-        <p class="has-text-centered">
-            <a href="<?php echo APP_URL; ?>purchaseList/" class="button is-link is-rounded">Volver a la lista</a>
-        </p>
+
     </div>
 </div>

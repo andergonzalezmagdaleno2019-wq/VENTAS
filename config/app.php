@@ -12,7 +12,7 @@
 
 
 	/*----------  Tipos de unidades de productos  ----------*/
-	const PRODUCTO_UNIDAD=["Unidad","Litro","Kilogramo","Caja","Paquete","Otro"];
+	const PRODUCTO_UNIDAD=["Unidad","Litro","Kilogramo","Caja","Otro"];
 
 	/*----------  Configuración de moneda  ----------*/
 	const MONEDA_SIMBOLO="$";

@@ -103,58 +103,72 @@
 		$pdf->SetFont('Arial','',9);
 		$pdf->SetTextColor(39,39,51);
 
-		/*---------- Consulta Detalle ----------*/
-		$compra_detalle=$ins_compra->seleccionarDatos("Normal","compra_detalle INNER JOIN producto ON compra_detalle.producto_id=producto.producto_id WHERE compra_codigo='".$datos_compra['compra_codigo']."'","*",0);
+		/*---------- Consulta Detalle (AQUÍ ESTABA EL ERROR: AHORA BUSCA POR compra_id) ----------*/
+        $compra_id_pdf = $datos_compra['compra_id'];
+		$compra_detalle=$ins_compra->seleccionarDatos("Normal","compra_detalle INNER JOIN producto ON compra_detalle.producto_id=producto.producto_id WHERE compra_id='$compra_id_pdf'","*",0);
 		$compra_detalle=$compra_detalle->fetchAll();
 
 		foreach($compra_detalle as $detalle){
             $subtotal = $detalle['compra_detalle_cantidad'] * $detalle['compra_detalle_precio'];
 
+            // Lógica para no mostrar 0.00 si el precio no se ha fijado
+            $precio_unit = ($detalle['compra_detalle_precio'] > 0) ? MONEDA_SIMBOLO.number_format($detalle['compra_detalle_precio'],2,'.',',') : '---';
+            $subtotal_txt = ($subtotal > 0) ? MONEDA_SIMBOLO.number_format($subtotal,2,'.',',') : '---';
+
 			$pdf->Cell(100,7,iconv("UTF-8", "ISO-8859-1", $detalle['producto_nombre']),'B',0,'L');
 			$pdf->Cell(15,7,iconv("UTF-8", "ISO-8859-1",$detalle['compra_detalle_cantidad']),'B',0,'C');
-			$pdf->Cell(32,7,iconv("UTF-8", "ISO-8859-1",MONEDA_SIMBOLO.number_format($detalle['compra_detalle_precio'],MONEDA_DECIMALES,MONEDA_SEPARADOR_DECIMAL,MONEDA_SEPARADOR_MILLAR)),'B',0,'C');
-			$pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1",MONEDA_SIMBOLO.number_format($subtotal,MONEDA_DECIMALES,MONEDA_SEPARADOR_DECIMAL,MONEDA_SEPARADOR_MILLAR)),'B',0,'R');
+			$pdf->Cell(32,7,iconv("UTF-8", "ISO-8859-1",$precio_unit),'B',0,'C');
+			$pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1",$subtotal_txt),'B',0,'R');
 			$pdf->Ln(7);
 		}
 
 		/*========================================================================*/
-		/*== NUEVOS TOTALES CON TASA BCV Y BOLÍVARES (ORDEN DE COMPRA)          ==*/
+		/*== NUEVOS TOTALES CON LÓGICA INTELIGENTE (SIN N/A)                    ==*/
 		/*========================================================================*/
 		$pdf->Ln(3);
 		$pdf->SetFont('Arial','B',11);
-        $pdf->SetTextColor(39,39,51); // Color negro/gris oscuro
-		$pdf->Cell(147,8,iconv("UTF-8", "ISO-8859-1",'TOTAL COMPRA ($): '),0,0,'R');
-		$pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",MONEDA_SIMBOLO.number_format($datos_compra['compra_total'],MONEDA_DECIMALES,MONEDA_SEPARADOR_DECIMAL,MONEDA_SEPARADOR_MILLAR)),0,0,'R');
+        $pdf->SetTextColor(39,39,51); 
+        
+        if($datos_compra['compra_total'] > 0){
+            // Si la orden ya tiene precio real, se muestra todo normalmente
+            $pdf->Cell(147,8,iconv("UTF-8", "ISO-8859-1",'TOTAL COMPRA ($): '),0,0,'R');
+            $pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",MONEDA_SIMBOLO.number_format($datos_compra['compra_total'],2,'.',',')),0,0,'R');
 
-        $pdf->Ln(7);
+            $tasa_bcv = (isset($datos_compra['compra_tasa_bcv']) && $datos_compra['compra_tasa_bcv'] > 0) ? $datos_compra['compra_tasa_bcv'] : 0;
+            if($tasa_bcv > 0){
+                $total_bs = $datos_compra['compra_total'] * $tasa_bcv;
+                $pdf->Ln(7);
+                $pdf->SetFont('Arial','B',10);
+                $pdf->Cell(147,8,iconv("UTF-8", "ISO-8859-1",'TASA BCV OFICIAL: '),0,0,'R');
+                $pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",'Bs. '.number_format($tasa_bcv, 2, ',', '.')),0,0,'R');
 
-        // Cálculo para Bolívares usando la tasa guardada en la base de datos
-        $tasa_bcv = (isset($datos_compra['compra_tasa_bcv']) && $datos_compra['compra_tasa_bcv'] > 0) ? $datos_compra['compra_tasa_bcv'] : 0;
-        $total_bs = $datos_compra['compra_total'] * $tasa_bcv;
-
-        $str_tasa = ($tasa_bcv > 0) ? 'Bs. '.number_format($tasa_bcv, 2, ',', '.') : 'N/A';
-        $str_total_bs = ($tasa_bcv > 0) ? 'Bs. '.number_format($total_bs, 2, ',', '.') : 'N/A';
-
-        $pdf->SetFont('Arial','B',10);
-		$pdf->Cell(147,8,iconv("UTF-8", "ISO-8859-1",'TASA BCV OFICIAL: '),0,0,'R');
-		$pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",$str_tasa),0,0,'R');
-
-        $pdf->Ln(7);
-
-        // Resaltar el Total en Bolívares en Azul
-        $pdf->SetFont('Arial','B',11);
-        $pdf->SetTextColor(32,100,210);
-		$pdf->Cell(147,8,iconv("UTF-8", "ISO-8859-1",'TOTAL COMPRA (Bs): '),0,0,'R');
-		$pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",$str_total_bs),0,0,'R');
+                $pdf->Ln(7);
+                $pdf->SetFont('Arial','B',11);
+                $pdf->SetTextColor(32,100,210);
+                $pdf->Cell(147,8,iconv("UTF-8", "ISO-8859-1",'TOTAL COMPRA (Bs): '),0,0,'R');
+                $pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",'Bs. '.number_format($total_bs, 2, ',', '.')),0,0,'R');
+            }
+        } else {
+            // Si es una orden pendiente (precio 0), oculta Bs y BCV y muestra "POR DEFINIR"
+            $pdf->Cell(147,8,iconv("UTF-8", "ISO-8859-1",'TOTAL ESTIMADO: '),0,0,'R');
+            $pdf->SetTextColor(150,150,150); // Color gris sutil
+            $pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",'POR DEFINIR'),0,0,'R');
+        }
 
 		$pdf->Ln(25);
 		$pdf->SetFont('Arial','I',9);
         $pdf->SetTextColor(150,150,150);
-		$pdf->MultiCell(0,5,iconv("UTF-8", "ISO-8859-1","*** Este documento es un comprobante de registro de entrada de mercancía al inventario ***"),0,'C');
+        
+        $nota = $datos_compra['compra_nota_interna'];
+        if(!empty($nota)){
+            $pdf->MultiCell(0,5,iconv("UTF-8", "ISO-8859-1","Nota interna: ".$nota),0,'C');
+            $pdf->Ln(2);
+        }
+        
+		$pdf->MultiCell(0,5,iconv("UTF-8", "ISO-8859-1","*** Este documento es una solicitud formal de mercancía al proveedor. Los valores monetarios están sujetos a confirmación tras la entrega ***"),0,'C');
 
 		$pdf->Output("I","Orden_Compra_".$datos_compra['compra_codigo'].".pdf",true);
 
 	}else{
         echo "Orden de compra no encontrada.";
     }
-?>

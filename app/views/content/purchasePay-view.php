@@ -1,6 +1,6 @@
 <div class="container is-fluid mb-6">
-    <h1 class="title">Cuentas por Pagar</h1>
-    <h2 class="subtitle">Gestión de facturas pendientes y vencimientos</h2>
+    <h1 class="title">Cuentas por Pagar y Saldos a Favor</h1>
+    <h2 class="subtitle">Gestión de facturas pendientes y anticipos a proveedores</h2>
 </div>
 
 <div class="container pb-6 pt-6">
@@ -8,20 +8,29 @@
         use app\controllers\purchaseController;
         $insCompra = new purchaseController();
 
-        /* --- 1. CÁLCULO DE INDICADORES (KPIs) --- */
+        /* --- 1. CÁLCULO DE INDICADORES (KPIs) FINANCIEROS --- */
+        
+        // Deuda Total
         $total_deuda = $insCompra->ejecutarConsulta("SELECT SUM(compra_saldo_pendiente) as total FROM compra WHERE compra_saldo_pendiente > 0");
         $total_deuda = $total_deuda->fetch()['total'] ?? 0;
 
+        // Deuda Vencida
         $vencido = $insCompra->ejecutarConsulta("SELECT SUM(compra_saldo_pendiente) as total FROM compra WHERE compra_fecha_vencimiento < CURRENT_DATE AND compra_saldo_pendiente > 0");
         $vencido = $vencido->fetch()['total'] ?? 0;
 
+        // Próximo a vencer
         $proximo = $insCompra->ejecutarConsulta("SELECT SUM(compra_saldo_pendiente) as total FROM compra WHERE compra_fecha_vencimiento BETWEEN CURRENT_DATE AND DATE_ADD(CURRENT_DATE, INTERVAL 7 DAY) AND compra_saldo_pendiente > 0");
         $proximo = $proximo->fetch()['total'] ?? 0;
+
+        // NUEVO: Saldo a Favor (Anticipos que superaron la factura)
+        // Usamos abs() para convertir el número negativo (ej: -100) en positivo (100) para mostrarlo bonito
+        $saldo_favor = $insCompra->ejecutarConsulta("SELECT SUM(compra_saldo_pendiente) as total FROM compra WHERE compra_saldo_pendiente < 0");
+        $saldo_favor = abs((float)($saldo_favor->fetch()['total'] ?? 0));
     ?>
 
     <div class="columns is-multiline mb-6">
-        <div class="column is-one-third">
-            <div class="box has-background-info-light" style="border-left: 5px solid #209cee;">
+        <div class="column is-3">
+            <div class="box has-background-info-light" style="border-left: 5px solid #209cee; height: 100%;">
                 <div class="level is-mobile">
                     <div class="level-item has-text-centered">
                         <div>
@@ -36,8 +45,8 @@
             </div>
         </div>
 
-        <div class="column is-one-third">
-            <div class="box has-background-danger-light" style="border-left: 5px solid #ff3860;">
+        <div class="column is-3">
+            <div class="box has-background-danger-light" style="border-left: 5px solid #ff3860; height: 100%;">
                 <div class="level is-mobile">
                     <div class="level-item has-text-centered">
                         <div>
@@ -52,8 +61,8 @@
             </div>
         </div>
 
-        <div class="column is-one-third">
-            <div class="box has-background-warning-light" style="border-left: 5px solid #ffdd57;">
+        <div class="column is-3">
+            <div class="box has-background-warning-light" style="border-left: 5px solid #ffdd57; height: 100%;">
                 <div class="level is-mobile">
                     <div class="level-item has-text-centered">
                         <div>
@@ -67,98 +76,183 @@
                 </div>
             </div>
         </div>
+
+        <div class="column is-3">
+            <div class="box has-background-success-light" style="border-left: 5px solid #48c774; height: 100%;">
+                <div class="level is-mobile">
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="heading">Saldo a Favor</p>
+                            <p class="title is-4 has-text-success-dark"><?php echo number_format($saldo_favor, 2); ?> $</p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <i class="fas fa-piggy-bank fa-2x has-text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <?php
-        $consulta = "SELECT c.*, p.proveedor_nombre, 
-            DATEDIFF(c.compra_fecha_vencimiento, CURRENT_DATE) as dias_restantes 
-            FROM compra c 
-            INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
-            WHERE c.compra_saldo_pendiente > 0 
-            ORDER BY c.compra_fecha_vencimiento ASC";
+    <div class="tabs is-boxed is-centered">
+        <ul>
+            <li class="is-active" id="tab-deudas" onclick="cambiarPestana('deudas')">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i></span>
+                    <span>Deudas a Pagar</span>
+                </a>
+            </li>
+            <li id="tab-favor" onclick="cambiarPestana('favor')">
+                <a class="has-text-success">
+                    <span class="icon is-small"><i class="fas fa-hand-holding-usd" aria-hidden="true"></i></span>
+                    <span>Saldos a Favor (Anticipos)</span>
+                </a>
+            </li>
+        </ul>
+    </div>
 
-        $datos = $insCompra->ejecutarConsulta($consulta);
-        
-        if($datos->rowCount() > 0){
-            $datos = $datos->fetchAll();
-    ?>
-    
-    <div class="table-container">
-        <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-            <thead>
-                <tr class="is-link">
-                    <th class="has-text-centered has-text-white">Código</th>
-                    <th class="has-text-centered has-text-white">Proveedor</th>
-                    <th class="has-text-centered has-text-white">Estado Pago</th>
-                    <th class="has-text-centered has-text-white">Vencimiento</th>
-                    <th class="has-text-centered has-text-white">Saldo Pendiente</th>
-                    <th class="has-text-centered has-text-white">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                    foreach($datos as $c){
-                        $dias = $c['dias_restantes'];
-                        
-                        // Lógica de Semáforo de Vencimiento
-                        if($dias < 0){
-                            $clase_color = "has-text-danger has-text-weight-bold";
-                            $mensaje = "Vencida hace " . abs($dias) . " días";
-                            $icono = "fa-exclamation-triangle";
-                        } elseif($dias <= 3){
-                            $clase_color = "has-text-warning has-text-weight-bold";
-                            $mensaje = "Vence en $dias días";
-                            $icono = "fa-clock";
-                        } else {
-                            $clase_color = "has-text-info";
-                            $mensaje = "Al día ($dias días)";
-                            $icono = "fa-check-circle";
-                        }
+    <div id="contenedor-deudas">
+        <?php
+            $consulta = "SELECT c.*, p.proveedor_nombre, 
+                DATEDIFF(c.compra_fecha_vencimiento, CURRENT_DATE) as dias_restantes 
+                FROM compra c 
+                INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
+                WHERE c.compra_saldo_pendiente > 0 
+                ORDER BY c.compra_fecha_vencimiento ASC";
 
-                        // Lógica de colores para el Estado de Pago
-                        $tag_color = "is-info"; // Parcial
-                        if($c['compra_estado_pago'] == "Pendiente") $tag_color = "is-danger";
-                        if($c['compra_estado_pago'] == "Pagado") $tag_color = "is-success";
-                ?>
-                    <tr class="has-text-centered">
-                        <td><?php echo $c['compra_codigo']; ?></td>
-                        <td><?php echo $c['proveedor_nombre']; ?></td>
-                        <td>
-                            <span class="tag <?php echo $tag_color; ?> is-light is-rounded">
-                                <?php echo $c['compra_estado_pago']; ?>
-                            </span>
-                        </td>
-                        <td class="<?php echo $clase_color; ?>">
-                            <i class="fas <?php echo $icono; ?>"></i><br>
-                            <?php echo date("d/m/Y", strtotime($c['compra_fecha_vencimiento'])); ?>
-                            <br><small><?php echo $mensaje; ?></small>
-                        </td>
-                        <td class="is-size-5 has-text-weight-bold">
-                            <?php echo number_format($c['compra_saldo_pendiente'], 2); ?> $
-                        </td>
-                        <td>
-                            <div class="buttons is-centered">
-                                <button class="button is-success is-small is-rounded" onclick="abrirModalAbono(
-                                    '<?php echo $c['compra_id']; ?>', 
-                                    '<?php echo $c['compra_codigo']; ?>', 
-                                    '<?php echo $c['compra_saldo_pendiente']; ?>'
-                                )">
-                                    <i class="fas fa-hand-holding-usd"></i>&nbsp; Abonar
-                                </button>
-                                <button class="button is-info is-small is-rounded" onclick="verHistorialAbonos('<?php echo $c['compra_id']; ?>', '<?php echo $c['compra_codigo']; ?>')">
-                                    <i class="fas fa-history"></i>
-                                </button>
-                            </div>
-                        </td>
+            $datos = $insCompra->ejecutarConsulta($consulta);
+            if($datos->rowCount() > 0){
+                $datos = $datos->fetchAll();
+        ?>
+        <div class="table-container">
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+                <thead>
+                    <tr class="is-link">
+                        <th class="has-text-centered has-text-white">Código</th>
+                        <th class="has-text-centered has-text-white">Proveedor</th>
+                        <th class="has-text-centered has-text-white">Estado Pago</th>
+                        <th class="has-text-centered has-text-white">Vencimiento</th>
+                        <th class="has-text-centered has-text-white">Saldo Pendiente</th>
+                        <th class="has-text-centered has-text-white">Acciones</th>
                     </tr>
-                <?php } ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php
+                        foreach($datos as $c){
+                            $dias = $c['dias_restantes'];
+                            
+                            // Lógica de Semáforo de Vencimiento
+                            if($dias < 0){
+                                $clase_color = "has-text-danger has-text-weight-bold";
+                                $mensaje = "Vencida hace " . abs($dias) . " días";
+                                $icono = "fa-exclamation-triangle";
+                            } elseif($dias <= 3){
+                                $clase_color = "has-text-warning has-text-weight-bold";
+                                $mensaje = "Vence en $dias días";
+                                $icono = "fa-clock";
+                            } else {
+                                $clase_color = "has-text-info";
+                                $mensaje = "Al día ($dias días)";
+                                $icono = "fa-check-circle";
+                            }
+
+                            $tag_color = "is-info";
+                            if($c['compra_estado_pago'] == "Pendiente") $tag_color = "is-danger";
+                    ?>
+                        <tr class="has-text-centered">
+                            <td><?php echo $c['compra_codigo']; ?></td>
+                            <td><?php echo $c['proveedor_nombre']; ?></td>
+                            <td>
+                                <span class="tag <?php echo $tag_color; ?> is-light is-rounded">
+                                    <?php echo $c['compra_estado_pago']; ?>
+                                </span>
+                            </td>
+                            <td class="<?php echo $clase_color; ?>">
+                                <i class="fas <?php echo $icono; ?>"></i><br>
+                                <?php echo date("d/m/Y", strtotime($c['compra_fecha_vencimiento'])); ?>
+                                <br><small><?php echo $mensaje; ?></small>
+                            </td>
+                            <td class="is-size-5 has-text-weight-bold has-text-danger-dark">
+                                <?php echo number_format($c['compra_saldo_pendiente'], 2); ?> $
+                            </td>
+                            <td>
+                                <div class="buttons is-centered">
+                                    <button class="button is-success is-small is-rounded" onclick="abrirModalAbono(
+                                        '<?php echo $c['compra_id']; ?>', 
+                                        '<?php echo $c['compra_codigo']; ?>', 
+                                        '<?php echo $c['compra_saldo_pendiente']; ?>'
+                                    )">
+                                        <i class="fas fa-hand-holding-usd"></i>&nbsp; Abonar
+                                    </button>
+                                    <button class="button is-info is-small is-rounded" onclick="verHistorialAbonos('<?php echo $c['compra_id']; ?>', '<?php echo $c['compra_codigo']; ?>')">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
+        <?php } else { ?>
+            <div class="notification is-success is-light has-text-centered">
+                <i class="fas fa-check-circle fa-2x mb-2"></i><br>
+                <strong>¡Todo al día!</strong> No tienes deudas pendientes con proveedores.
+            </div>
+        <?php } ?>
     </div>
 
-    <?php } else { ?>
-        <p class="has-text-centered">No hay cuentas pendientes por pagar.</p>
-    <?php } ?>
+    <div id="contenedor-favor" style="display: none;">
+        <?php
+            // Buscamos saldos negativos (a favor)
+            $consulta_favor = "SELECT c.*, p.proveedor_nombre FROM compra c 
+                INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
+                WHERE c.compra_saldo_pendiente < 0 ORDER BY c.compra_id DESC";
+
+            $datos_favor = $insCompra->ejecutarConsulta($consulta_favor);
+            if($datos_favor->rowCount() > 0){
+                $datos_favor = $datos_favor->fetchAll();
+        ?>
+        <div class="table-container">
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+                <thead>
+                    <tr class="has-background-success-dark">
+                        <th class="has-text-centered has-text-white">Código Compra</th>
+                        <th class="has-text-centered has-text-white">Proveedor</th>
+                        <th class="has-text-centered has-text-white">Fecha Orden</th>
+                        <th class="has-text-centered has-text-white">Total Facturado</th>
+                        <th class="has-text-centered has-text-white">Monto a Favor</th>
+                        <th class="has-text-centered has-text-white">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($datos_favor as $f){ ?>
+                        <tr class="has-text-centered">
+                            <td><?php echo $f['compra_codigo']; ?></td>
+                            <td><?php echo $f['proveedor_nombre']; ?></td>
+                            <td><?php echo date("d/m/Y", strtotime($f['compra_fecha'])); ?></td>
+                            <td><?php echo number_format($f['compra_total'], 2); ?> $</td>
+                            <td class="is-size-5 has-text-weight-bold has-text-success-dark">
+                                + <?php echo number_format(abs($f['compra_saldo_pendiente']), 2); ?> $
+                            </td>
+                            <td>
+                                <button class="button is-info is-small is-rounded" onclick="verHistorialAbonos('<?php echo $f['compra_id']; ?>', '<?php echo $f['compra_codigo']; ?>')" title="Ver Anticipos entregados">
+                                    <i class="fas fa-history"></i> Ver Pagos
+                                </button>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
+        <?php } else { ?>
+            <div class="notification is-warning is-light has-text-centered">
+                <i class="fas fa-info-circle fa-2x mb-2"></i><br>
+                Actualmente no tienes saldos a favor con ningún proveedor.
+            </div>
+        <?php } ?>
+    </div>
+
 </div>
 
 <div class="modal" id="modal-abono">
@@ -217,6 +311,22 @@
 </div>
 
 <script>
+    // Script para cambiar entre las pestañas de Deudas y Saldos a Favor
+    function cambiarPestana(pestana) {
+        document.getElementById('tab-deudas').classList.remove('is-active');
+        document.getElementById('tab-favor').classList.remove('is-active');
+        document.getElementById('contenedor-deudas').style.display = 'none';
+        document.getElementById('contenedor-favor').style.display = 'none';
+
+        if(pestana === 'deudas') {
+            document.getElementById('tab-deudas').classList.add('is-active');
+            document.getElementById('contenedor-deudas').style.display = 'block';
+        } else {
+            document.getElementById('tab-favor').classList.add('is-active');
+            document.getElementById('contenedor-favor').style.display = 'block';
+        }
+    }
+
     const selectMetodo = document.querySelector('#pago_metodo');
     const inputReferencia = document.querySelector('#pago_referencia');
 
