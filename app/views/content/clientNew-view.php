@@ -29,7 +29,7 @@
 						<label>Numero de documento <?php echo CAMPO_OBLIGATORIO; ?></label>
 						<input class="input" type="text" name="cliente_numero_documento"
 							pattern="[a-zA-Z0-9\-]{7,30}" maxlength="15" 
-							placeholder="Ej: V-12345678 o 12345678-9" required>
+							placeholder="Ej: V-12345678 o 12345678-9" oninvalid="this.setCustomValidity('Solo se permiten numeros en este campo')" required>
 					</div>
 				</div>
 			</div>
@@ -37,13 +37,13 @@
 			<div class="column">
 				<div class="control">
 					<label>Nombres <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_nombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
+					<input class="input" type="text" name="cliente_nombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" oninvalid="this.setCustomValidity('Solo se permiten letras en este campo')" required>
 				</div>
 			</div>
 			<div class="column">
 				<div class="control">
 					<label>Apellidos <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_apellido" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required>
+					<input class="input" type="text" name="cliente_apellido" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" oninvalid="this.setCustomValidity('Solo se permiten letras en este campo')" required>
 				</div>
 			</div>
 		</div>
@@ -51,7 +51,7 @@
 			<div class="column">
 				<div class="control">
 					<label>Estado, provincia o departamento <?php echo CAMPO_OBLIGATORIO; ?></label>
-					<input class="input" type="text" name="cliente_provincia" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" required>
+					<input class="input" type="text" name="cliente_provincia" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}" maxlength="30" oninvalid="this.setCustomValidity('Solo se permiten letras en este campo')" required>
 				</div>
 			</div>
 			<div class="column">
