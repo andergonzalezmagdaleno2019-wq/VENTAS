@@ -6,7 +6,6 @@
 <div class="container pb-6 pt-6">
 	<?php
 		include "./app/views/inc/btn_back.php";
-        
         $id = $insLogin->limpiarCadena($url[1]);
 		$datos=$insLogin->seleccionarDatos("Unico","proveedor","proveedor_id",$id);
 
@@ -25,24 +24,18 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nombre del Proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="proveedor_nombre" value="<?php echo $datos['proveedor_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,\- ]{3,70}" maxlength="70" required autocomplete="off">
+				  	<input class="input" type="text" name="proveedor_nombre" data-filtro="empresa" value="<?php echo $datos['proveedor_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,\- ]{3,70}" minlength="3" maxlength="70" required autocomplete="off" title="El nombre de la empresa debe tener al menos 3 caracteres.">
 				</div>
 		  	</div>
             <div class="column">
 					<div class="control">
 						<label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" 
-       					name="proveedor_rif" 
-       					value="<?php echo $datos['proveedor_rif']; ?>" 
-       					pattern="[0-9\-]{1,15}"
-       					maxlength="15" 
-       					required autocomplete="off">
+						<input class="input" type="text" name="proveedor_rif" data-filtro="rif" value="<?php echo $datos['proveedor_rif']; ?>" pattern="[0-9\-]{8,14}" minlength="8" maxlength="14" required autocomplete="off" title="Solo números y guiones (-). Mínimo 8 caracteres.">
 					</div>
 		  	</div>
 		</div>
 
 		<?php
-            /* Lógica para picar el teléfono guardado del proveedor */
             $tel_db = isset($datos['proveedor_telefono']) ? $datos['proveedor_telefono'] : "";
             $prefijo_prov = ($tel_db != "") ? substr($tel_db, 0, 4) : "";
             $numero_prov = ($tel_db != "") ? substr($tel_db, 4) : "";
@@ -54,14 +47,14 @@
                     <div class="field has-addons">
                         <p class="control">
                             <span class="select">
-                                <select name="proveedor_telefono_codigo" required>
+                                <select name="proveedor_telefono_codigo" required title="Seleccione código de área.">
                                     <option value="">Cód.</option>
                                     <?php echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, $prefijo_prov); ?>
                                 </select>
                             </span>
                         </p>
                         <p class="control is-expanded">
-                            <input class="input" type="text" name="proveedor_telefono" value="<?php echo $numero_prov; ?>" pattern="[0-9]{7}" maxlength="7" placeholder="1234567" required autocomplete="off">
+                            <input class="input only-numbers" type="text" name="proveedor_telefono" value="<?php echo $numero_prov; ?>" pattern="[0-9]{7}" minlength="7" maxlength="7" placeholder="1234567" required autocomplete="off" title="El teléfono debe tener 7 dígitos exactos.">
                         </p>
                     </div>
 				</div>
@@ -79,8 +72,8 @@
 		</p>
 	</form>
 	<?php
-		}else{
-			include "./app/views/inc/error_alert.php";
-		}
+		}else{ include "./app/views/inc/error_alert.php"; }
 	?>
 </div>
+
+<?php include "./app/views/inc/script_validador.php"; ?>

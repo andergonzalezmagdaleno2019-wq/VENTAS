@@ -1,6 +1,5 @@
 <div class="container is-fluid mb-6">
 	<?php 
-        /* INSTANCIAMOS EL CONTROLADOR CORRECTO */
         use app\controllers\userController;
         $insUsuario = new userController();
         $id = $insUsuario->limpiarCadena($url[1]);
@@ -18,7 +17,6 @@
 <div class="container pb-6 pt-6">
 	<?php
 		include "./app/views/inc/btn_back.php";
-
 		$datos=$insUsuario->seleccionarDatos("Unico","usuario","usuario_id",$id);
 
 		if($datos->rowCount()==1){
@@ -38,7 +36,7 @@
 				<div class="control">
 					<label>Tipo de documento <?php echo CAMPO_OBLIGATORIO;?></label><br>
 					<div class="select is-fullwidth">
-						<select name="usuario_tipo_documento" required>
+						<select name="usuario_tipo_documento" id="doc_tipo" required title="Seleccione tipo">
 							<option value="V" <?php if($datos['usuario_tipo_documento']=="V"){ echo 'selected'; } ?> >V - Venezolano</option>
 							<option value="E" <?php if($datos['usuario_tipo_documento']=="E"){ echo 'selected'; } ?> >E - Extranjero</option>
 						</select>
@@ -48,7 +46,7 @@
 			<div class="column is-8">
 				<div class="control">
 					<label>Número de documento (Cédula) <?php echo CAMPO_OBLIGATORIO;?></label>
-					<input class="input" type="text" name="usuario_dni" value="<?php echo $datos['usuario_dni']; ?>" pattern="[0-9]{7,10}" maxlength="10" required title="Ingrese entre 7 y 10 números, sin puntos ni guiones." >
+					<input class="input" type="text" name="usuario_dni" id="doc_numero" data-filtro="numeros" value="<?php echo $datos['usuario_dni']; ?>" pattern="[0-9]{7,10}" minlength="7" maxlength="10" required title="La cédula debe tener al menos 7 números." >
 				</div>
 			</div>
 		</div>
@@ -57,13 +55,13 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nombres <?php echo CAMPO_OBLIGATORIO;?></label>
-				  	<input class="input" type="text" name="usuario_nombre" value="<?php echo $datos['usuario_nombre']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required autocomplete="off" title="Solo se permiten letras. Mínimo 3 caracteres.">
+				  	<input class="input only-letters" type="text" name="usuario_nombre" value="<?php echo $datos['usuario_nombre']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" minlength="3" maxlength="40" required autocomplete="off" title="Mínimo 3 caracteres.">
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
 					<label>Apellidos <?php echo CAMPO_OBLIGATORIO;?></label>
-				  	<input class="input" type="text" name="usuario_apellido" value="<?php echo $datos['usuario_apellido']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" maxlength="40" required autocomplete="off" title="Solo se permiten letras. Mínimo 3 caracteres.">
+				  	<input class="input only-letters" type="text" name="usuario_apellido" value="<?php echo $datos['usuario_apellido']; ?>" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}" minlength="3" maxlength="40" required autocomplete="off" title="Mínimo 3 caracteres.">
 				</div>
 		  	</div>
 		</div>
@@ -72,7 +70,7 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nombre de Usuario <?php echo CAMPO_OBLIGATORIO;?></label>
-				  	<input class="input" type="text" name="usuario_usuario" value="<?php echo $datos['usuario_usuario']; ?>" pattern="[a-zA-Z0-9_]{4,20}" maxlength="20" required autocomplete="off" title="Solo letras, números y guión bajo (_). Entre 4 y 20 caracteres.">
+				  	<input class="input" type="text" name="usuario_usuario" data-filtro="usuario" value="<?php echo $datos['usuario_usuario']; ?>" pattern="[a-zA-Z0-9_]{4,20}" minlength="4" maxlength="20" required autocomplete="off" title="Mínimo 4 caracteres (Letras, números o guión bajo).">
 				</div>
 		  	</div>
 		  	<div class="column">
@@ -83,10 +81,7 @@
 		  	</div>
 		</div>
 
-        <?php 
-            /* Solo el Administrador principal puede cambiar roles */
-            if($_SESSION['rol'] == 1 && $datos['usuario_id'] != 1){ 
-        ?>
+        <?php if($_SESSION['rol'] == 1 && $datos['usuario_id'] != 1){ ?>
         <div class="columns">
 		  	<div class="column">
                 <label>Rol de usuario</label><br>
@@ -112,13 +107,13 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label>Nueva contraseña (Mínimo 7 caracteres)</label>
-				  	<input class="input" type="password" name="usuario_clave_1" pattern="[a-zA-Z0-9$@.-]{7,100}" maxlength="100" title="Mínimo 7 caracteres permitidos." >
+				  	<input class="input" type="password" name="usuario_clave_1" pattern="[a-zA-Z0-9$@.-]{7,100}" minlength="7" maxlength="100" title="Mínimo 7 caracteres permitidos." >
 				</div>
 		  	</div>
 		  	<div class="column">
 		    	<div class="control">
 					<label>Repetir nueva contraseña</label>
-				  	<input class="input" type="password" name="usuario_clave_2" pattern="[a-zA-Z0-9$@.-]{7,100}" maxlength="100" title="Debe coincidir con la clave anterior." >
+				  	<input class="input" type="password" name="usuario_clave_2" pattern="[a-zA-Z0-9$@.-]{7,100}" minlength="7" maxlength="100" title="Debe coincidir con la clave anterior." >
 				</div>
 		  	</div>
 		</div>
@@ -127,9 +122,7 @@
 			<button type="submit" class="button is-success is-rounded"><i class="fas fa-sync-alt"></i> &nbsp; Guardar Cambios</button>
 		</p>
 	</form>
-	<?php
-		}else{
-			include "./app/views/inc/error_alert.php";
-		}
-	?>
+	<?php }else{ include "./app/views/inc/error_alert.php"; } ?>
 </div>
+
+<?php include "./app/views/inc/script_validador.php"; ?>
