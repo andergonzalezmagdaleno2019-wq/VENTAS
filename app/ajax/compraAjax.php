@@ -22,44 +22,30 @@
         if($_POST['modulo_compra']=="registrar"){
             echo $insCompra->registrarCompraControlador();
         }
-        // NUEVO: Para eliminar
         if($_POST['modulo_compra']=="eliminar"){
             echo $insCompra->eliminarCompraControlador();
         }
         if($_POST['modulo_compra']=="buscar_por_categoria"){
             echo $insCompra->buscarPorCategoriaCompraControlador();
         }
-
-        /*---------- Registrar Recepción de Mercancía ----------*/
         if($_POST['modulo_compra']=="registrar_recepcion"){
             echo $insCompra->registrarRecepcionControlador();
         }
-
-        /*---------- Registrar Abono (Cuentas por Pagar) ----------*/
         if($_POST['modulo_compra']=="registrar_abono"){
             echo $insCompra->registrarAbonoControlador();
         }
-
-        /*---------- Ver historial de abonos ----------*/
         if($_POST['modulo_compra']=="ver_historial_abonos"){
             echo $insCompra->listarAbonosCompraControlador($_POST['compra_id']);
         }
-
-
-        /*---------- Eliminación ----------*/
         if($_POST['modulo_compra']=="eliminar_abono"){
         echo $insCompra->eliminarAbonoControlador();
         }
-        
-        /*---------- Eliminar producto individual de la sesión ----------*/
         if($_POST['modulo_compra']=="eliminar_producto_carrito"){
             echo $insCompra->eliminarProductoCarritoControlador();
         }
-
         if($_POST['modulo_compra'] == "eliminar_compra"){
             echo $ins_compra->eliminarCompraControlador();
         }
-
         if($_POST['modulo_compra'] == "vaciar_anuladas"){
             echo $ins_compra->vaciarAnuladasControlador();
         }

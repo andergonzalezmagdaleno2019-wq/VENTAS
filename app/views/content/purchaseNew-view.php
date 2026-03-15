@@ -1,6 +1,6 @@
 <div class="container is-fluid mb-6">
     <h1 class="title">Compras</h1>
-    <h2 class="subtitle">Nueva Orden de Compra (Entrada de Almacén) - <strong>FastNet</strong></h2>
+    <h2 class="subtitle">Generar Nota de Entrega (Pedido a Proveedor) - <strong>FastNet</strong></h2>
 </div>
 
 <div class="container is-fluid pb-6">
@@ -106,7 +106,7 @@
                         </div>
                         
                         <div class="column is-8 has-text-right pt-2">
-                            <h3 class="title is-4 has-text-link mt-0"><i class="fas fa-clipboard-list"></i> Orden Pendiente por Valorar</h3>
+                            <h3 class="title is-4 has-text-link mt-0"><i class="fas fa-clipboard-list"></i> Orden Pendiente a Proveedor</h3>
                         </div>
                     </div>
 
@@ -115,26 +115,28 @@
                             <tr class="has-background-link-light">
                                 <th>Producto Pedido</th>
                                 <th class="has-text-centered" style="width: 150px;">Último Costo (Ref)</th>
-                                <th class="has-text-centered" style="width: 180px;">Cantidad a Solicitar</th>
-                                <th class="has-text-centered" style="width: 100px;">Acción</th>
+                                <th class="has-text-centered" style="width: 120px;">Cant. Solicitada</th>
+                                <th class="has-text-centered" style="width: 150px;">Subtotal Estimado</th>
+                                <th class="has-text-centered" style="width: 90px;">Quitar</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
+                                $total_estimado_orden = 0;
                                 if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){
                                     foreach($_SESSION['datos_compra'] as $detalle){
                                         
-                                        // Tu lógica visual para el costo
-                                        $costo_ref_txt = (isset($detalle['costo_referencia']) && $detalle['costo_referencia'] > 0) ? "$".number_format($detalle['costo_referencia'], 2) : '<span class="has-text-grey-light">N/A</span>';
+                                        $subtotal_est = $detalle['compra_cantidad'] * $detalle['costo_referencia'];
+                                        $total_estimado_orden += $subtotal_est;
+
+                                        $costo_ref_txt = (isset($detalle['costo_referencia']) && $detalle['costo_referencia'] > 0) ? "$".number_format($detalle['costo_referencia'], 2) : '<span class="has-text-grey-light">Nuevo ($0.00)</span>';
+                                        $sub_est_txt = ($subtotal_est > 0) ? "<strong>$".number_format($subtotal_est, 2)."</strong>" : '<span class="has-text-grey-light">$0.00</span>';
 
                                         echo '<tr>
                                             <td style="vertical-align: middle;"><strong>'.$detalle['producto_nombre'].'</strong></td>
-                                            
-                                            <td class="has-text-centered has-text-grey" style="vertical-align: middle;">
-                                                '.$costo_ref_txt.'
-                                            </td>
-
-                                            <td class="has-text-centered is-size-5" style="vertical-align: middle;">'.$detalle['compra_cantidad'].' Unid.</td>
+                                            <td class="has-text-centered has-text-grey" style="vertical-align: middle;">'.$costo_ref_txt.'</td>
+                                            <td class="has-text-centered is-size-5" style="vertical-align: middle;">'.$detalle['compra_cantidad'].'</td>
+                                            <td class="has-text-centered" style="vertical-align: middle;">'.$sub_est_txt.'</td>
                                             <td class="has-text-centered" style="vertical-align: middle;">
                                                 <button type="button" class="button is-danger is-small is-rounded" onclick="eliminarDelCarrito('.$detalle['producto_id'].')">
                                                     <i class="fas fa-trash-alt"></i>
@@ -142,39 +144,38 @@
                                             </td>
                                         </tr>';
                                     }
+                                    echo '<tr class="has-background-light">
+                                            <td colspan="3" class="has-text-right has-text-weight-bold">TOTAL ESTIMADO DE LA ORDEN:</td>
+                                            <td class="has-text-centered has-text-weight-bold is-size-5 has-text-link">$'.number_format($total_estimado_orden, 2).'</td>
+                                            <td></td>
+                                          </tr>';
                                 }else{
-                                    echo '<tr class="has-text-centered"><td colspan="4">Aún no hay productos en esta orden de compra</td></tr>';
+                                    echo '<tr class="has-text-centered"><td colspan="5">Aún no has agregado productos a la lista de pedido</td></tr>';
                                 }
                             ?>
                         </tbody>
                     </table>
-
                     <?php if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){ ?>
                     <hr>
-                    <div class="columns">
+                    <div class="columns is-centered">
                         <div class="column is-4">
                             <div class="field">
                                 <label class="label"><i class="fas fa-money-bill-wave"></i> Anticipo a Proveedor ($)</label>
                                 <div class="control">
-                                    <input class="input" type="number" step="0.01" name="compra_pago_inicial" placeholder="0.00" min="0">
+                                    <input class="input" type="number" step="0.01" name="compra_pago_inicial" placeholder="0.00" min="0" max="<?php echo $total_estimado_orden; ?>">
                                 </div>
-                                <p class="help">Si se paga el total, la orden quedará como "Pagada"</p>
+                                <?php if($total_estimado_orden == 0){ ?>
+                                    <p class="help is-danger">No puedes dar anticipos porque todos los productos son nuevos (Costo estimado $0.00).</p>
+                                <?php } else { ?>
+                                    <p class="help is-info">El anticipo no puede superar el total estimado de <strong>$<?php echo number_format($total_estimado_orden, 2); ?></strong></p>
+                                <?php } ?>
                             </div>
                         </div>
-                        <div class="column is-4">
+                        <div class="column is-6">
                             <div class="field">
-                                <label class="label"><i class="fas fa-calendar-alt"></i> Fecha límite de pago</label>
+                                <label class="label"><i class="fas fa-sticky-note"></i> Nota de Solicitud</label>
                                 <div class="control">
-                                    <input class="input" type="date" name="compra_fecha_vencimiento" value="<?php echo date("Y-m-d"); ?>" required>
-                                </div>
-                                <p class="help">¿Cuándo se debe pagar la factura final?</p>
-                            </div>
-                        </div>
-                        <div class="column is-4">
-                            <div class="field">
-                                <label class="label"><i class="fas fa-sticky-note"></i> Nota Interna</label>
-                                <div class="control">
-                                    <input class="input" type="text" name="compra_nota" placeholder="Ej: Pedido urgente por WhatsApp">
+                                    <input class="input" type="text" name="compra_nota" placeholder="Ej: Mercancía a consignación, confirmar stock.">
                                 </div>
                             </div>
                         </div>

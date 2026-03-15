@@ -64,19 +64,7 @@
                 </div>
             </form>
         </div>
-        
-        <?php if($estado_actual == "Anulada"): ?>
-        <div class="column is-narrow">
-            <form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" method="POST" data-confirm="¿Estás seguro? Esta acción eliminará permanentemente TODAS las compras anuladas y sus detalles.">
-                <input type="hidden" name="modulo_compra" value="vaciar_anuladas">
-                <button type="submit" class="button is-danger is-outlined is-rounded">
-                    <span class="icon"><i class="fas fa-trash-sweep"></i></span>
-                    <span>Vaciar Papelera</span>
-                </button>
-            </form>
         </div>
-        <?php endif; ?>
-    </div>
 
     <div class="columns">
         <div class="column">
@@ -110,6 +98,7 @@
 </div>
 
 <script>
+    /* --- Modal de Pagos --- */
     function verHistorialAbonos(id, codigo) {
         let modal = document.getElementById('modal-historial');
         let titulo = document.getElementById('historial_codigo');
@@ -136,6 +125,44 @@
 
     function cerrarModalHistorial() {
         document.getElementById('modal-historial').classList.remove('is-active');
+    }
+
+    /* --- NUEVO: Ventana Emergente Inteligente para Anular --- */
+    function anularCompraConMotivo(id){
+        Swal.fire({
+            title: '¿Anular esta compra?',
+            text: "Esta acción devolverá los productos al proveedor. Por favor, indique el motivo:",
+            input: 'text',
+            inputPlaceholder: 'Ej: Proveedor no tenía stock, error de transcripción...',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, Anular',
+            cancelButtonText: 'Cancelar',
+            inputValidator: (value) => {
+                if (!value) {
+                    return '¡Debe escribir un motivo para la auditoría!'
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let motivo = result.value;
+                let datos = new FormData();
+                datos.append('modulo_compra', 'eliminar');
+                datos.append('compra_id', id);
+                datos.append('motivo_anulacion', motivo); // Enviamos el motivo al servidor
+
+                fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', {
+                    method: 'POST',
+                    body: datos
+                })
+                .then(respuesta => respuesta.json())
+                .then(respuesta => {
+                    return alertas_ajax(respuesta);
+                });
+            }
+        });
     }
 </script>
 

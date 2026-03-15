@@ -8,7 +8,7 @@
 		=            CARRITO Y BÚSQUEDAS              =
 		=============================================*/
 
-		/*----------  Buscar producto (SIN COSTO - REGLA PROFESOR) ----------*/
+		/*----------  Buscar producto (SIN COSTO) ----------*/
 		public function buscarProductoCompraControlador(){
 			$codigo=$this->limpiarCadena($_POST['buscar_producto']);
 			if($codigo==""){ return '<div class="notification is-danger is-light">Debes introducir un Nombre o Código</div>'; }
@@ -56,7 +56,7 @@
 
             if(!isset($_SESSION['datos_compra'])){ $_SESSION['datos_compra']=[]; }
             
-            // NUEVO: Guardamos el costo de la base de datos como "Referencia"
+            // Guardamos el costo de la base de datos como "Referencia Estimada"
             $costo_ref = $campos['producto_costo'];
 
             $detalle=[ 
@@ -66,7 +66,7 @@
                 "compra_cantidad"=>$cantidad, 
                 "compra_costo"=>$costo, 
                 "subtotal"=>$cantidad*$costo,
-                "costo_referencia"=>$costo_ref // <-- TU IDEA AGREGADA AQUÍ
+                "costo_referencia"=>$costo_ref 
             ];
             
             $_SESSION['datos_compra'][$id]=$detalle;
@@ -74,7 +74,7 @@
 			return json_encode(["tipo"=>"recargar","titulo"=>"Agregado","texto"=>"Se agregó a la orden","icono"=>"success"]);
 		}
 
-        /*----------  Quitar un producto del carrito (Aporte Compañero) ----------*/
+        /*----------  Quitar un producto del carrito ----------*/
         public function eliminarProductoCarritoControlador(){
             if(!isset($_POST['producto_id'])){ return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "Sin ID", "icono" => "error"]); }
             $id = $this->limpiarCadena($_POST['producto_id']);
@@ -94,7 +94,9 @@
 		=       REGISTRO DE ORDEN Y FINANZAS          =
 		=============================================*/
 
-		/*----------  Registrar Orden de Compra (Fusión)  ----------*/
+		
+        
+    
         public function registrarCompraControlador(){
             if(!isset($_SESSION['datos_compra']) || count($_SESSION['datos_compra'])<=0){ 
                 return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"No tienes productos","icono"=>"error"]); exit(); 
@@ -103,20 +105,29 @@
             $proveedor=$this->limpiarCadena($_POST['compra_proveedor']);
             $compra_tasa_bcv = $this->limpiarCadena($_POST['compra_tasa_bcv']);
             $compra_nota = isset($_POST['compra_nota']) ? $this->limpiarCadena($_POST['compra_nota']) : "";
-            $fecha_vencimiento = $this->limpiarCadena($_POST['compra_fecha_vencimiento']);
-            $pago_inicial = isset($_POST['compra_pago_inicial']) ? $this->limpiarCadena($_POST['compra_pago_inicial']) : 0;
+            $pago_inicial = isset($_POST['compra_pago_inicial']) ? (float)$this->limpiarCadena($_POST['compra_pago_inicial']) : 0;
+           
 
             if(!is_numeric($compra_tasa_bcv)){ $compra_tasa_bcv = 0; }
-            if(!is_numeric($pago_inicial)){ $pago_inicial = 0; }
             if($proveedor==""){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Selecciona proveedor","icono"=>"error"]); exit(); }
-            if($fecha_vencimiento == ""){ $fecha_vencimiento = date("Y-m-d"); }
 
             $fecha=date("Y-m-d"); 
-            $total=0; // Inicia en 0 por regla del profesor
             
-            // Si hay pago inicial pero el total es 0, el saldo queda negativo (A favor de nosotros)
-            $saldo_pendiente = $total - $pago_inicial;
+            
+            $total_estimado = 0;
+            foreach($_SESSION['datos_compra'] as $detalle){
+                $total_estimado += ($detalle['compra_cantidad'] * $detalle['costo_referencia']);
+            }
+            
+            
+            if($pago_inicial > $total_estimado && $total_estimado > 0){
+                return json_encode(["tipo"=>"simple","titulo"=>"Anticipo Inválido","texto"=>"No puedes dar un anticipo ($".$pago_inicial.") mayor al total estimado de la orden ($".$total_estimado.").","icono"=>"error"]); exit();
+            }
+
+            
+            $saldo_pendiente = $total_estimado - $pago_inicial;
             $estado_pago = ($saldo_pendiente <= 0 && $pago_inicial > 0) ? "Pagado" : "Pendiente";
+            $fecha_vencimiento = date("Y-m-d"); 
             
             $consulta_correlativo = $this->ejecutarConsulta("SELECT MAX(compra_id) AS id_maximo FROM compra");
             $siguiente_numero = (int)$consulta_correlativo->fetch()['id_maximo'] + 1;
@@ -125,7 +136,7 @@
             $datos_compra_reg=[
                 ["campo_nombre"=>"compra_codigo","campo_marcador"=>":Codigo","campo_valor"=>$codigo_compra],
                 ["campo_nombre"=>"compra_fecha","campo_marcador"=>":Fecha","campo_valor"=>$fecha],
-                ["campo_nombre"=>"compra_total","campo_marcador"=>":Total","campo_valor"=>$total],
+                ["campo_nombre"=>"compra_total","campo_marcador"=>":Total","campo_valor"=>$total_estimado],
                 ["campo_nombre"=>"compra_tasa_bcv","campo_marcador"=>":Tasa","campo_valor"=>$compra_tasa_bcv],
                 ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
                 ["campo_nombre"=>"proveedor_id","campo_marcador"=>":Proveedor","campo_valor"=>$proveedor],
@@ -141,15 +152,15 @@
             if($registrar_compra->rowCount()==1){
                 $id_compra_p = $this->ejecutarConsulta("SELECT compra_id FROM compra WHERE compra_codigo='$codigo_compra'")->fetch()['compra_id'];
 
-                // Registrar anticipo si lo hubo
+                // Registrar anticipo si el cajero metió dinero
                 if($pago_inicial > 0){
                     $datos_pago_inicial=[
                         ["campo_nombre"=>"compra_id","campo_marcador"=>":IdCompra","campo_valor"=>$id_compra_p],
                         ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
                         ["campo_nombre"=>"pago_fecha","campo_marcador"=>":Fecha","campo_valor"=>$fecha],
                         ["campo_nombre"=>"pago_monto","campo_marcador"=>":Monto","campo_valor"=>$pago_inicial],
-                        ["campo_nombre"=>"pago_metodo","campo_marcador"=>":Metodo","campo_valor"=>"Anticipo"],
-                        ["campo_nombre"=>"pago_referencia","campo_marcador"=>":Ref","campo_valor"=>"Pago al ordenar"]
+                        ["campo_nombre"=>"pago_metodo","campo_marcador"=>":Metodo","campo_valor"=>"Efectivo"],
+                        ["campo_nombre"=>"pago_referencia","campo_marcador"=>":Ref","campo_valor"=>"Anticipo al generar orden"]
                     ];
                     $this->guardarDatos("compra_pagos",$datos_pago_inicial);
                 }
@@ -159,7 +170,7 @@
                         ["campo_nombre"=>"compra_id","campo_marcador"=>":IdCompra","campo_valor"=>$id_compra_p], 
                         ["campo_nombre"=>"producto_id","campo_marcador"=>":Producto","campo_valor"=>$detalle['producto_id']], 
                         ["campo_nombre"=>"compra_detalle_cantidad","campo_marcador"=>":Cantidad","campo_valor"=>$detalle['compra_cantidad']], 
-                        ["campo_nombre"=>"compra_detalle_precio","campo_marcador"=>":Precio","campo_valor"=>$detalle['compra_costo']] 
+                        ["campo_nombre"=>"compra_detalle_precio","campo_marcador"=>":Precio","campo_valor"=>0] // El precio real queda en 0 esperando la factura
                     ];
                     $this->guardarDatos("compra_detalle",$datos_detalle);
                 }
@@ -168,7 +179,7 @@
                 return json_encode([
                     "tipo"=>"confirmar",
                     "titulo"=>"Orden ".$codigo_compra." Generada",
-                    "texto"=>"¿Desea imprimir el PDF para el proveedor ahora?",
+                    "texto"=>"¿Desea imprimir la NOTA DE ENTREGA para enviarla al proveedor ahora?",
                     "icono"=>"success",
                     "confirmButtonText" => "Sí, imprimir",
                     "cancelButtonText" => "No, después",
@@ -201,18 +212,26 @@
 		=    RECEPCIÓN DE CAMIÓN Y PRECIOS REALES     =
 		=============================================*/
 
-        /*---------- Recibir Mercancía (Tu regla) ----------*/
+        
+        /*---------- Recibir Mercancía (Corrige el total y establece Condición) ----------*/
         public function registrarRecepcionControlador() {
             $compra_id = $this->limpiarCadena($_POST['compra_id']);
             $productos = $_POST['productos_recibidos']; 
-            $costos_nuevos = $_POST['costos_recibidos']; // Atrapamos los costos reales
-            $nota = isset($_POST['recepcion_nota']) ? $this->limpiarCadena($_POST['recepcion_nota']) : "";
+            $costos_nuevos = $_POST['costos_recibidos'];
+            
+            // CAPTURAMOS LOS NUEVOS DATOS FINANCIEROS
+            $condicion_pago = $this->limpiarCadena($_POST['compra_condicion']);
+            $fecha_vencimiento = $this->limpiarCadena($_POST['compra_fecha_vencimiento']);
+            $nota_usuario = isset($_POST['recepcion_nota']) ? $this->limpiarCadena($_POST['recepcion_nota']) : "";
+            
+            // Unimos la nota del usuario con la condición para que quede en el historial
+            $nota_final = "Condición: " . $condicion_pago . " | " . $nota_usuario;
             
             $datos_recepcion = [
                 ["campo_nombre"=>"compra_id","campo_marcador"=>":Compra","campo_valor"=>$compra_id],
                 ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
                 ["campo_nombre"=>"recepcion_fecha","campo_marcador"=>":Fecha","campo_valor"=>date("Y-m-d")],
-                ["campo_nombre"=>"recepcion_nota","campo_marcador"=>":Nota","campo_valor"=>$nota]
+                ["campo_nombre"=>"recepcion_nota","campo_marcador"=>":Nota","campo_valor"=>$nota_final]
             ];
             
             $guardar = $this->guardarDatos("recepcion", $datos_recepcion);
@@ -237,15 +256,16 @@
                     }
                 }
 
-                // Recalcular TOTAL de la compra (Para las cuentas por pagar)
+                // MAGIA FINANCIERA: Recalcular TOTAL de la compra y ACTUALIZAR FECHA DE VENCIMIENTO
                 $nuevo_total = (float) $this->ejecutarConsulta("SELECT SUM(compra_detalle_cantidad * compra_detalle_precio) FROM compra_detalle WHERE compra_id='$compra_id'")->fetchColumn();
-                $this->ejecutarConsulta("UPDATE compra SET compra_total = '$nuevo_total' WHERE compra_id = '$compra_id'");
+                
+                $this->ejecutarConsulta("UPDATE compra SET compra_total = '$nuevo_total', compra_fecha_vencimiento = '$fecha_vencimiento' WHERE compra_id = '$compra_id'");
 
                 // Sincronizar estados
                 $this->actualizarEstadoCompra($compra_id); // Físico
                 $this->actualizarSaldosCompra($compra_id); // Financiero
 
-                return json_encode(["tipo" => "redireccionar", "titulo" => "¡Recepción Exitosa!", "texto" => "Inventario y Costos actualizados.", "icono" => "success", "url" => APP_URL."purchaseList/"]);
+                return json_encode(["tipo" => "redireccionar", "titulo" => "¡Factura Ingresada!", "texto" => "Inventario y Cuentas por Pagar actualizados.", "icono" => "success", "url" => APP_URL."purchaseList/"]);
             } else {
                 return json_encode(["tipo" => "simple", "titulo" => "Ocurrió un error", "texto" => "No se pudo registrar.", "icono" => "error"]);
             }
@@ -366,11 +386,19 @@
             return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"No se pudo eliminar", "icono"=>"error"]);
         }
 
-        /*---------- Anulación de Compra Segura (Revierte Inventario y hace Soft Delete) ----------*/
+        /*---------- Anulación de Compra Segura (Con Motivo de Auditoría) ----------*/
         public function eliminarCompraControlador() {
             $id = $this->limpiarCadena($_POST['compra_id']);
+            $motivo = isset($_POST['motivo_anulacion']) ? $this->limpiarCadena($_POST['motivo_anulacion']) : "Anulada sin motivo";
+
             $check = $this->ejecutarConsulta("SELECT * FROM compra WHERE compra_id='$id'");
             if($check->rowCount() <= 0){ return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "La compra no existe.", "icono" => "error"]); }
+            
+            $datos_compra = $check->fetch();
+            $nota_anterior = $datos_compra['compra_nota_interna'];
+            
+            // Unimos la nota vieja (si tenía) con la nueva advertencia de anulación
+            $nueva_nota_auditoria = $nota_anterior . " | [ANULADA]: " . $motivo;
 
             // 1. REVERTIR EL INVENTARIO 
             $recepciones = $this->ejecutarConsulta("SELECT rd.producto_id, rd.cantidad_recibida FROM recepcion_detalle rd INNER JOIN recepcion r ON rd.recepcion_id = r.recepcion_id WHERE r.compra_id='$id'");
@@ -379,23 +407,49 @@
                 $upd->execute([":Cant" => $prod['cantidad_recibida'], ":ID" => $prod['producto_id']]);
             }
 
-            // 2. SOFT DELETE (Mover a Anuladas y limpiar la deuda financiera)
-            $anular = $this->ejecutarConsulta("UPDATE compra SET compra_estado='Anulada', compra_saldo_pendiente='0' WHERE compra_id='$id'");
+            // 2. SOFT DELETE (Mover a Anuladas, limpiar la deuda y GUARDAR EL MOTIVO)
+            $anular = $this->ejecutarConsulta("UPDATE compra SET compra_estado='Anulada', compra_saldo_pendiente='0', compra_nota_interna='$nueva_nota_auditoria' WHERE compra_id='$id'");
 
             if($anular->rowCount() == 1){ 
-                return json_encode(["tipo" => "recargar", "titulo" => "Anulada", "texto" => "Inventario revertido. Movida a Anuladas.", "icono" => "success"]); 
+                return json_encode(["tipo" => "recargar", "titulo" => "Anulada", "texto" => "El inventario fue revertido y la compra se anuló correctamente.", "icono" => "success"]); 
             } else { return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "Error al anular.", "icono" => "error"]); }
         }
 
-        public function vaciarAnuladasControlador(){
-            $check = $this->ejecutarConsulta("SELECT compra_id FROM compra WHERE compra_estado='Anulada'");
-            if($check->rowCount() > 0){
-                $this->ejecutarConsulta("DELETE FROM compra_detalle WHERE compra_id IN (SELECT compra_id FROM compra WHERE compra_estado='Anulada')");
-                $this->ejecutarConsulta("DELETE FROM compra_pagos WHERE compra_id IN (SELECT compra_id FROM compra WHERE compra_estado='Anulada')");
-                $this->ejecutarConsulta("DELETE FROM compra WHERE compra_estado='Anulada'");
-                return json_encode(["tipo" => "recargar", "titulo" => "Papelera Vaciada", "texto" => "Registros borrados.", "icono" => "success"]);
+        /*---------- Registrar Devolución de Dinero (Saldo a Favor) ----------*/
+        public function registrarReintegroControlador(){
+            $id = $this->limpiarCadena($_POST['reintegro_compra_id']);
+            $monto = (float) $this->limpiarCadena($_POST['reintegro_monto']);
+            $metodo = $this->limpiarCadena($_POST['reintegro_metodo']);
+            $referencia = $this->limpiarCadena($_POST['reintegro_referencia']);
+            
+            if($monto <= 0){ return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto debe ser mayor a cero", "icono"=>"error"]); }
+            if($referencia == "" && ($metodo == "Efectivo" || $metodo == "Divisas")){ $referencia = "DEVOLUCION EFECTIVO/DIVISA"; } 
+            elseif ($referencia == "") { return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"La referencia es obligatoria", "icono"=>"error"]); }
+
+            // Verificamos el saldo a favor actual
+            $saldo_actual = (float) $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetchColumn();
+            
+            if($saldo_actual >= 0){ return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Esta compra no tiene saldo a favor.", "icono"=>"error"]); }
+            
+            if($monto > abs($saldo_actual)){ return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto no puede superar el saldo a favor ($".abs($saldo_actual).")", "icono"=>"error"]); }
+
+            // EL TRUCO CONTABLE: Guardamos el pago en NEGATIVO para restar lo que "Sobró"
+            $monto_negativo = -$monto;
+
+            $datos_pago = [
+                ["campo_nombre"=>"compra_id","campo_marcador"=>":Id","campo_valor"=>$id],
+                ["campo_nombre"=>"pago_monto","campo_marcador"=>":Monto","campo_valor"=>$monto_negativo],
+                ["campo_nombre"=>"pago_fecha","campo_marcador"=>":Fecha","campo_valor"=>date("Y-m-d")],
+                ["campo_nombre"=>"pago_metodo","campo_marcador"=>":Metodo","campo_valor"=>"Reintegro (".$metodo.")"],
+                ["campo_nombre"=>"pago_referencia","campo_marcador"=>":Referencia","campo_valor"=>$referencia],
+                ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']]
+            ];
+
+            if($this->guardarDatos("compra_pagos", $datos_pago)->rowCount() >= 1){
+                $this->actualizarSaldosCompra($id);
+                return json_encode(["tipo"=>"recargar", "titulo"=>"¡Dinero Recuperado!", "texto"=>"El reintegro se registró y la cuenta regresó a $0", "icono"=>"success"]);
             }
-            return json_encode(["tipo" => "simple", "titulo" => "Aviso", "texto" => "No hay compras anuladas.", "icono" => "info"]);
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Error al registrar el reintegro", "icono"=>"error"]);
         }
 
 		/*=============================================
@@ -426,7 +480,7 @@
             return $tabla . '</tbody></table></div>';
         }
 
-        /*---------- Listado Principal de Compras (Con todas las opciones) ----------*/
+        /*---------- Listado Principal de Compras ----------*/
         public function listarCompraControlador($pagina, $registros, $url, $busqueda) {
             $pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $busqueda = $this->limpiarCadena($busqueda);
             $url_split = explode("/", $url); $estado_view = (isset($url_split[1]) && $url_split[1] != "") ? $url_split[1] : "Pendiente";
@@ -481,16 +535,17 @@
                             $tabla .= '<a href="' . APP_URL . 'purchasePay/' . $rows['compra_id'] . '/" class="button is-primary is-rounded is-small" title="Abonar Dinero"><i class="fas fa-money-bill-wave"></i></a>';
                         }
 
-                        // PDF: Si está completa saca la factura amarilla. Si no, la Orden roja.
+                        // PDF
                         if($rows['compra_estado'] == "Completado"){
                             $tabla .= '<button type="button" class="button is-warning is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchaseReceipt.php?id=' . $rows['compra_id'] . '\')" title="Factura Interna"><i class="fas fa-file-invoice-dollar"></i></button>';
                         } else {
                             $tabla .= '<button type="button" class="button is-danger is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchase_order.php?code=' . $rows['compra_codigo'] . '\')" title="Orden a Proveedor"><i class="fas fa-file-pdf"></i></button>';
                         }
 
+                        
                         // Anular (Solo si no han pagado)
                         if($rows['compra_estado_pago'] != "Pagado"){
-                            $tabla .= '<form class="FormularioAjax ml-1" action="' . APP_URL . 'app/ajax/compraAjax.php" method="POST"><input type="hidden" name="modulo_compra" value="eliminar"><input type="hidden" name="compra_id" value="' . $rows['compra_id'] . '"><button type="submit" class="button is-dark is-rounded is-small" title="Anular Compra"><i class="fas fa-ban"></i></button></form>';
+                            $tabla .= '<button type="button" class="button is-dark is-rounded is-small ml-1" onclick="anularCompraConMotivo(\'' . $rows['compra_id'] . '\')" title="Anular Compra"><i class="fas fa-ban"></i></button>';
                         }
                     }
                     $tabla .= '</div></td></tr>';

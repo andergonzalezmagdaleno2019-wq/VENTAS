@@ -27,19 +27,20 @@
     $detalles_array = $detalles->fetchAll();
 ?>
 
-<<div class="container pb-6 pt-6">
+<div class="container pb-6 pt-6">
     <?php include "./app/views/inc/btn_back.php"; ?>
     <h1 class="title">Recepción y Facturación de Proveedor</h1>
     <h2 class="subtitle">Orden de Compra: <strong><?php echo $datos_compra['compra_codigo']; ?></strong> - <?php echo $datos_compra['proveedor_nombre']; ?></h2>
+    
     <div class="notification is-info is-light">
-        <i class="fas fa-info-circle"></i> &nbsp; <strong>Instrucciones:</strong> Indique la cantidad que está recibiendo físicamente y el <strong>Costo Unitario Final</strong> según la factura. <em>(El sistema le sugiere el último precio al que compró el producto)</em>.
+        <i class="fas fa-info-circle"></i> &nbsp; <strong>Instrucciones:</strong> Indique la cantidad que está recibiendo físicamente y el <strong>Costo Unitario Final</strong> según la factura del proveedor.
     </div>
 
-    <div class="box">
-        <form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" method="POST" autocomplete="off">
-            <input type="hidden" name="modulo_compra" value="registrar_recepcion">
-            <input type="hidden" name="compra_id" value="<?php echo $compra_id; ?>">
+    <form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" method="POST" autocomplete="off">
+        <input type="hidden" name="modulo_compra" value="registrar_recepcion">
+        <input type="hidden" name="compra_id" value="<?php echo $compra_id; ?>">
 
+        <div class="box">
             <table class="table is-bordered is-striped is-hoverable is-fullwidth">
                 <thead>
                     <tr class="has-background-link-dark">
@@ -102,19 +103,68 @@
                     <?php } ?>
                 </tbody>
             </table>
+        </div>
 
-            <div class="field mt-5">
-                <label class="label">Nota de Recepción (Opcional)</label>
-                <div class="control">
-                    <textarea class="textarea" name="recepcion_nota" placeholder="Ej: Se reciben las cajas, pero con retraso. Todo correcto."></textarea>
+        <div class="box has-background-light">
+            <h3 class="title is-5 has-text-link"><i class="fas fa-file-invoice-dollar"></i> Condiciones de Facturación</h3>
+            <div class="columns">
+                <div class="column is-4">
+                    <div class="field">
+                        <label class="label">Condición de Pago de la Factura</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="compra_condicion" id="compra_condicion" required>
+                                    <option value="Contado" selected>Al Contado (Pago Inmediato)</option>
+                                    <option value="Consignacion">A Consignación (Se paga al vender)</option>
+                                    <option value="Credito 15">Crédito a 15 Días</option>
+                                    <option value="Credito 30">Crédito a 30 Días</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-4">
+                    <div class="field">
+                        <label class="label">Fecha Límite de Pago Real</label>
+                        <div class="control">
+                            <input class="input" type="date" name="compra_fecha_vencimiento" id="compra_fecha_vencimiento" value="<?php echo date("Y-m-d"); ?>" min="<?php echo date("Y-m-d"); ?>" required>
+                        </div>
+                        <p class="help">Se ajustará automáticamente según la condición.</p>
+                    </div>
+                </div>
+                <div class="column is-4">
+                    <div class="field">
+                        <label class="label">Nota de Recepción (Opcional)</label>
+                        <div class="control">
+                            <input class="input" type="text" name="recepcion_nota" placeholder="Ej: Factura N° 4589. Llegó todo correcto.">
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <p class="has-text-centered mt-5">
-                <button type="submit" class="button is-success is-rounded is-medium">
-                    <i class="fas fa-truck-loading"></i> &nbsp; Confirmar Recepción y Precios
-                </button>
-            </p>
-        </form>
-    </div>
+        <p class="has-text-centered mt-5">
+            <button type="submit" class="button is-success is-rounded is-medium">
+                <i class="fas fa-check-circle"></i> &nbsp; Confirmar Recepción y Cerrar Factura
+            </button>
+        </p>
+    </form>
 </div>
+
+<script>
+    document.getElementById('compra_condicion').addEventListener('change', function() {
+        let dias = 0;
+        if(this.value === 'Credito 15') dias = 15;
+        if(this.value === 'Credito 30') dias = 30;
+        if(this.value === 'Consignacion') dias = 90; 
+
+        let fechaHoy = new Date();
+        fechaHoy.setDate(fechaHoy.getDate() + dias);
+        
+        let mes = ('0' + (fechaHoy.getMonth() + 1)).slice(-2);
+        let dia = ('0' + fechaHoy.getDate()).slice(-2);
+        let fechaFormateada = fechaHoy.getFullYear() + '-' + mes + '-' + dia;
+        
+        document.getElementById('compra_fecha_vencimiento').value = fechaFormateada;
+    });
+</script>
