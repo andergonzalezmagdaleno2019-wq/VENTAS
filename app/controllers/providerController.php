@@ -18,6 +18,11 @@
 				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
 			}
 			
+            # VALIDACIÓN: El nombre debe tener letras #
+            if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre del proveedor no puede ser solo números, debe contener letras.", "icono" => "error"]; return json_encode($alerta); exit();
+            }
+
 			if($this->verificarDatos("[0-9\-]{1,15}", $rif)){
 				$alerta=["tipo"=>"simple","titulo"=>"Formato Inválido","texto"=>"El RIF solo permite números y guiones (-).","icono"=>"error"]; return json_encode($alerta); exit();
 			}
@@ -76,7 +81,13 @@
                     // Formatear teléfono para vista
                     $tel_tabla = ($rows['proveedor_telefono'] != "") ? substr($rows['proveedor_telefono'], 0, 4)."-".substr($rows['proveedor_telefono'], 4) : "N/A";
 					
-                    $tabla.='<tr class="has-text-centered" ><td>'.$contador.'</td><td><strong>'.$rows['proveedor_nombre'].'</strong></td><td>'.$rows['proveedor_rif'].'</td><td>'.$tel_tabla.'</td><td>'.$rows['proveedor_direccion'].'</td><td><a href="'.APP_URL.'providerUpdate/'.$rows['proveedor_id'].'/" class="button is-success is-rounded is-small"><i class="fas fa-sync"></i></a></td><td><form class="FormularioAjax" action="'.APP_URL.'app/ajax/proveedorAjax.php" method="POST" autocomplete="off" ><input type="hidden" name="modulo_proveedor" value="eliminar"><input type="hidden" name="proveedor_id" value="'.$rows['proveedor_id'].'"><button type="submit" class="button is-danger is-rounded is-small"><i class="far fa-trash-alt"></i></button></form></td></tr>';
+                    // AUTOMATIZACIÓN DE LA J- EN EL RIF
+                    $rif_tabla = $rows['proveedor_rif'];
+                    if(preg_match('/^[0-9]/', $rif_tabla)){
+                        $rif_tabla = "J-" . $rif_tabla;
+                    }
+
+                    $tabla.='<tr class="has-text-centered" ><td>'.$contador.'</td><td><strong>'.$rows['proveedor_nombre'].'</strong></td><td>'.$rif_tabla.'</td><td>'.$tel_tabla.'</td><td>'.$rows['proveedor_direccion'].'</td><td><a href="'.APP_URL.'providerUpdate/'.$rows['proveedor_id'].'/" class="button is-success is-rounded is-small"><i class="fas fa-sync"></i></a></td><td><form class="FormularioAjax" action="'.APP_URL.'app/ajax/proveedorAjax.php" method="POST" autocomplete="off" ><input type="hidden" name="modulo_proveedor" value="eliminar"><input type="hidden" name="proveedor_id" value="'.$rows['proveedor_id'].'"><button type="submit" class="button is-danger is-rounded is-small"><i class="far fa-trash-alt"></i></button></form></td></tr>';
 					$contador++;
 				}
 				$pag_final=$contador-1;
@@ -126,7 +137,13 @@
             $telefono_numero = $this->limpiarCadena($_POST['proveedor_telefono']);
 
 			if($nombre=="" || $rif==""){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Los campos Nombre y RIF son obligatorios","icono"=>"error"]; return json_encode($alerta); exit(); }
-			if($this->verificarDatos("[0-9\-]{1,15}", $rif)){ $alerta=["tipo"=>"simple","titulo"=>"Formato Inválido","texto"=>"El RIF solo permite números y guiones.","icono"=>"error"]; return json_encode($alerta); exit(); }
+			
+            # VALIDACIÓN: El nombre debe tener letras #
+            if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre del proveedor no puede ser solo números, debe contener letras.", "icono" => "error"]; return json_encode($alerta); exit();
+            }
+
+            if($this->verificarDatos("[0-9\-]{1,15}", $rif)){ $alerta=["tipo"=>"simple","titulo"=>"Formato Inválido","texto"=>"El RIF solo permite números y guiones.","icono"=>"error"]; return json_encode($alerta); exit(); }
 			
             # VALIDACIÓN Y UNIFICACIÓN DE TELÉFONO #
             $telefono = "";

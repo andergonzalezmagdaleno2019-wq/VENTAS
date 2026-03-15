@@ -22,6 +22,13 @@
 		$datos_empresa=$ins_venta->seleccionarDatos("Normal","empresa LIMIT 1","*",0);
 		$datos_empresa=$datos_empresa->fetch();
 
+        /* --- FORMATOS VISUALES PARA EL PDF --- */
+        $emp_tel = $datos_empresa['empresa_telefono'];
+        $emp_tel_format = (strlen($emp_tel) == 11) ? substr($emp_tel, 0, 4)."-".substr($emp_tel, 4) : $emp_tel;
+        
+        $emp_rif = $datos_empresa['empresa_rif'];
+        if(preg_match('/^[0-9]/', $emp_rif)){ $emp_rif = "J-" . $emp_rif; }
+
 		require "./code128.php";
 
 		$pdf = new PDF_Code128('P','mm','Letter');
@@ -36,11 +43,11 @@
 
 		$pdf->SetFont('Arial','',10);
 		$pdf->SetTextColor(39,39,51);
-		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","RIF: ".$datos_empresa['empresa_rif']),0,0,'L');
+		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","RIF: ".$emp_rif),0,0,'L');
 		$pdf->Ln(5);
 		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_empresa['empresa_direccion']),0,0,'L');
 		$pdf->Ln(5);
-		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Teléfono: ".$datos_empresa['empresa_telefono']),0,0,'L');
+		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Teléfono: ".$emp_tel_format),0,0,'L');
 		$pdf->Ln(5);
 		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Email: ".$datos_empresa['empresa_email']),0,0,'L');
 		$pdf->Ln(10);
@@ -80,12 +87,16 @@
 			$pdf->SetTextColor(39,39,51); $pdf->Cell(6,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Dir:'),0,0);
 			$pdf->SetTextColor(97,97,97); $pdf->Cell(109,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT","N/A"),0,0);
 		}else{
+            $cli_tel = $datos_venta['cliente_telefono'];
+            $cli_tel_format = (strlen($cli_tel) == 11) ? substr($cli_tel, 0, 4)."-".substr($cli_tel, 4) : (($cli_tel == "") ? "N/A" : $cli_tel);
+            $cli_doc = $datos_venta['cliente_tipo_documento']."-".$datos_venta['cliente_numero_documento'];
+
 			$pdf->SetFont('Arial','',10); $pdf->SetTextColor(39,39,51); $pdf->Cell(13,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Cliente:'),0,0);
 			$pdf->SetTextColor(97,97,97); $pdf->Cell(60,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_venta['cliente_nombre']." ".$datos_venta['cliente_apellido']),0,0,'L');
 			$pdf->SetTextColor(39,39,51); $pdf->Cell(8,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Doc: "),0,0,'L');
-			$pdf->SetTextColor(97,97,97); $pdf->Cell(60,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_venta['cliente_tipo_documento']." ".$datos_venta['cliente_numero_documento']),0,0,'L');
+			$pdf->SetTextColor(97,97,97); $pdf->Cell(60,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$cli_doc),0,0,'L');
 			$pdf->SetTextColor(39,39,51); $pdf->Cell(7,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Tel:'),0,0,'L');
-			$pdf->SetTextColor(97,97,97); $pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_venta['cliente_telefono']),0,0);
+			$pdf->SetTextColor(97,97,97); $pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$cli_tel_format),0,0);
 			$pdf->Ln(7);
 			$pdf->SetTextColor(39,39,51); $pdf->Cell(6,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Dir:'),0,0);
 			$pdf->SetTextColor(97,97,97); $pdf->Cell(109,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_venta['cliente_provincia'].", ".$datos_venta['cliente_ciudad'].", ".$datos_venta['cliente_direccion']),0,0);
@@ -134,7 +145,7 @@
         if($pdf->GetY() > 215){ $pdf->AddPage(); }
         $pdf->SetY(-60);
 
-        // --- CÁLCULOS DEL TOTAL EN BS (EXTRACCIÓN DE IVA PARA NO QUEBRAR LA CAJA) ---
+        // --- CÁLCULOS DEL TOTAL EN BS (EXTRACCIÓN DE IVA) ---
         $total_general_bs = $datos_venta['venta_total'] * $tasa_bcv;
         $base_imponible_bs = $total_general_bs / 1.16; // Se extrae la base
         $iva_16_bs = $total_general_bs - $base_imponible_bs; // Se calcula cuánto fue de IVA
@@ -179,3 +190,4 @@
 	}else{
         echo "Factura no encontrada";
     } 
+

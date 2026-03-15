@@ -17,6 +17,13 @@
 	$datos_empresa = $ins_reporte->seleccionarDatos("Normal","empresa LIMIT 1","*",0);
 	$datos_empresa = $datos_empresa->fetch();
 
+    /* --- FORMATOS VISUALES PARA EL PDF --- */
+    $emp_tel = $datos_empresa['empresa_telefono'];
+    $emp_tel_format = (strlen($emp_tel) == 11) ? substr($emp_tel, 0, 4)."-".substr($emp_tel, 4) : $emp_tel;
+    
+    $emp_rif = $datos_empresa['empresa_rif'];
+    if(preg_match('/^[0-9]/', $emp_rif)){ $emp_rif = "J-" . $emp_rif; }
+
 	require "./code128.php";
 	$pdf = new PDF_Code128('P','mm','Letter');
 	$pdf->SetMargins(15,15,15);
@@ -32,9 +39,9 @@
 	$pdf->SetTextColor(39,39,51);
 	$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1",$datos_empresa['empresa_direccion']),0,0,'L');
 	$pdf->Ln(5);
-	$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","Teléfono: ".$datos_empresa['empresa_telefono']),0,0,'L');
+	$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","Teléfono: ".$emp_tel_format),0,0,'L');
 	$pdf->Ln(5);
-    $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","RIF: ".$datos_empresa['empresa_rif']),0,0,'L');
+    $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","RIF: ".$emp_rif),0,0,'L');
     $pdf->Ln(15);
 
     // Título del Reporte

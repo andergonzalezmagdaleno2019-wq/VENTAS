@@ -25,6 +25,11 @@
 		    	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El NOMBRE no coincide con el formato solicitado","icono"=>"error"]; return json_encode($alerta); exit();
 		    }
 
+            # VALIDACIÓN: El nombre de la empresa debe tener letras #
+            if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre de la Empresa no puede ser solo números.", "icono" => "error"]; return json_encode($alerta); exit();
+            }
+
             if($rif!=""){
                 if($this->verificarDatos("[a-zA-Z0-9\- ]{5,40}",$rif)){
                     $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El RIF no coincide con el formato solicitado","icono"=>"error"]; return json_encode($alerta); exit();
@@ -126,6 +131,11 @@
 		    if($this->verificarDatos("[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ., ]{4,85}",$nombre)){
 		    	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El NOMBRE no coincide con el formato solicitado","icono"=>"error"]; return json_encode($alerta); exit();
 		    }
+
+            # VALIDACIÓN: El nombre de la empresa debe tener letras #
+            if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
+                $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre de la Empresa no puede ser solo números.", "icono" => "error"]; return json_encode($alerta); exit();
+            }
 
             if($rif!=""){
                 if($this->verificarDatos("[a-zA-Z0-9\- ]{5,40}",$rif)){
