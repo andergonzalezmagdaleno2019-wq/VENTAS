@@ -63,14 +63,7 @@
                     <input class="input" type="text" name="proveedor_direccion" maxlength="200" autocomplete="off">
                 </div>
             </div>
-        </div>
-            <div class="column">
-                <div class="control">
-                    <label>Dirección</label>
-                    <input class="input" type="text" name="proveedor_direccion" maxlength="200" autocomplete="off">
-                </div>
-            </div>
-        </div>
+            
 
         <p class="has-text-centered">
             <button type="reset" class="button is-link is-light is-rounded"><i class="fas fa-paint-roller"></i> &nbsp; Limpiar</button>
