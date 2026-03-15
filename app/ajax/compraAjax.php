@@ -46,9 +46,7 @@
         if($_POST['modulo_compra'] == "eliminar_compra"){
             echo $ins_compra->eliminarCompraControlador();
         }
-        if($_POST['modulo_compra'] == "vaciar_anuladas"){
-            echo $ins_compra->vaciarAnuladasControlador();
-        }
+       
 
     }else{
         session_destroy();
