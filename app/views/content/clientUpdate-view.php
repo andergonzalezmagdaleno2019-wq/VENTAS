@@ -95,29 +95,25 @@
 				</div>
 			</div>
 			<div class="columns">
-				<div class="column">
+				<div class="column is-4">
 					<div class="control">
 						<label>Teléfono</label>
 						<div class="field has-addons">
 							<p class="control">
 								<span class="select">
 									<select name="cliente_telefono_codigo">
-										<?php
-										// Esto marcará automáticamente el código que ya tiene el cliente (ej. 0414)
-										echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, $prefijo_db);
-										?>
+                                        <option value="">Cód.</option>
+										<?php echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, $prefijo_db); ?>
 									</select>
 								</span>
 							</p>
 							<p class="control is-expanded">
-								<input class="input" type="text" name="cliente_telefono"
-									value="<?php echo $numero_db; ?>"
-									pattern="[0-9]{7}" maxlength="7">
+								<input class="input" type="text" name="cliente_telefono" value="<?php echo $numero_db; ?>" pattern="[0-9]{7}" maxlength="7" placeholder="1234567" autocomplete="off">
 							</p>
 						</div>
 					</div>
 				</div>
-				<div class="column">
+				<div class="column is-8">
 					<div class="control">
 						<label>Email</label>
 						<input class="input" type="email" name="cliente_email" value="<?php echo $datos['cliente_email']; ?>" maxlength="70">

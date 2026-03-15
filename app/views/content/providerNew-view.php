@@ -39,28 +39,31 @@
 
         </div>
         <div class="columns">
-            <div class="column">
+            <div class="column is-4">
                 <div class="control">
-                    <label>Teléfono de contacto del proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
+                    <label>Teléfono de contacto <?php echo CAMPO_OBLIGATORIO; ?></label>
                     <div class="field has-addons">
                         <p class="control">
-                            <span class="select" id="cont-cod-prov">
-                                <select name="proveedor_telefono_codigo" id="prov_cod_tel" required>
+                            <span class="select">
+                                <select name="proveedor_telefono_codigo" required>
                                     <option value="" selected>Cód.</option>
-                                    <?php
-                                        echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO");
-                                    ?>
+                                    <?php echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO"); ?>
                                 </select>
                             </span>
                         </p>
                         <p class="control is-expanded">
-                            <input class="input" type="text" name="proveedor_telefono"
-                                pattern="[0-9]{7}" maxlength="7"
-                                placeholder="1234567" required autocomplete="off">
+                            <input class="input" type="text" name="proveedor_telefono" pattern="[0-9]{7}" maxlength="7" placeholder="1234567" required autocomplete="off">
                         </p>
                     </div>
                 </div>
             </div>
+            <div class="column is-8">
+                <div class="control">
+                    <label>Dirección</label>
+                    <input class="input" type="text" name="proveedor_direccion" maxlength="200" autocomplete="off">
+                </div>
+            </div>
+        </div>
             <div class="column">
                 <div class="control">
                     <label>Dirección</label>

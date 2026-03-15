@@ -67,15 +67,15 @@
         <div class="columns">
             <div class="column">
                 <div class="control">
-                    <label>Costo de Compra (Neto) $ <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="producto_costo" id="producto_costo_up" value="<?php echo $datos['producto_costo']; ?>" pattern="[0-9.]{1,25}" maxlength="25" required autocomplete="off">
+                    <label>Costo de Compra (Neto) $</label>
+                    <input class="input is-readonly" type="text" name="producto_costo" id="producto_costo_up" value="<?php echo $datos['producto_costo']; ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed; border-color: transparent;">
                     <p class="help is-info has-text-weight-bold" id="costo_bs_label_up">Bs. 0.00</p>
                 </div>
             </div>
             <div class="column">
                 <div class="control">
-                    <label>Precio de Venta $ <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="producto_precio" id="producto_precio_up" value="<?php echo $datos['producto_precio']; ?>" pattern="[0-9.]{1,25}" maxlength="25" required >
+                    <label>Precio de Venta $</label>
+                    <input class="input is-readonly" type="text" name="producto_precio" id="producto_precio_up" value="<?php echo $datos['producto_precio']; ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed; border-color: transparent;">
                     <p class="help is-link has-text-weight-bold" id="precio_bs_label_up">Bs. 0.00</p>
                 </div>
             </div>
@@ -89,6 +89,15 @@
                             ?>
                         </select>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="columns">
+            <div class="column is-full mb-4">
+                <div class="notification is-link is-light" style="border-left: 5px solid #3273dc; padding: 10px;">
+                    <i class="fas fa-lock fa-lg"></i> &nbsp; 
+                    <strong>Aviso:</strong> El Costo y el Precio de Venta están bloqueados por seguridad. Su valor solo se actualizará automáticamente al recibir mercancía en el módulo de <strong>Compras</strong>.
                 </div>
             </div>
         </div>
@@ -108,35 +117,37 @@
             </div>
         </div>
 
-        <div class="column">
-            <label>Categoría / Subcategoría <?php echo CAMPO_OBLIGATORIO; ?></label>
-            <div class="select is-fullwidth">
-                <select name="producto_categoria" required>
-                    <?php
-                        $insCategory = new app\controllers\categoryController();
-                        $datos_cat = $insCategory->seleccionarDatos("Normal", "categoria", "*", "ORDER BY categoria_nombre ASC");
-                        $todas = $datos_cat->fetchAll();
+        <div class="columns">
+            <div class="column is-full">
+                <label>Categoría / Subcategoría <?php echo CAMPO_OBLIGATORIO; ?></label>
+                <div class="select is-fullwidth">
+                    <select name="producto_categoria" required>
+                        <?php
+                            $insCategory = new app\controllers\categoryController();
+                            $datos_cat = $insCategory->seleccionarDatos("Normal", "categoria", "*", "ORDER BY categoria_nombre ASC");
+                            $todas = $datos_cat->fetchAll();
 
-                        foreach($todas as $p){
-                            if($p['categoria_padre_id'] == NULL || $p['categoria_padre_id'] == "" || $p['categoria_padre_id'] == "0"){
-                                echo '<optgroup label="📂 '.$p['categoria_nombre'].'">';
-                                foreach($todas as $h){
-                                    if($h['categoria_padre_id'] == $p['categoria_id']){
-                                        $seleccionado = ($h['categoria_id'] == $datos['categoria_id']) ? 'selected=""' : '';
-                                        $texto_actual = ($h['categoria_id'] == $datos['categoria_id']) ? ' (Actual)' : '';
-                                        echo '<option value="'.$h['categoria_id'].'" '.$seleccionado.'>'.$h['categoria_nombre'].$texto_actual.'</option>';
+                            foreach($todas as $p){
+                                if($p['categoria_padre_id'] == NULL || $p['categoria_padre_id'] == "" || $p['categoria_padre_id'] == "0"){
+                                    echo '<optgroup label="📂 '.$p['categoria_nombre'].'">';
+                                    foreach($todas as $h){
+                                        if($h['categoria_padre_id'] == $p['categoria_id']){
+                                            $seleccionado = ($h['categoria_id'] == $datos['categoria_id']) ? 'selected=""' : '';
+                                            $texto_actual = ($h['categoria_id'] == $datos['categoria_id']) ? ' (Actual)' : '';
+                                            echo '<option value="'.$h['categoria_id'].'" '.$seleccionado.'>'.$h['categoria_nombre'].$texto_actual.'</option>';
+                                        }
                                     }
+                                    echo '</optgroup>';
                                 }
-                                echo '</optgroup>';
                             }
-                        }
-                    ?>
-                </select>
+                        ?>
+                    </select>
+                </div>
             </div>
         </div>
 
         <p class="has-text-centered mt-5">
-            <button type="submit" class="button is-success is-rounded"><i class="fas fa-sync-alt"></i> &nbsp; Actualizar</button>
+            <button type="submit" class="button is-success is-rounded"><i class="fas fa-sync-alt"></i> &nbsp; Actualizar Datos</button>
         </p>
     </form>
     
@@ -149,10 +160,9 @@
 
         function calcularPrecioUp() {
             let costo = parseFloat(inputCostoUp.value);
-            if (!isNaN(costo)) {
-                let ganancia = costo * 0.20;
-                let precioFinal = costo + ganancia;
-                
+            let precioFinal = parseFloat(inputPrecioUp.value);
+            
+            if (!isNaN(costo) && !isNaN(precioFinal)) {
                 if(tasa_bcv > 0){
                     let formatBs = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     costoBsLabelUp.innerText = "Bs. " + formatBs.format(costo * tasa_bcv);
@@ -161,23 +171,10 @@
                     costoBsLabelUp.innerText = "Sin conexión BCV";
                     precioBsLabelUp.innerText = "Sin conexión BCV";
                 }
-            } else {
-                costoBsLabelUp.innerText = "Bs. 0.00";
-                precioBsLabelUp.innerText = "Bs. 0.00";
             }
         }
 
-        inputCostoUp.addEventListener('input', function() {
-            let costo = parseFloat(this.value);
-            if(!isNaN(costo)){
-                let ganancia = costo * 0.20;
-                inputPrecioUp.value = (costo + ganancia).toFixed(2);
-            } else {
-                inputPrecioUp.value = "0.00";
-            }
-            calcularPrecioUp();
-        });
-
+        // Eliminamos el evento 'input' porque los campos ya no se pueden editar manualmente
         document.addEventListener('DOMContentLoaded', calcularPrecioUp);
     </script>
     

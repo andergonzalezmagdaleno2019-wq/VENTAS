@@ -41,11 +41,29 @@
 		  	</div>
 		</div>
 
+		<?php
+            /* Lógica para picar el teléfono guardado del proveedor */
+            $tel_db = isset($datos['proveedor_telefono']) ? $datos['proveedor_telefono'] : "";
+            $prefijo_prov = ($tel_db != "") ? substr($tel_db, 0, 4) : "";
+            $numero_prov = ($tel_db != "") ? substr($tel_db, 4) : "";
+        ?>
 		<div class="columns">
             <div class="column is-4">
 		    	<div class="control">
 					<label>Teléfono <?php echo CAMPO_OBLIGATORIO; ?></label>
-				  	<input class="input" type="text" name="proveedor_telefono" value="<?php echo isset($datos['proveedor_telefono']) ? $datos['proveedor_telefono'] : ''; ?>" pattern="[0-9()+]{8,20}" maxlength="20" required autocomplete="off">
+                    <div class="field has-addons">
+                        <p class="control">
+                            <span class="select">
+                                <select name="proveedor_telefono_codigo" required>
+                                    <option value="">Cód.</option>
+                                    <?php echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, $prefijo_prov); ?>
+                                </select>
+                            </span>
+                        </p>
+                        <p class="control is-expanded">
+                            <input class="input" type="text" name="proveedor_telefono" value="<?php echo $numero_prov; ?>" pattern="[0-9]{7}" maxlength="7" placeholder="1234567" required autocomplete="off">
+                        </p>
+                    </div>
 				</div>
 		  	</div>
 		  	<div class="column is-8">

@@ -68,29 +68,25 @@
 			</div>
 		</div>
 		<div class="columns">
-			<div class="column">
+			<div class="column is-4">
 				<div class="control">
 					<label>Teléfono <?php echo CAMPO_OBLIGATORIO; ?></label>
 					<div class="field has-addons">
 						<p class="control">
-							<span class="select" id="contenedor-cod-tel">
-								<select name="cliente_telefono_codigo" id="cliente_telefono_codigo" required>
+							<span class="select">
+								<select name="cliente_telefono_codigo" required>
 									<option value="" selected>Cód.</option>
-									<?php
-									echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO");
-									?>
+									<?php echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO"); ?>
 								</select>
 							</span>
 						</p>
 						<p class="control is-expanded">
-							<input class="input" type="text" name="cliente_telefono"
-								pattern="[0-9]{7}" maxlength="7"
-								placeholder="1234567" required>
+							<input class="input" type="text" name="cliente_telefono" pattern="[0-9]{7}" maxlength="7" placeholder="1234567" required autocomplete="off">
 						</p>
 					</div>
 				</div>
 			</div>
-			<div class="column">
+			<div class="column is-8">
 				<div class="control">
 					<label>Email <?php echo CAMPO_OBLIGATORIO; ?></label>
 					<input class="input" type="email" name="cliente_email" maxlength="70" required>
