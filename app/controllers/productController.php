@@ -10,135 +10,72 @@ class productController extends mainModel
     /*----------  Controlador registrar producto  ----------*/
     public function registrarProductoControlador()
     {
-
         $codigo = $this->limpiarCadena($_POST['producto_codigo']);
         $nombre = $this->limpiarCadena($_POST['producto_nombre']);
         $marca = $this->limpiarCadena($_POST['producto_marca']);
         $modelo = $this->limpiarCadena($_POST['producto_modelo']);
 
-        $precio = $this->limpiarCadena($_POST['producto_precio']);
-        $costo = $this->limpiarCadena($_POST['producto_costo']);
-
-        // Ya no recibimos stock por POST, definimos 0 por defecto
+        // FORZAMOS LOS VALORES FINANCIEROS A CERO (Se llenarán por Compras)
+        $precio = "0.00";
+        $costo = "0.00";
         $stock = 0; 
+
         $stock_min = $this->limpiarCadena($_POST['producto_stock_min']);
         $stock_max = $this->limpiarCadena($_POST['producto_stock_max']);
-
         $categoria = $this->limpiarCadena($_POST['producto_categoria']);
         $unidad = $this->limpiarCadena($_POST['producto_unidad']);
 
         /*---------- NUEVAS VALIDACIONES DE INTEGRIDAD ----------*/
-        # Validando Código de Barras (Solo números, máx 13) #
+        # Validando Código de Barras #
         if ($this->verificarDatos("[0-9]{1,13}", $codigo)) {
             $alerta = ["tipo" => "simple", "titulo" => "Error en Código", "texto" => "El código de barras solo permite números (máx. 13)", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
+            return json_encode($alerta); exit();
         }
 
 		# Validando que el nombre no sea solo números #
         if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
-            $alerta = [
-                "tipo" => "simple", 
-                "titulo" => "Nombre Inválido", 
-                "texto" => "El nombre del producto debe contener  letras (no puede ser solo números)", 
-                "icono" => "error"
-            ];
-            return json_encode($alerta);
-            exit();
+            $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre del producto debe contener letras (no puede ser solo números)", "icono" => "error"];
+            return json_encode($alerta); exit();
         }
 
-        # Validando Costo y Precio (Números con punto decimal) #
-        if ($this->verificarDatos("[0-9.]{1,25}", $costo)) {
-            $alerta = ["tipo" => "simple", "titulo" => "Error en Costo", "texto" => "El costo de compra no tiene un formato válido", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
-        }
-
-        if ($this->verificarDatos("[0-9.]{1,25}", $precio)) {
-            $alerta = ["tipo" => "simple", "titulo" => "Error en Precio", "texto" => "El precio de venta no tiene un formato válido", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
-        }
-
-        // Se quitó $stock de la validación de campos vacíos
-        if ($codigo == "" || $nombre == "" || $precio == "" || $categoria == "" || $unidad == "" || $costo == "" || $stock_min ==  "" || $stock_max == "") {
-            $alerta = ["tipo" => "simple", "titulo" => "Ocurrió un error inesperado", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
-        }
-
-        if ((float)$costo <= 0 || (float)$precio <= 0) {
-            $alerta = [
-                "tipo" => "simple", 
-                "titulo" => "Error de Precio/Costo", 
-                "texto" => "El costo de compra y el precio de venta deben ser mayores a 0", 
-                "icono" => "error"
-            ];
-            return json_encode($alerta);
-            exit();
+        if ($codigo == "" || $nombre == "" || $categoria == "" || $unidad == "" || $stock_min ==  "" || $stock_max == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No has llenado todos los campos que son obligatorios", "icono" => "error"];
+            return json_encode($alerta); exit();
         }
 
         /*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
         if ((int)$stock_max <= 0) {
-            $alerta = [
-                "tipo" => "simple", 
-                "titulo" => "Límite de Stock Inválido", 
-                "texto" => "El Stock Máximo (Límite) debe ser mayor a 0", 
-                "icono" => "error"
-            ];
-            return json_encode($alerta);
-            exit();
+            $alerta = ["tipo" => "simple", "titulo" => "Límite Inválido", "texto" => "El Stock Máximo (Límite) debe ser mayor a 0", "icono" => "error"];
+            return json_encode($alerta); exit();
         }
 
         if ((int)$stock_min >= (int)$stock_max) {
-            $alerta = [
-                "tipo" => "simple", 
-                "titulo" => "Lógica de Stock Incorrecta", 
-                "texto" => "El Stock Mínimo (Alerta) no puede ser mayor o igual al Stock Máximo", 
-                "icono" => "error"
-            ];
-            return json_encode($alerta);
-            exit();
+            $alerta = ["tipo" => "simple", "titulo" => "Lógica Incorrecta", "texto" => "El Stock Mínimo (Alerta) no puede ser mayor o igual al Stock Máximo", "icono" => "error"];
+            return json_encode($alerta); exit();
         }
 
         $check_codigo = $this->ejecutarConsulta("SELECT producto_codigo FROM producto WHERE producto_codigo='$codigo'");
         if ($check_codigo->rowCount() > 0) {
-            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El código ya existe", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
+            $alerta = ["tipo" => "simple", "titulo" => "Código Duplicado", "texto" => "El código de barras ya existe asignado a otro producto.", "icono" => "error"];
+            return json_encode($alerta); exit();
         }
 
         /*---------- PROCESAMIENTO DE IMAGEN ----------*/
         $img_dir = "../views/productos/";
         $foto = "";
         if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['name'] != "" && $_FILES['producto_foto']['size'] > 0) {
-            if (!file_exists($img_dir)) {
-                if (!mkdir($img_dir, 0777)) {
-                    $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Error al crear directorio", "icono" => "error"];
-                    return json_encode($alerta);
-                    exit();
-                }
-            }
+            if (!file_exists($img_dir)) { mkdir($img_dir, 0777); }
             if (mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/jpeg" && mime_content_type($_FILES['producto_foto']['tmp_name']) != "image/png") {
                 $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Formato de imagen no permitido", "icono" => "error"];
-                return json_encode($alerta);
-                exit();
+                return json_encode($alerta); exit();
             }
             $foto = str_ireplace(" ", "_", $nombre) . "_" . rand(0, 100);
             switch (mime_content_type($_FILES['producto_foto']['tmp_name'])) {
-                case 'image/jpeg':
-                    $foto = $foto . ".jpg";
-                    break;
-                case 'image/png':
-                    $foto = $foto . ".png";
-                    break;
+                case 'image/jpeg': $foto = $foto . ".jpg"; break;
+                case 'image/png': $foto = $foto . ".png"; break;
             }
             chmod($img_dir, 0777);
-            if (!move_uploaded_file($_FILES['producto_foto']['tmp_name'], $img_dir . $foto)) {
-                $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo subir la imagen", "icono" => "error"];
-                return json_encode($alerta);
-                exit();
-            }
+            move_uploaded_file($_FILES['producto_foto']['tmp_name'], $img_dir . $foto);
         }
 
         $producto_datos_reg = [
@@ -160,14 +97,11 @@ class productController extends mainModel
         $registrar_producto = $this->guardarDatos("producto", $producto_datos_reg);
 
         if ($registrar_producto->rowCount() == 1) {
-            $this->guardarBitacora("Productos", "Registro", "Se registró el producto: " . $nombre . " (Inicia con stock 0)");
-            $alerta = ["tipo" => "redireccionar", "titulo" => "Éxito", "texto" => "Producto registrado con éxito (Stock inicial: 0)", "icono" => "success", "url" => APP_URL."productList/"];
+            $this->guardarBitacora("Productos", "Registro", "Se registró en catálogo maestro: " . $nombre);
+            $alerta = ["tipo" => "redireccionar", "titulo" => "Catálogo Actualizado", "texto" => "Producto registrado. Costo y Stock en 0 hasta procesar su primera Orden de Compra.", "icono" => "success", "url" => APP_URL."productList/"];
         } else {
-            if (is_file($img_dir . $foto)) {
-                chmod($img_dir . $foto, 0777);
-                unlink($img_dir . $foto);
-            }
-            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar", "icono" => "error"];
+            if (is_file($img_dir . $foto)) { unlink($img_dir . $foto); }
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar en la base de datos.", "icono" => "error"];
         }
         return json_encode($alerta);
     }
@@ -427,30 +361,21 @@ class productController extends mainModel
             exit();
         }
 
-        # Validando Costo y Precio #
-        if ($this->verificarDatos("[0-9.]{1,25}", $costo)) {
-            $alerta = ["tipo" => "simple", "titulo" => "Error en Costo", "texto" => "El costo de compra no tiene un formato válido", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
+       if ($this->verificarDatos("[0-9.]{1,25}", $costo)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Costo", "texto" => "El costo de compra no tiene un formato válido", "icono" => "error"]; return json_encode($alerta); exit();
         }
 
         if ($this->verificarDatos("[0-9.]{1,25}", $precio)) {
-            $alerta = ["tipo" => "simple", "titulo" => "Error en Precio", "texto" => "El precio de venta no tiene un formato válido", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
+            $alerta = ["tipo" => "simple", "titulo" => "Error en Precio", "texto" => "El precio de venta no tiene un formato válido", "icono" => "error"]; return json_encode($alerta); exit();
         }
 
-        // Se quitó $stock de la validación de vacíos
         if ($codigo == "" || $nombre == "" || $precio == "" || $categoria == "" || $unidad == "" || $costo == "") {
-            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Faltan campos obligatorios", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Faltan campos obligatorios", "icono" => "error"]; return json_encode($alerta); exit();
         }
 
-        if ((float)$costo <= 0 || (float)$precio <= 0) {
-            $alerta = ["tipo" => "simple", "titulo" => "Error de Precio/Costo", "texto" => "El costo y precio deben ser mayores a 0", "icono" => "error"];
-            return json_encode($alerta);
-            exit();
+        /* CORRECCIÓN: Permitimos que costo y precio sean 0 (si aún no se ha comprado), pero nunca negativos */
+        if ((float)$costo < 0 || (float)$precio < 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error Financiero", "texto" => "El costo y precio no pueden ser números negativos.", "icono" => "error"]; return json_encode($alerta); exit();
         }
 
         /*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
