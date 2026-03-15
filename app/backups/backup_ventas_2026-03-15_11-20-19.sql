@@ -291,6 +291,8 @@ INSERT INTO rol VALUES
 
 CREATE TABLE `usuario` (
   `usuario_id` int(7) NOT NULL AUTO_INCREMENT,
+  `usuario_tipo_documento` varchar(7) NOT NULL DEFAULT 'V',
+  `usuario_dni` varchar(30) NOT NULL DEFAULT '0',
   `usuario_nombre` varchar(50) NOT NULL,
   `usuario_apellido` varchar(50) NOT NULL,
   `usuario_email` varchar(50) NOT NULL,
@@ -305,11 +307,12 @@ CREATE TABLE `usuario` (
   KEY `fk_usuario_rol` (`rol_id`),
   CONSTRAINT `fk_usuario_caja` FOREIGN KEY (`caja_id`) REFERENCES `caja` (`caja_id`),
   CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`rol_id`) REFERENCES `rol` (`rol_id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 
 INSERT INTO usuario VALUES
-("1","Administrador","Principal","Administrador@gmail.com","Administrador","$2y$10$Jgm6xFb5Onz/BMdIkNK2Tur8yg/NYEMb/tdnhoV7kB1BwIG4R05D2","","1","1","Activo");
+("1","V","0","Administrador","Principal","Administrador@gmail.com","Administrador","$2y$10$Jgm6xFb5Onz/BMdIkNK2Tur8yg/NYEMb/tdnhoV7kB1BwIG4R05D2","","1","1","Activo"),
+("2","V","31209801","Fabio","Cadenas","fabio.informatico@gmail.com","Fabio123","$2y$10$xQNJn7GW1Ds0q.DNap8IDOJTtGVviz.BScZ/G8pJTvCV98Pqq4oHi","","1","2","Activo");
 
 
 
