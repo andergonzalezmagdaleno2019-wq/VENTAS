@@ -132,6 +132,12 @@
 							</a>
 						</li>
 						<li class="full-width">
+							<a href="<?php echo APP_URL; ?>purchasePay/" class="full-width">
+								<div class="navLateral-body-cl"><i class="fas fa-file-invoice-dollar fa-fw"></i></div>
+								<div class="navLateral-body-cr">Cuentas por Pagar</div>
+							</a>
+						</li>
+						<li class="full-width">
 							<a href="<?php echo APP_URL; ?>purchaseReport/" class="full-width">
 								<div class="navLateral-body-cl"><i class="fas fa-chart-bar fa-fw"></i></div>
 								<div class="navLateral-body-cr">Reporte de compras</div>

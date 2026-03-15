@@ -96,11 +96,14 @@
                 </div>
             </div>
 
-            <p class="has-text-centered mt-4">
+            <div class="buttons is-centered mt-4">
+                <a href="<?php echo APP_URL; ?>purchaseList/" class="button is-link is-light is-rounded is-medium">
+                    <i class="fas fa-arrow-left"></i> &nbsp; Volver al Listado
+                </a>
                 <button type="submit" class="button is-success is-rounded is-medium">
                     <i class="fas fa-check-circle"></i> &nbsp; Confirmar Ingreso
                 </button>
-            </p>
+            </div>
         </form>
     </div>
 </div>

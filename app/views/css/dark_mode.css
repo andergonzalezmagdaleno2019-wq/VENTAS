@@ -679,3 +679,280 @@ body.dark-mode .button.is-link.is-light.js-modal-trigger[disabled] {
     pointer-events: none !important;
     filter: grayscale(0.5) !important;
 }
+
+/* Colores específicos para los iconos del sub-menú Cuentas por Pagar */
+
+/* Icono de Reloj para Pendientes (Amarillo/Naranja) */
+.sub-menu-options li a[href*="Pendiente"] .navLateral-body-cl i {
+    color: #ffd12d !important;
+    text-shadow: 0 0 5px rgba(255, 209, 45, 0.2);
+}
+
+/* Icono de Check para Pagadas (Verde) */
+.sub-menu-options li a[href*="Pagada"] .navLateral-body-cl i {
+    color: #48c774 !important;
+    text-shadow: 0 0 5px rgba(72, 199, 116, 0.2);
+}
+
+/* Icono de Ban para Anuladas (Rojo) */
+.sub-menu-options li a[href*="Anulada"] .navLateral-body-cl i {
+    color: #f14668 !important;
+    text-shadow: 0 0 5px rgba(241, 70, 104, 0.2);
+}
+
+/* Efecto al pasar el mouse para que el texto también tome un poco de color */
+.sub-menu-options li a:hover .navLateral-body-cr {
+    transition: color .3s ease;
+}
+
+.sub-menu-options li a[href*="Pendiente"]:hover .navLateral-body-cr { color: #ffd12d; }
+.sub-menu-options li a[href*="Pagada"]:hover .navLateral-body-cr { color: #48c774; }
+.sub-menu-options li a[href*="Anulada"]:hover .navLateral-body-cr { color: #f14668; }
+
+/* Modo oscuro - Menú lateral principal */
+.dark-mode .navLateral {
+    background-color: #1a1a1a;
+    border-right: 1px solid #2d2d2d;
+}
+
+/* Logo y título principal */
+.dark-mode .navLateral-body-logo {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border-bottom: 2px solid #3d3d3d;
+}
+
+/* Perfil de usuario */
+.dark-mode figure {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+.dark-mode .navLateral-body-cr span {
+    color: #ffffff;
+}
+
+.dark-mode .navLateral-body-cr small {
+    color: #b0b0b0;
+}
+
+/* Título de menú */
+.dark-mode .navLateral-body-tittle-menu {
+    background-color: #2d2d2d;
+    color: #4CAF50;
+    border-bottom: 2px solid #4CAF50;
+}
+
+/* Elementos del menú principal */
+.dark-mode .menu-principal > li > a {
+    color: #e0e0e0;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+.dark-mode .menu-principal > li > a:hover {
+    background-color: #333333;
+    color: #4CAF50;
+}
+
+/* Iconos del menú */
+.dark-mode .navLateral-body-cl i {
+    color: #888888;
+}
+
+.dark-mode .menu-principal > li > a:hover .navLateral-body-cl i {
+    color: #4CAF50;
+}
+
+/* Submenús */
+.dark-mode .sub-menu-options {
+    background-color: #252525;
+}
+
+.dark-mode .sub-menu-options li a {
+    color: #cccccc;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+.dark-mode .sub-menu-options li a:hover {
+    background-color: #333333;
+    color: #4CAF50;
+}
+
+/* Divisores */
+.dark-mode .divider-menu-h {
+    background-color: #3d3d3d;
+}
+
+/* Flechas de submenú */
+.dark-mode .btn-subMenu span {
+    color: #888888;
+}
+
+.dark-mode .btn-subMenu:hover span {
+    color: #4CAF50;
+}
+
+/* Botón de cerrar sesión */
+.dark-mode .btn-exit {
+    background-color: #2d2d2d;
+    color: #ff6b6b;
+}
+
+.dark-mode .btn-exit:hover {
+    background-color: #3d3d3d;
+    color: #ff4444;
+}
+
+/* Scrollbar personalizada para modo oscuro */
+.dark-mode .navLateral::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dark-mode .navLateral::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.dark-mode .navLateral::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 4px;
+}
+
+.dark-mode .navLateral::-webkit-scrollbar-thumb:hover {
+    background: #45a049;
+}
+
+/* Estilo para elementos activos */
+.dark-mode .menu-principal .active {
+    background-color: #333333;
+    border-left: 4px solid #4CAF50;
+}
+
+.dark-mode .menu-principal .active i,
+.dark-mode .menu-principal .active span {
+    color: #4CAF50;
+}
+
+/* Transiciones suaves */
+.dark-mode .navLateral,
+.dark-mode .navLateral-body-logo,
+.dark-mode .menu-principal a,
+.dark-mode .sub-menu-options a {
+    transition: all 0.3s ease;
+}
+/* --- ALERTA ROJA PARA MODO OSCURO --- */
+
+/* Estilo base para alerta de error/peligro */
+body.dark-mode .alert-danger,
+body.dark-mode .alert.is-danger,
+body.dark-mode .notification.is-danger {
+    background-color: #2d1a1a !important;  /* Rojo oscuro base */
+    border-left: 4px solid #ff4f4f !important;  /* Borde rojo brillante */
+    color: #ffb3b3 !important;  /* Texto rojo claro */
+    box-shadow: 0 2px 8px rgba(255, 79, 79, 0.15) !important;  /* Sombra roja suave */
+}
+
+/* Estilo para mensajes de error en formularios */
+body.dark-mode .help.is-danger,
+body.dark-mode .has-text-danger {
+    color: #ff7b7b !important;  /* Rojo más brillante para mensajes pequeños */
+}
+
+/* Estilo para iconos de error */
+body.dark-mode .icon.is-danger i,
+body.dark-mode .fa-exclamation-circle,
+body.dark-mode .fa-exclamation-triangle {
+    color: #ff4f4f !important;
+    filter: drop-shadow(0 0 4px rgba(255, 79, 79, 0.4)) !important;
+}
+
+/* Estilo para botones de peligro */
+body.dark-mode .button.is-danger {
+    background-color: #a83b3b !important;
+    border: none !important;
+    color: #ffffff !important;
+    transition: all 0.3s ease !important;
+}
+
+body.dark-mode .button.is-danger:hover {
+    background-color: #c44f4f !important;
+    box-shadow: 0 2px 8px rgba(168, 59, 59, 0.3) !important;
+}
+
+/* Estilo para inputs con error */
+body.dark-mode .input.is-danger,
+body.dark-mode .textarea.is-danger,
+body.dark-mode .select.is-danger select {
+    border: 2px solid #ff4f4f !important;
+    background-color: #2d1a1a !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(255, 79, 79, 0.1) !important;
+}
+
+/* Estilo para etiquetas de error */
+body.dark-mode .tag.is-danger {
+    background-color: #a83b3b !important;
+    color: #ffffff !important;
+}
+
+/* Efecto hover para filas con error en tablas */
+body.dark-mode .table tbody tr.is-danger {
+    background-color: #2d1a1a !important;
+}
+
+body.dark-mode .table tbody tr.is-danger:hover {
+    background-color: #3d2424 !important;
+}
+
+/* Alerta flotante o toast de error */
+body.dark-mode .toast.is-danger {
+    background-color: #2d1a1a !important;
+    border: 1px solid #ff4f4f !important;
+    color: #ffb3b3 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 79, 79, 0.2) !important;
+}
+
+/* Texto de error */
+body.dark-mode .has-text-danger-dark {
+    color: #ff7b7b !important;
+}
+
+/* Borde de error en cards o contenedores */
+body.dark-mode .card.is-danger,
+body.dark-mode .box.is-danger {
+    border: 2px solid #ff4f4f !important;
+    background-color: #2d1a1a !important;
+}
+
+/* Progress bar de error */
+body.dark-mode progress.is-danger::-webkit-progress-value {
+    background-color: #ff4f4f !important;
+}
+
+body.dark-mode progress.is-danger::-moz-progress-bar {
+    background-color: #ff4f4f !important;
+}
+
+/* Checkbox y radio con error */
+body.dark-mode .checkbox.is-danger,
+body.dark-mode .radio.is-danger {
+    color: #ffb3b3 !important;
+}
+
+body.dark-mode .checkbox.is-danger input:checked + .check,
+body.dark-mode .radio.is-danger input:checked + .check {
+    background-color: #ff4f4f !important;
+    border-color: #ff4f4f !important;
+}
+/* --- PARCHE PARA ELIMINAR CUALQUIER FONDO ROSA/CLARO --- */
+
+/* Forzar que todas las filas en modo oscuro tengan fondo oscuro */
+body.dark-mode tbody tr {
+    background-color: inherit !important;
+}
+
+/* Eliminar fondos claros específicos de Bulma */
+body.dark-mode .has-background-light,
+body.dark-mode .has-background-white,
+body.dark-mode .has-background-white-ter {
+    background-color: transparent !important;
+}

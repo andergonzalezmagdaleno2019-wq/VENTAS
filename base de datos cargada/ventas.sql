@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 14-03-2026 a las 05:51:03
+-- Tiempo de generación: 15-03-2026 a las 05:13:34
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -83,7 +83,10 @@ INSERT INTO `bitacora` (`bitacora_id`, `usuario_id`, `bitacora_fecha`, `bitacora
 (39, 1, '2026-03-13', '11:07:54 pm', 'Productos', 'Registro', 'Se registró el producto: Arasdfad (Inicia con stock 0)'),
 (40, 1, '2026-03-13', '11:08:08 pm', 'Productos', 'Actualización', 'Datos actualizados del producto: 1321321'),
 (41, 1, '2026-03-13', '11:23:19 pm', 'Proveedores', 'Registro', 'Se registró el proveedor: Conputodo (RIF: 71281237-2)'),
-(42, 1, '2026-03-14', '12:33:53 am', 'Productos', 'Registro', 'Se registró el producto: Laptop lenovo (Inicia con stock 0)');
+(42, 1, '2026-03-14', '12:33:53 am', 'Productos', 'Registro', 'Se registró el producto: Laptop lenovo (Inicia con stock 0)'),
+(43, 1, '2026-03-14', '05:51:20 pm', 'Seguridad', 'Inicio de Sesión', 'El usuario Administrador entró al sistema.'),
+(44, 1, '2026-03-14', '06:30:30 pm', 'Productos', 'Registro', 'Se registró el producto: Avion de guerra (Inicia con stock 0)'),
+(45, 1, '2026-03-14', '11:11:04 pm', 'Productos', 'Registro', 'Se registró el producto: Laptop gamer (Inicia con stock 0)');
 
 -- --------------------------------------------------------
 
@@ -115,26 +118,27 @@ CREATE TABLE `categoria` (
   `categoria_id` int(7) NOT NULL,
   `categoria_nombre` varchar(50) NOT NULL,
   `categoria_padre_id` int(11) DEFAULT NULL,
-  `categoria_ubicacion` varchar(150) NOT NULL
+  `categoria_ubicacion` varchar(150) NOT NULL,
+  `categoria_unidades` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 --
 -- Volcado de datos para la tabla `categoria`
 --
 
-INSERT INTO `categoria` (`categoria_id`, `categoria_nombre`, `categoria_padre_id`, `categoria_ubicacion`) VALUES
-(1, 'Computación', NULL, ''),
-(2, 'Laptops', 1, ''),
-(3, 'Monitores', 1, ''),
-(4, 'All in one', 1, ''),
-(6, 'PC de escritorio', 1, ''),
-(7, 'Impresión y oficina', NULL, ''),
-(8, 'Consumibles', 7, ''),
-(9, 'Componentes de PC', NULL, ''),
-(10, 'Unidades de almacenamiento', 9, ''),
-(11, 'Gabinetes', 9, ''),
-(12, 'Periféricos', NULL, ''),
-(13, 'Audífonos', 12, '');
+INSERT INTO `categoria` (`categoria_id`, `categoria_nombre`, `categoria_padre_id`, `categoria_ubicacion`, `categoria_unidades`) VALUES
+(1, 'Computación', NULL, '', NULL),
+(2, 'Laptops', 1, '', NULL),
+(3, 'Monitores', 1, '', NULL),
+(4, 'All in one', 1, '', NULL),
+(6, 'PC de escritorio', 1, '', NULL),
+(7, 'Impresión y oficina', NULL, '', NULL),
+(8, 'Consumibles', 7, '', NULL),
+(9, 'Componentes de PC', NULL, '', NULL),
+(10, 'Unidades de almacenamiento', 9, '', NULL),
+(11, 'Gabinetes', 9, '', NULL),
+(12, 'Periféricos', NULL, '', NULL),
+(13, 'Audífonos', 12, '', NULL);
 
 -- --------------------------------------------------------
 
@@ -177,16 +181,18 @@ CREATE TABLE `compra` (
   `usuario_id` int(7) NOT NULL,
   `proveedor_id` int(11) NOT NULL,
   `compra_estado` varchar(20) DEFAULT 'Pendiente',
-  `compra_nota_interna` text DEFAULT NULL
+  `compra_nota_interna` text DEFAULT NULL,
+  `compra_saldo_pendiente` decimal(30,2) NOT NULL,
+  `compra_estado_pago` enum('Pendiente','Parcial','Pagado') DEFAULT 'Pendiente',
+  `compra_fecha_vencimiento` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 --
 -- Volcado de datos para la tabla `compra`
 --
 
-INSERT INTO `compra` (`compra_id`, `compra_codigo`, `compra_fecha`, `compra_total`, `compra_tasa_bcv`, `usuario_id`, `proveedor_id`, `compra_estado`, `compra_nota_interna`) VALUES
-(4, 'COM-000001', '2026-03-14', 250.00, 0.00, 1, 1, 'Completado', ''),
-(5, 'COM-000005', '2026-03-14', 1440.00, 0.00, 1, 1, 'Parcial', '');
+INSERT INTO `compra` (`compra_id`, `compra_codigo`, `compra_fecha`, `compra_total`, `compra_tasa_bcv`, `usuario_id`, `proveedor_id`, `compra_estado`, `compra_nota_interna`, `compra_saldo_pendiente`, `compra_estado_pago`, `compra_fecha_vencimiento`) VALUES
+(1, 'COM-000001', '2026-03-14', 6300.00, 446.80, 1, 1, 'Parcial', '', 6300.00, 'Pendiente', '2026-03-27');
 
 -- --------------------------------------------------------
 
@@ -207,8 +213,24 @@ CREATE TABLE `compra_detalle` (
 --
 
 INSERT INTO `compra_detalle` (`compra_detalle_id`, `compra_id`, `producto_id`, `compra_detalle_cantidad`, `compra_detalle_precio`) VALUES
-(2, 4, 23, 10, 25.00),
-(3, 5, 24, 12, 120.00);
+(1, 1, 1, 9, 700.00);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `compra_pagos`
+--
+
+CREATE TABLE `compra_pagos` (
+  `pago_id` int(11) NOT NULL,
+  `compra_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `pago_fecha` date NOT NULL,
+  `pago_monto` decimal(30,2) NOT NULL,
+  `pago_metodo` enum('Efectivo','Transferencia','Divisas','Debito') NOT NULL,
+  `pago_referencia` varchar(100) DEFAULT NULL,
+  `pago_nota` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -256,38 +278,16 @@ CREATE TABLE `producto` (
   `producto_stock_max` int(10) NOT NULL DEFAULT 100,
   `producto_precio` decimal(30,2) NOT NULL,
   `producto_stock` int(25) NOT NULL,
-  `producto_unidad` varchar(100) NOT NULL
+  `producto_unidad` varchar(100) NOT NULL,
+  `producto_unidades_caja` int(10) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 --
 -- Volcado de datos para la tabla `producto`
 --
 
-INSERT INTO `producto` (`producto_id`, `producto_codigo`, `producto_nombre`, `producto_stock_total`, `producto_tipo_unidad`, `producto_precio_compra`, `producto_precio_venta`, `producto_marca`, `producto_modelo`, `producto_estado`, `producto_foto`, `categoria_id`, `producto_costo`, `producto_stock_min`, `producto_stock_max`, `producto_precio`, `producto_stock`, `producto_unidad`) VALUES
-(1, '4631283426491', 'Laptop HP 14-EP2012WM | Intel N150', 0, '', 0.00, 0.00, 'HP', 'Intel N150', 'Activo', '', 2, 210.00, 5, 100, 252.00, 10, 'Unidad'),
-(2, '0958230752183', 'Laptop HP 15-fd0095wm | Intel Core i5 12va Gen', 0, '', 0.00, 0.00, 'HP', 'Intel Core i5 12va Gen', 'Activo', '', 2, 520.00, 5, 100, 624.00, 10, 'Unidad'),
-(3, '0568057689758', 'Laptop HP 15-fc0037la | AMD Ryzen 5 7520U', 0, '', 0.00, 0.00, 'HP', 'AMD Ryzen 5 7520U', 'Activo', '', 2, 470.00, 5, 100, 564.00, 10, 'Unidad'),
-(4, '8972323789782', 'Laptop Gamer HP Victus 15-fa2013dx | Intel Core i5 13va Gen', 0, '', 0.00, 0.00, 'HP', 'Intel Core i5 13va Gen', 'Activo', '', 2, 720.00, 5, 100, 864.00, 10, 'Unidad'),
-(5, '1231293891038', 'Laptop Acer Aspire Go 15 | Intel Core i5 13va Gen', 0, '', 0.00, 0.00, 'ACER', 'Intel Core i5 13va Gen', 'Activo', '', 2, 500.00, 5, 100, 600.00, 10, 'Unidad'),
-(6, '5678956789567', 'Laptop Gamer Acer Predator Helios Neo 14 | Intel Core Ultra 7 155H', 0, '', 0.00, 0.00, 'ACER', 'Intel Core Ultra 7 155H', 'Activo', '', 2, 1460.00, 5, 100, 1752.00, 10, 'Unidad'),
-(7, '5689567577838', 'Laptop Gamer MSI Katana 15 HX B14WGK-016US | Intel Core i9 14va Gen', 0, '', 0.00, 0.00, 'MSI', 'Intel Core i9 14va Gen', 'Activo', '', 2, 2000.00, 5, 100, 2400.00, 10, 'Unidad'),
-(8, '9029419824078', 'Laptop Gamer MSI Katana 15 HX B14WGK-293US | Intel Core i7 14va Gen', 0, '', 0.00, 0.00, 'MSI', 'Intel Core i7 14va Gen', 'Activo', '', 2, 1550.00, 5, 100, 1860.00, 10, 'Unidad'),
-(9, '0976509034860', 'Laptop Gamer MSI Thin 15 B13UC | Intel Core i5 13va Gen', 0, '', 0.00, 0.00, 'MSI', 'Intel Core i5 13va Gen', 'Activo', '', 2, 730.00, 5, 100, 876.00, 10, 'Unidad'),
-(10, '1990456809809', 'Monitor MSI PRO MP243XW 24\" Full HD 100Hz Altavoces Integrados', 0, '', 0.00, 0.00, 'MSI', '24\"', 'Activo', '', 3, 110.00, 5, 100, 132.00, 10, 'Unidad'),
-(11, '9825784028740', 'All In One MSI PRO AP162T | Intel N100 (Serie N)', 0, '', 0.00, 0.00, 'MSI', 'Intel N100 (Serie N)', 'Activo', '', 4, 270.00, 5, 100, 324.00, 10, 'Unidad'),
-(12, '7897856854745', 'PC ConAstron Design Master | AMD Ryzen 7 5700 RTX 3060 12GB', 0, '', 0.00, 0.00, 'CONASTRON', 'AMD Ryzen 7 5700 RTX 3060 12GB', 'Activo', '', 6, 920.00, 5, 100, 1104.00, 10, 'Unidad'),
-(13, '0921887421789', 'HP Pavilion TP01-1247c | Intel Core i5 10ma Gen', 0, '', 0.00, 0.00, 'HP', 'Intel Core i5 10ma Gen', 'Activo', '', 6, 400.00, 5, 100, 480.00, 10, 'Unidad'),
-(14, '1031859765467', 'HP Slim Desktop S01-PF2033w | Intel Core i7 12va Gen', 0, '', 0.00, 0.00, 'HP', 'Intel Core i7 12va Gen', 'Activo', '', 6, 520.00, 5, 100, 624.00, 10, 'Unidad'),
-(15, '7979780789067', 'Tinta Original HP GT52/GT53 Colores (Cyan, Magenta, Amarillo, Negro) p', 0, '', 0.00, 0.00, 'HP', 'GT52/GT53', 'Activo', '', 8, 15.00, 5, 100, 18.00, 10, 'Unidad'),
-(16, '1340917596834', 'Pasta Térmica Gamemax TG3 de Alto Rendimiento', 0, '', 0.00, 0.00, 'GAMEMAX', 'TG3', 'Activo', '', 8, 10.00, 5, 100, 12.00, 10, 'Unidad'),
-(17, '1080971203412', 'Disco Duro Interno 3.5 Seagate BarraCuda 2TB SATA 6Gb/s 7200 RPM', 0, '', 0.00, 0.00, 'SEAGATE', 'BarraCuda', 'Activo', '', 10, 140.00, 5, 100, 168.00, 10, 'Unidad'),
-(18, '2034278573495', 'Case Gamer REDRAGON Wheeljack GC-606BK Mid-Tower', 0, '', 0.00, 0.00, 'REDRAGON', 'Wheeljack GC-606BK', 'Activo', '', 11, 100.00, 5, 100, 120.00, 10, 'Unidad'),
-(19, '2498234826394', 'Case Gamer GameMax Vista Mid-Tower Panoramic Glass Dual Chamber ARGB', 0, '', 0.00, 0.00, 'GAMEMAX', 'Vista MB / Vista White', 'Activo', '', 11, 95.00, 5, 100, 114.00, 10, 'Unidad'),
-(20, '5394729649821', 'Case Gamer GameMax Diamond COC Black Mid-Tower ARGB', 0, '', 0.00, 0.00, 'GAMEMAX', 'Diamond COC', 'Activo', '', 11, 55.00, 5, 100, 66.00, 10, 'Unidad'),
-(21, '4021947928125', 'Audífonos Argom Tech Dynamic 63 ARG-HS-0063 USB con Micrófono', 0, '', 0.00, 0.00, 'ARGOM TECH', 'Dynamic 63 (ARG-HS-0063)', 'Activo', '', 13, 20.00, 5, 100, 24.00, 10, 'Unidad'),
-(22, '2398782173109', 'Audífonos In-Ear Genius HS-M320 con Micrófono y Conector 3.5mm', 0, '', 0.00, 0.00, 'GENIUS', 'HS-M320', 'Activo', '', 13, 10.00, 5, 100, 12.00, 10, 'Unidad'),
-(23, '5234523423424', '1321321', 0, '', 0.00, 0.00, 'ASDASDA', '34131231dasd', 'Activo', '', 2, 25.00, 5, 100, 30.00, 10, 'Unidad'),
-(24, '5465467456456', 'Laptop lenovo', 0, '', 0.00, 0.00, 'LENOVO', 'I5 5600f', 'Activo', '', 2, 120.00, 5, 100, 144.00, 7, 'Unidad');
+INSERT INTO `producto` (`producto_id`, `producto_codigo`, `producto_nombre`, `producto_stock_total`, `producto_tipo_unidad`, `producto_precio_compra`, `producto_precio_venta`, `producto_marca`, `producto_modelo`, `producto_estado`, `producto_foto`, `categoria_id`, `producto_costo`, `producto_stock_min`, `producto_stock_max`, `producto_precio`, `producto_stock`, `producto_unidad`, `producto_unidades_caja`) VALUES
+(1, '2498217649872', 'Laptop gamer', 0, '', 0.00, 0.00, 'HP', 'I9 9700k', 'Activo', '', 2, 700.00, 5, 100, 840.00, 5, 'Unidad', 1);
 
 -- --------------------------------------------------------
 
@@ -333,7 +333,11 @@ INSERT INTO `recepcion` (`recepcion_id`, `compra_id`, `usuario_id`, `recepcion_f
 (2, 4, 1, '2026-03-14', NULL),
 (3, 4, 1, '2026-03-14', NULL),
 (4, 4, 1, '2026-03-14', NULL),
-(5, 5, 1, '2026-03-14', NULL);
+(5, 5, 1, '2026-03-14', NULL),
+(6, 6, 1, '2026-03-14', NULL),
+(7, 16, 1, '2026-03-14', NULL),
+(8, 16, 1, '2026-03-14', NULL),
+(9, 1, 1, '2026-03-14', NULL);
 
 -- --------------------------------------------------------
 
@@ -354,7 +358,10 @@ CREATE TABLE `recepcion_detalle` (
 
 INSERT INTO `recepcion_detalle` (`recepcion_detalle_id`, `recepcion_id`, `producto_id`, `cantidad_recibida`) VALUES
 (3, 3, 23, 10),
-(4, 5, 24, 7);
+(4, 5, 24, 7),
+(5, 6, 25, 7),
+(6, 7, 23, 9),
+(7, 9, 1, 5);
 
 -- --------------------------------------------------------
 
@@ -487,6 +494,14 @@ ALTER TABLE `compra_detalle`
   ADD KEY `fk_detalle_compra` (`compra_id`);
 
 --
+-- Indices de la tabla `compra_pagos`
+--
+ALTER TABLE `compra_pagos`
+  ADD PRIMARY KEY (`pago_id`),
+  ADD KEY `compra_id` (`compra_id`),
+  ADD KEY `usuario_id` (`usuario_id`);
+
+--
 -- Indices de la tabla `empresa`
 --
 ALTER TABLE `empresa`
@@ -561,7 +576,7 @@ ALTER TABLE `venta_detalle`
 -- AUTO_INCREMENT de la tabla `bitacora`
 --
 ALTER TABLE `bitacora`
-  MODIFY `bitacora_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+  MODIFY `bitacora_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT de la tabla `caja`
@@ -585,13 +600,19 @@ ALTER TABLE `cliente`
 -- AUTO_INCREMENT de la tabla `compra`
 --
 ALTER TABLE `compra`
-  MODIFY `compra_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `compra_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `compra_detalle`
 --
 ALTER TABLE `compra_detalle`
-  MODIFY `compra_detalle_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `compra_detalle_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `compra_pagos`
+--
+ALTER TABLE `compra_pagos`
+  MODIFY `pago_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `empresa`
@@ -603,7 +624,7 @@ ALTER TABLE `empresa`
 -- AUTO_INCREMENT de la tabla `producto`
 --
 ALTER TABLE `producto`
-  MODIFY `producto_id` int(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `producto_id` int(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `proveedor`
@@ -615,13 +636,13 @@ ALTER TABLE `proveedor`
 -- AUTO_INCREMENT de la tabla `recepcion`
 --
 ALTER TABLE `recepcion`
-  MODIFY `recepcion_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `recepcion_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `recepcion_detalle`
 --
 ALTER TABLE `recepcion_detalle`
-  MODIFY `recepcion_detalle_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `recepcion_detalle_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `rol`
@@ -670,6 +691,13 @@ ALTER TABLE `compra`
 ALTER TABLE `compra_detalle`
   ADD CONSTRAINT `compra_detalle_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`),
   ADD CONSTRAINT `fk_detalle_compra` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `compra_pagos`
+--
+ALTER TABLE `compra_pagos`
+  ADD CONSTRAINT `compra_pagos_ibfk_1` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`),
+  ADD CONSTRAINT `compra_pagos_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`);
 
 --
 -- Filtros para la tabla `producto`

@@ -69,7 +69,31 @@
 			return json_encode($alerta);
         }
 
-		/*----------  Controlador registrar compra  ----------*/
+        /*---------- Controlador eliminar producto individual del carrito ----------*/
+    public function eliminarProductoCarritoControlador(){
+        // Forzamos que el ID sea capturado correctamente
+        if(!isset($_POST['producto_id'])){
+            return json_encode([
+                "tipo" => "simple",
+                "titulo" => "Error de envío",
+                "texto" => "No se recibió el ID del producto",
+                "icono" => "error"
+            ]);
+        }
+
+        $id = $this->limpiarCadena($_POST['producto_id']);
+
+        if(isset($_SESSION['datos_compra'][$id])){
+            unset($_SESSION['datos_compra'][$id]);
+            $alerta = ["tipo"=>"recargar", "titulo"=>"Producto quitado", "texto"=>"Se eliminó de la lista", "icono"=>"success"];
+        } else {
+            // Esto nos dirá si el JS mandó un ID que no existe
+            $alerta = ["tipo"=>"simple", "titulo"=>"Error", "texto"=>"ID no encontrado: ".$id, "icono"=>"error"];
+        }
+        return json_encode($alerta);
+    }
+
+/*----------  Controlador registrar compra con Cuentas por Pagar (FastNet)  ----------*/
 public function registrarCompraControlador(){
     if(!isset($_SESSION['datos_compra']) || count($_SESSION['datos_compra'])<=0){ 
         $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error","texto"=>"No tienes productos agregados","icono"=>"error"]; 
@@ -80,23 +104,38 @@ public function registrarCompraControlador(){
     $compra_tasa_bcv = $this->limpiarCadena($_POST['compra_tasa_bcv']);
     $compra_nota = isset($_POST['compra_nota']) ? $this->limpiarCadena($_POST['compra_nota']) : "";
     
+    $fecha_vencimiento = $this->limpiarCadena($_POST['compra_fecha_vencimiento']);
+    $pago_inicial = isset($_POST['compra_pago_inicial']) ? $this->limpiarCadena($_POST['compra_pago_inicial']) : 0;
+
     if(!is_numeric($compra_tasa_bcv) || $compra_tasa_bcv == ""){ $compra_tasa_bcv = 0; }
+    if(!is_numeric($pago_inicial)){ $pago_inicial = 0; }
+    
     if($proveedor==""){ 
         $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Debe seleccionar un proveedor","icono"=>"error"]; 
         return json_encode($alerta); exit(); 
     }
 
+    if($fecha_vencimiento == ""){ $fecha_vencimiento = date("Y-m-d"); }
+
     $fecha=date("Y-m-d"); 
     $total=0;
     foreach($_SESSION['datos_compra'] as $productos){ $total+=$productos['subtotal']; }
     
-    // Generador de Código Correlativo
+    $saldo_pendiente = $total - $pago_inicial;
+
+    if($saldo_pendiente <= 0){
+        $estado_pago = "Pagado";
+    } elseif($pago_inicial > 0) {
+        $estado_pago = "Parcial";
+    } else {
+        $estado_pago = "Pendiente";
+    }
+    
     $consulta_correlativo = $this->ejecutarConsulta("SELECT MAX(compra_id) AS id_maximo FROM compra");
     $resultado_correlativo = $consulta_correlativo->fetch();
     $siguiente_numero = (int)$resultado_correlativo['id_maximo'] + 1;
     $codigo_compra = "COM-" . str_pad($siguiente_numero, 6, "0", STR_PAD_LEFT);
     
-    // Registro de la Compra con Estado 'Pendiente'
     $datos_compra_reg=[
         ["campo_nombre"=>"compra_codigo","campo_marcador"=>":Codigo","campo_valor"=>$codigo_compra],
         ["campo_nombre"=>"compra_fecha","campo_marcador"=>":Fecha","campo_valor"=>$fecha],
@@ -105,15 +144,29 @@ public function registrarCompraControlador(){
         ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
         ["campo_nombre"=>"proveedor_id","campo_marcador"=>":Proveedor","campo_valor"=>$proveedor],
         ["campo_nombre"=>"compra_estado","campo_marcador"=>":Estado","campo_valor"=>"Pendiente"],
-        ["campo_nombre"=>"compra_nota_interna","campo_marcador"=>":Nota","campo_valor"=>$compra_nota]
+        ["campo_nombre"=>"compra_nota_interna","campo_marcador"=>":Nota","campo_valor"=>$compra_nota],
+        ["campo_nombre"=>"compra_saldo_pendiente","campo_marcador"=>":Saldo","campo_valor"=>$saldo_pendiente],
+        ["campo_nombre"=>"compra_estado_pago","campo_marcador"=>":EstadoPago","campo_valor"=>$estado_pago],
+        ["campo_nombre"=>"compra_fecha_vencimiento","campo_marcador"=>":Vencimiento","campo_valor"=>$fecha_vencimiento]
     ];
 
     $registrar_compra=$this->guardarDatos("compra",$datos_compra_reg);
 
     if($registrar_compra->rowCount()==1){
-        // Obtenemos el ID de la compra
         $id_compra_p = $this->ejecutarConsulta("SELECT compra_id FROM compra WHERE compra_codigo='$codigo_compra'");
         $id_compra_p = $id_compra_p->fetch()['compra_id'];
+
+        if($pago_inicial > 0){
+            $datos_pago_inicial=[
+                ["campo_nombre"=>"compra_id","campo_marcador"=>":IdCompra","campo_valor"=>$id_compra_p],
+                ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
+                ["campo_nombre"=>"pago_fecha","campo_marcador"=>":Fecha","campo_valor"=>$fecha],
+                ["campo_nombre"=>"pago_monto","campo_marcador"=>":Monto","campo_valor"=>$pago_inicial],
+                ["campo_nombre"=>"pago_metodo","campo_marcador"=>":Metodo","campo_valor"=>"Efectivo"],
+                ["campo_nombre"=>"pago_referencia","campo_marcador"=>":Ref","campo_valor"=>"Pago inicial al registrar"]
+            ];
+            $this->guardarDatos("compra_pagos",$datos_pago_inicial);
+        }
 
         foreach($_SESSION['datos_compra'] as $detalle){
             $datos_detalle=[ 
@@ -123,53 +176,64 @@ public function registrarCompraControlador(){
                 ["campo_nombre"=>"compra_detalle_precio","campo_marcador"=>":Precio","campo_valor"=>$detalle['compra_costo']] 
             ];
             $this->guardarDatos("compra_detalle",$datos_detalle);
-            
-            // IMPORTANTE: Aquí ya NO hay UPDATE a la tabla producto.
-            // La mercancía aún no ha "entrado" físicamente.
         }
         
         unset($_SESSION['datos_compra']);
-        $alerta=["tipo"=>"recargar","titulo"=>"Orden Generada","texto"=>"La Orden de Compra $codigo_compra ha sido registrada. Pendiente por recibir mercancía.","icono"=>"success"];
+
+        // --- EL DISPARADOR AQUÍ ---
+        $alerta=[
+            "tipo"=>"confirmar",
+            "titulo"=>"Orden ".$codigo_compra." Generada",
+            "texto"=>"La compra se registró con éxito. ¿Desea imprimir el comprobante PDF ahora?",
+            "icono"=>"success",
+            "confirmButtonText" => "Sí, imprimir",
+            "cancelButtonText" => "No, después",
+            "url"=>APP_URL."app/pdf/report_purchase.php?code=".$codigo_compra
+        ];
+
     }else{ 
         $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar la orden","icono"=>"error"]; 
     }
     return json_encode($alerta);
 }
 
-        /*----------  Controlador eliminar compra (ANULAR)  ----------*/
-        public function eliminarCompraControlador(){
-            $id=$this->limpiarCadena($_POST['compra_id']);
-            
-            $check_compra=$this->ejecutarConsulta("SELECT * FROM compra WHERE compra_id='$id'");
-            if($check_compra->rowCount()<=0){ 
-                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"La compra no existe","icono"=>"error"]; 
-                return json_encode($alerta); 
-            }
-            $datos_compra=$check_compra->fetch();
+    /*---------- Controlador para Anular Compra (Antes era Eliminar) ----------*/
+    public function eliminarCompraControlador() {
+        // Recibimos el ID de la compra
+        $id = $this->limpiarCadena($_POST['compra_id']);
 
-            // Revertir el stock antes de borrar
-            $detalle = $this->ejecutarConsulta("SELECT * FROM compra_detalle WHERE compra_id='$id'");
-            $detalle = $detalle->fetchAll();
-            
-            foreach($detalle as $producto_comprado){
-                $update = $this->conectar()->prepare("UPDATE producto SET producto_stock = producto_stock - :Cantidad WHERE producto_id = :ID");
-                $update->bindValue(":Cantidad", $producto_comprado['compra_detalle_cantidad']); 
-                $update->bindValue(":ID", $producto_comprado['producto_id']); 
-                $update->execute();
-            }
-
-            // Borramos el detalle y la compra (Si usas ON DELETE CASCADE en SQL, con borrar la compra basta)
-            $this->eliminarRegistro("compra_detalle","compra_id",$id);
-            $eliminarCompra = $this->eliminarRegistro("compra","compra_id",$id);
-
-            if($eliminarCompra->rowCount()==1){ 
-                $alerta=["tipo"=>"recargar","titulo"=>"Compra anulada","texto"=>"Inventario revertido correctamente","icono"=>"success"]; 
-            }else{ 
-                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo anular la compra","icono"=>"error"]; 
-            }
-            return json_encode($alerta);
+        // 1. Verificamos que la compra exista
+        $check_compra = $this->ejecutarConsulta("SELECT * FROM compra WHERE compra_id='$id'");
+        
+        if($check_compra->rowCount() <= 0){ 
+            return json_encode([
+                "tipo" => "simple",
+                "titulo" => "Error",
+                "texto" => "La compra no existe en el sistema.",
+                "icono" => "error"
+            ]); 
         }
 
+        // 2. IMPORTANTE: En lugar de DELETE, hacemos UPDATE
+        // Esto mueve la compra a la pestaña de "Anuladas"
+        $anular = $this->ejecutarConsulta("UPDATE compra SET compra_estado='Anulada' WHERE compra_id='$id'");
+
+        if($anular->rowCount() == 1){ 
+            return json_encode([
+                "tipo" => "recargar",
+                "titulo" => "Orden Anulada",
+                "texto" => "La orden ha sido movida a la sección de Anuladas correctamente.",
+                "icono" => "success"
+            ]); 
+        } else { 
+            return json_encode([
+                "tipo" => "simple",
+                "titulo" => "Error",
+                "texto" => "No se pudo anular la orden en este momento.",
+                "icono" => "error"
+            ]); 
+        }
+    }
 /*---------- Controlador para recibir mercancía ----------*/
     public function registrarRecepcionControlador() {
         $compra_id = $this->limpiarCadena($_POST['compra_id']);
@@ -356,24 +420,42 @@ public function registrarCompraControlador(){
         $tabla .= '</tbody></table></div>';
         return $tabla;
     }
-
-/*---------- Controlador para listar compras (CON BOTONES DE ACCIÓN) ----------*/
+/*---------- Controlador para listar compras (FILTRADO POR ESTADO) ----------*/
     public function listarCompraControlador($pagina, $registros, $url, $busqueda) {
         $pagina = $this->limpiarCadena($pagina);
         $registros = $this->limpiarCadena($registros);
-        $url = APP_URL . $url . "/";
         $busqueda = $this->limpiarCadena($busqueda);
         $tabla = "";
+
+        // Separamos la URL para identificar si estamos en /Pendiente, /Pagada o /Anulada
+        $url_split = explode("/", $url);
+        $estado_view = (isset($url_split[1]) && $url_split[1] != "") ? $url_split[1] : "Pendiente";
+        
+        $url = APP_URL . $url . "/";
 
         $pagina = (isset($pagina) && $pagina > 0) ? (int) $pagina : 1;
         $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
+        // DEFINICIÓN DE FILTROS SQL
+        if(isset($busqueda) && $busqueda != ""){
+            $filtro_sql = "WHERE (c.compra_codigo LIKE '%$busqueda%' OR p.proveedor_nombre LIKE '%$busqueda%')";
+        } else {
+            if($estado_view == "Anulada"){
+                $filtro_sql = "WHERE c.compra_estado='Anulada'";
+            } elseif($estado_view == "Pagada"){
+                $filtro_sql = "WHERE c.compra_estado_pago='Pagado' AND c.compra_estado!='Anulada'";
+            } else {
+                // Por defecto: Pendientes (No pagadas y no anuladas)
+                $filtro_sql = "WHERE c.compra_estado_pago!='Pagado' AND c.compra_estado!='Anulada'";
+            }
+        }
+
         $consulta_datos = "SELECT c.*, p.proveedor_nombre, u.usuario_nombre, u.usuario_apellido 
-                        FROM compra c 
-                        INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
-                        INNER JOIN usuario u ON c.usuario_id = u.usuario_id 
-                        WHERE c.compra_codigo LIKE '%$busqueda%' OR p.proveedor_nombre LIKE '%$busqueda%'
-                        ORDER BY c.compra_id DESC LIMIT $inicio, $registros";
+                            FROM compra c 
+                            INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
+                            INNER JOIN usuario u ON c.usuario_id = u.usuario_id 
+                            $filtro_sql
+                            ORDER BY c.compra_id DESC LIMIT $inicio, $registros";
 
         $datos = $this->ejecutarConsulta($consulta_datos);
         $datos = $datos->fetchAll();
@@ -386,6 +468,7 @@ public function registrarCompraControlador(){
                             <th class="has-text-centered has-text-white">Fecha</th>
                             <th class="has-text-centered has-text-white">Proveedor</th>
                             <th class="has-text-centered has-text-white">Total</th>
+                            <th class="has-text-centered has-text-white">Saldo</th>
                             <th class="has-text-centered has-text-white">Estado</th>
                             <th class="has-text-centered has-text-white">Opciones</th>
                         </tr>
@@ -394,8 +477,23 @@ public function registrarCompraControlador(){
 
         if (count($datos) >= 1) {
             foreach ($datos as $rows) {
-                // Color del tag según estado
-                $color_estado = ($rows['compra_estado'] == "Completado") ? "is-success" : (($rows['compra_estado'] == "Parcial") ? "is-warning" : "is-info");
+                
+                // Lógica de colores basada en el estado de pago
+                if($rows['compra_estado'] == "Anulada"){
+                    $color_tag = "is-dark"; 
+                    $texto_estado = "Anulada";
+                } else {
+                    if($rows['compra_estado_pago'] == "Pagado"){
+                        $color_tag = "is-success";
+                        $texto_estado = "Pagado";
+                    } elseif($rows['compra_estado_pago'] == "Parcial"){
+                        $color_tag = "is-warning";
+                        $texto_estado = "Parcial";
+                    } else {
+                        $color_tag = "is-danger";
+                        $texto_estado = "Pendiente";
+                    }
+                }
 
                 $tabla .= '
                 <tr class="has-text-centered">
@@ -403,33 +501,278 @@ public function registrarCompraControlador(){
                     <td>' . date("d-m-Y", strtotime($rows['compra_fecha'])) . '</td>
                     <td>' . $rows['proveedor_nombre'] . '</td>
                     <td>' . MONEDA_SIMBOLO . number_format($rows['compra_total'], 2, '.', ',') . '</td>
-                    <td><span class="tag ' . $color_estado . '">' . $rows['compra_estado'] . '</span></td>
+                    <td class="has-text-weight-bold">' . MONEDA_SIMBOLO . number_format($rows['compra_saldo_pendiente'], 2, '.', ',') . '</td>
+                    <td><span class="tag ' . $color_tag . ' is-rounded">' . $texto_estado . '</span></td>
                     <td>
                         <div class="buttons is-centered">
-                            <a href="' . APP_URL . 'purchaseDetail/' . $rows['compra_id'] . '/" class="button is-info is-rounded is-small" title="Ver Detalle">
+                            <button type="button" class="button is-link is-light is-rounded is-small" onclick="verHistorialAbonos(\'' . $rows['compra_id'] . '\', \'' . $rows['compra_codigo'] . '\')" title="Ver Historial de Pagos">
+                                <i class="fas fa-history"></i>
+                            </button>
+
+                            <a href="' . APP_URL . 'purchaseDetail/' . $rows['compra_id'] . '/" class="button is-info is-rounded is-small" title="Ver Detalle Compra">
                                 <i class="fas fa-eye"></i>
-                            </a>
+                            </a>';
 
-                            <a href="' . APP_URL . 'purchaseReceptionDetail/' . $rows['compra_id'] . '/" class="button is-success is-rounded is-small" title="Recibir Mercancía">
-                                <i class="fas fa-truck-loading"></i>
-                            </a>
+                            if($rows['compra_estado'] != "Anulada"){
+                                // Botón de Recibir Mercancía
+                                $tabla .= '
+                                    <a href="' . APP_URL . 'purchaseReceptionDetail/' . $rows['compra_id'] . '/" class="button is-success is-rounded is-small" title="Recibir Mercancía">
+                                        <i class="fas fa-truck-loading"></i>
+                                    </a>';
 
-                            <button type="button" class="button is-warning is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchaseReceipt.php?id=' . $rows['compra_id'] . '\')" title="Imprimir Nota de Entrega">
-                                <i class="fas fa-file-signature"></i>
-                            </button>
+                                // --- NUEVO: BOTÓN DE ABONO (Solo si hay saldo pendiente) ---
+                                if($rows['compra_saldo_pendiente'] > 0){
+                                    $tabla .= '
+                                        <a href="' . APP_URL . 'purchasePay/' . $rows['compra_id'] . '/" class="button is-primary is-rounded is-small" title="Realizar Abono">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </a>';
+                                }
 
-                            <button type="button" class="button is-link is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/invoice.php?code=' . $rows['compra_codigo'] . '\')" title="Imprimir Factura">
-                                <i class="fas fa-print"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>';
+                                // Botones de Impresión
+                                $tabla .= '
+                                    <button type="button" class="button is-warning is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchaseReceipt.php?id=' . $rows['compra_id'] . '\')" title="Imprimir Nota de Entrega">
+                                        <i class="fas fa-file-signature"></i>
+                                    </button>
+
+                                    <button type="button" class="button is-link is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/report_purchase.php?code=' . $rows['compra_codigo'] . '\')" title="Imprimir Orden de Compra">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </button>';
+
+                                // Botón de Anular (Solo si no está pagada)
+                                if($rows['compra_estado_pago'] != "Pagado"){
+                                    $tabla .= '
+                                        <form class="FormularioAjax" action="' . APP_URL . 'app/ajax/compraAjax.php" method="POST" style="display: inline-block; margin-left: 5px;">
+                                            <input type="hidden" name="modulo_compra" value="eliminar_compra">
+                                            <input type="hidden" name="compra_id" value="' . $rows['compra_id'] . '">
+                                            <button type="submit" class="button is-danger is-rounded is-small" title="Anular Compra">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </form>';
+                                }
+                            }
+                $tabla .= '</div></td></tr>';
             }
         } else {
-            $tabla .= '<tr class="has-text-centered"><td colspan="6">No hay registros en el sistema</td></tr>';
+            $tabla .= '<tr class="has-text-centered"><td colspan="7">No hay registros en esta categoría</td></tr>';
         }
 
         $tabla .= '</tbody></table></div>';
         return $tabla;
+    }
+ /*---------- Controlador para registrar un abono ----------*/
+    public function registrarAbonoControlador(){
+        // Almacenando datos del formulario
+        $id = $this->limpiarCadena($_POST['pago_compra_id']);
+        $monto = $this->limpiarCadena($_POST['pago_monto']);
+        $metodo = $this->limpiarCadena($_POST['pago_metodo']);
+        $referencia = $this->limpiarCadena($_POST['pago_referencia']);
+        
+        // 1. Verificación de seguridad del monto
+        if($monto <= 0){
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto debe ser mayor a cero", "icono"=>"error"]);
+        }
+
+        // --- NUEVA VALIDACIÓN PARA REFERENCIA ---
+        if($referencia == "" && ($metodo == "Efectivo" || $metodo == "Divisas")){
+            $referencia = "EFECTIVO/DIVISA";
+        } elseif ($referencia == "") {
+            // Por si es transferencia y se le olvidó poner el número
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Para este método de pago la referencia es obligatoria", "icono"=>"error"]);
+        }
+
+        // 2. Consultamos el saldo actual de la compra
+        $check_compra = $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'");
+        
+        if($check_compra->rowCount() <= 0){
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"La compra no existe", "icono"=>"error"]);
+        }
+        
+        $datos = $check_compra->fetch();
+        $saldo_actual = $datos['compra_saldo_pendiente'];
+
+        // 3. Validar que no abone más de lo que debe
+        if($monto > $saldo_actual){
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto no puede superar el saldo actual ($$saldo_actual)", "icono"=>"error"]);
+        }
+
+        $nuevo_saldo = $saldo_actual - $monto;
+        $estado_pago = ($nuevo_saldo <= 0) ? "Pagado" : "Parcial";
+
+        // 4. Registrar el abono en 'compra_pagos'
+        $datos_pago = [
+            ["campo_nombre"=>"compra_id","campo_marcador"=>":Id","campo_valor"=>$id],
+            ["campo_nombre"=>"pago_monto","campo_marcador"=>":Monto","campo_valor"=>$monto],
+            ["campo_nombre"=>"pago_fecha","campo_marcador"=>":Fecha","campo_valor"=>date("Y-m-d")],
+            ["campo_nombre"=>"pago_metodo","campo_marcador"=>":Metodo","campo_valor"=>$metodo],
+            ["campo_nombre"=>"pago_referencia","campo_marcador"=>":Referencia","campo_valor"=>$referencia],
+            ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']]
+        ];
+
+        $guardar_pago = $this->guardarDatos("compra_pagos", $datos_pago);
+
+        if($guardar_pago->rowCount() >= 1){
+            // 5. ACTUALIZACIÓN CRÍTICA: Bajamos el saldo en la tabla compra
+            $datos_update_compra = [
+                ["campo_nombre"=>"compra_saldo_pendiente","campo_marcador"=>":Saldo","campo_valor"=>$nuevo_saldo],
+                ["campo_nombre"=>"compra_estado_pago","campo_marcador"=>":Estado","campo_valor"=>$estado_pago]
+            ];
+            
+            $condicion = ["condicion_campo"=>"compra_id", "condicion_marcador"=>":ID", "condicion_valor"=>$id];
+            $this->actualizarDatos("compra", $datos_update_compra, $condicion);
+
+            return json_encode([
+                "tipo"=>"recargar", 
+                "titulo"=>"¡Abono registrado!", 
+                "texto"=>"Se han abonado $$monto correctamente. Saldo actual: $$nuevo_saldo",
+                "icono"=>"success"
+            ]);
+        } else {
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"No se pudo registrar el pago en la base de datos", "icono"=>"error"]);
+        }
+    }
+
+    /*---------- Controlador para listar abonos ----------*/
+    public function listarAbonosCompra($id){
+        $id = $this->limpiarCadena($id);
+        
+        $consulta = "SELECT cp.*, u.usuario_nombre, u.usuario_apellido 
+            FROM compra_pagos cp 
+            INNER JOIN usuario u ON cp.usuario_id = u.usuario_id 
+            WHERE cp.compra_id='$id' 
+            ORDER BY cp.pago_fecha DESC";
+            
+        return $this->ejecutarConsulta($consulta);
+    }
+
+    /*---------- Controlador para generar la tabla HTML del historial ----------*/
+    public function listarAbonosCompraControlador($id){
+        $datos = $this->listarAbonosCompra($id);
+        
+        if($datos->rowCount() > 0){
+            $datos = $datos->fetchAll();
+            $tabla = '
+            <table class="table is-bordered is-striped is-narrow is-fullwidth">
+                <thead>
+                    <tr class="is-info">
+                        <th class="has-text-centered">Fecha</th>
+                        <th class="has-text-centered">Monto</th>
+                        <th class="has-text-centered">Método</th>
+                        <th class="has-text-centered">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>';
+                
+            foreach($datos as $pago){
+                $tabla .= '
+                    <tr class="has-text-centered">
+                        <td>'.date("d/m/Y", strtotime($pago['pago_fecha'])).'</td>
+                        <td class="has-text-weight-bold">$'.number_format($pago['pago_monto'], 2).'</td>
+                        <td>'.$pago['pago_metodo'].'</td>
+                        <td>
+                            <form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" style="display: inline-block;">
+                                <input type="hidden" name="modulo_compra" value="eliminar_abono">
+                                <input type="hidden" name="pago_id" value="'.$pago['pago_id'].'">
+                                <input type="hidden" name="compra_id" value="'.$id.'">
+                                <button type="submit" class="button is-danger is-outline is-small is-rounded">
+                                    <i class="far fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>';
+            }
+            $tabla .= '</tbody></table>';
+        } else {
+            $tabla = '<p class="has-text-centered">No hay abonos registrados.</p>';
+        }
+        return $tabla;
+    }
+    /*---------- Controlador para eliminar abono ----------*/
+    public function eliminarAbonoControlador(){
+        $pago_id = $this->limpiarCadena($_POST['pago_id']);
+        $compra_id = $this->limpiarCadena($_POST['compra_id']);
+
+        // 1. Obtener los datos del pago antes de borrarlo
+        $check_pago = $this->ejecutarConsulta("SELECT * FROM compra_pagos WHERE pago_id='$pago_id'");
+        
+        if($check_pago->rowCount() <= 0){
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El pago no existe", "icono"=>"error"]);
+        }
+        $datos_pago = $check_pago->fetch();
+        $monto_a_devolver = $datos_pago['pago_monto'];
+
+        // 2. Eliminar el pago
+        $eliminar = $this->ejecutarConsulta("DELETE FROM compra_pagos WHERE pago_id='$pago_id'");
+
+        if($eliminar->rowCount() == 1){
+            // 3. Recalcular saldo en la tabla compra
+            $check_compra = $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$compra_id'");
+            $datos_c = $check_compra->fetch();
+            
+            $nuevo_saldo = $datos_c['compra_saldo_pendiente'] + $monto_a_devolver;
+            $estado = ($nuevo_saldo > 0) ? "Parcial" : "Pagado";
+
+            $datos_upd = [
+                ["campo_nombre"=>"compra_saldo_pendiente","campo_marcador"=>":Saldo","campo_valor"=>$nuevo_saldo],
+                ["campo_nombre"=>"compra_estado_pago","campo_marcador"=>":Estado","campo_valor"=>$estado]
+            ];
+            $cond = ["condicion_campo"=>"compra_id", "condicion_marcador"=>":ID", "condicion_valor"=>$compra_id];
+            $this->actualizarDatos("compra", $datos_upd, $cond);
+
+            return json_encode(["tipo"=>"recargar", "titulo"=>"Abono eliminado", "texto"=>"El saldo ha sido restaurado correctamente", "icono"=>"success"]);
+        } else {
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"No se pudo eliminar el abono", "icono"=>"error"]);
+        }
+    }
+
+    /*---------- Controlador para recibir producto ----------*/
+    public function recibirProductoControlador() {
+        $compra_id = $this->limpiarCadena($_POST['compra_id']);
+        $producto_id = $this->limpiarCadena($_POST['producto_id']);
+        $cantidad_recibida = $this->limpiarCadena($_POST['cantidad_recibida']);
+
+        // 1. Actualizar el stock en la tabla producto
+        $update_stock = $this->ejecutarConsulta("UPDATE producto 
+            SET producto_stock = producto_stock + $cantidad_recibida 
+            WHERE producto_id = '$producto_id'");
+
+        if($update_stock) {
+            // 2. Opcional: Registrar en una tabla de movimientos para auditoría
+            /* $this->guardarMovimiento($producto_id, $cantidad_recibida, "Entrada por Compra", $compra_id); */
+            
+            return json_encode([
+                "tipo" => "recargar",
+                "titulo" => "Stock Actualizado",
+                "texto" => "Se han sumado $cantidad_recibida unidades al inventario.",
+                "icono" => "success"
+            ]);
+        }
+    }
+
+    /*---------- Vaciar TODAS las Anuladas (Eliminación Real) ----------*/
+    public function vaciarAnuladasControlador(){
+        // 1. Buscamos todas las compras anuladas para saber qué detalles borrar
+        $check = $this->ejecutarConsulta("SELECT compra_id FROM compra WHERE compra_estado='Anulada'");
+        
+        if($check->rowCount() > 0){
+            // Borramos detalles primero por integridad referencial
+            $this->ejecutarConsulta("DELETE FROM compra_detalle WHERE compra_id IN (SELECT compra_id FROM compra WHERE compra_estado='Anulada')");
+            
+            // Borramos las cabeceras de compra
+            $eliminar = $this->ejecutarConsulta("DELETE FROM compra WHERE compra_estado='Anulada'");
+
+            return json_encode([
+                "tipo" => "recargar",
+                "titulo" => "Papelera Vaciada",
+                "texto" => "Se eliminaron todos los registros anulados permanentemente.",
+                "icono" => "success"
+            ]);
+        } else {
+            return json_encode([
+                "tipo" => "simple",
+                "titulo" => "Aviso",
+                "texto" => "No hay compras anuladas para eliminar.",
+                "icono" => "info"
+            ]);
+        }
     }
 }

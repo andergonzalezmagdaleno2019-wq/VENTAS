@@ -16,13 +16,10 @@
 				<div class="control">
 					<label>Tipo de documento  <?php echo CAMPO_OBLIGATORIO;?></label><br>
 					<div class="select is-fullwidth">
-						<select name="usuario_tipo_documento">
+						<select name="usuario_tipo_documento" id="usuario_tipo_documento" required>
 							<option value="" selected="">Seleccione una opción</option>
 							<option value="V">1 - V</option>
 							<option value="E">2 - E</option>
-							<option value="J">3 - J</option>
-							<option value="G">4 - G</option>
-							<option value="P">5 - P</option>
 						</select>
 					</div>
 				</div>
