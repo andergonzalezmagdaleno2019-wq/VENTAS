@@ -28,7 +28,7 @@
                 <label>Tipos de producto permitidos <?php echo CAMPO_OBLIGATORIO; ?></label>
                 <div class="control mt-2">
                     <?php foreach(PRODUCTO_UNIDAD as $unidad){ ?>
-                        <label class="checkbox mr-4 has-text-weight-bold is-size-6">
+                        <label class="control mt-2 dark-mode">
                             <input type="checkbox" name="categoria_unidades[]" value="<?php echo $unidad; ?>"> <?php echo $unidad; ?>
                         </label>
                     <?php } ?>
