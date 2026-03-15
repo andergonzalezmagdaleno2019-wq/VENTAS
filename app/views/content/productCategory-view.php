@@ -1,6 +1,6 @@
 <div class="container is-fluid mb-6">
-	<h1 class="title">Productos</h1>
-	<h2 class="subtitle"><i class="fas fa-boxes fa-fw"></i> &nbsp; Productos por categoría</h2>
+    <h1 class="title">Productos</h1>
+    <h2 class="subtitle"><i class="fas fa-boxes fa-fw"></i> &nbsp; Productos por categoría</h2>
 </div>
 
 <div class="container pb-6 pt-6">
@@ -8,64 +8,137 @@
         use app\controllers\productController;
         $insProducto = new productController();
     ?>
+    <div class="columns">
         <div class="column is-one-third">
-            <h2 class="title has-text-centered">Categorías</h2>
-            <?php
-                // Obtenemos todos los datos para procesarlos manualmente
-                $datos_todas = $insProducto->seleccionarDatos("Normal","categoria","*",0);
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        <i class="fas fa-tags"></i> &nbsp; Categorías
+                    </p>
+                </header>
+                <div class="card-content" style="max-height: 450px; overflow-y: auto;">
+                    <?php
+                        // Obtenemos todos los datos para procesarlos manualmente
+                        $datos_todas = $insProducto->seleccionarDatos("Normal","categoria","*","ORDER BY categoria_nombre ASC");
 
-                if($datos_todas->rowCount() > 0){
-                    $todas = $datos_todas->fetchAll();
+                        if($datos_todas->rowCount() > 0){
+                            $todas = $datos_todas->fetchAll();
 
-                    foreach($todas as $padre){
-                        // Filtramos las Categorías Principales (Padres)
-                        if($padre['categoria_padre_id'] == NULL || $padre['categoria_padre_id'] == "0" || $padre['categoria_padre_id'] == ""){
-                            
-                            // CAMBIO AQUÍ: Usamos un <div> en lugar de un <a> para que no sea clickeable
-                            echo '<div class="button is-static is-link is-light is-fullwidth has-text-weight-bold mb-1" style="justify-content: flex-start; border: none; cursor: default;">
-                                    <i class="fas fa-folder-open"></i> &nbsp; '.$padre['categoria_nombre'].'
-                                </div>';
-
-                            // Listamos las subcategorías que dependen de este padre
-                            foreach($todas as $hijo){
-                                if($hijo['categoria_padre_id'] == $padre['categoria_id']){
-                                    // Las subcategorías SÍ mantienen el enlace <a> para filtrar productos
-                                    echo '<a href="'.APP_URL.$url[0].'/'.$hijo['categoria_id'].'/" class="button is-white is-fullwidth" style="justify-content: flex-start; padding-left: 30px; font-size: 0.9rem;">
-                                            <i class="fas fa-share fa-rotate-90"></i> &nbsp; '.$hijo['categoria_nombre'].'
-                                        </a>';
+                            foreach($todas as $p){
+                                // Filtramos las Categorías Principales (Padres)
+                                if($p['categoria_padre_id'] == NULL || $p['categoria_padre_id'] == "0" || $p['categoria_padre_id'] == ""){
+                                    
+                                    // Verificar si tiene hijos
+                                    $tiene_hijos = false;
+                                    foreach($todas as $h){
+                                        if($h['categoria_padre_id'] == $p['categoria_id']){ 
+                                            $tiene_hijos = true; 
+                                            break; 
+                                        }
+                                    }
+                                    
+                                    if($tiene_hijos) {
+                                        // Mostrar como acordeón (con hijos)
+                                        echo '<div class="mb-2">';
+                                        echo '<button class="button is-fullwidth has-text-left p-2 mb-1 acordeon-btn" style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;" onclick="toggleAcordeon(this)">
+                                                <span style="display: flex; align-items: center; width: 100%;">
+                                                    <i class="fas fa-folder-open" style="margin-right: 8px;"></i>
+                                                    <span style="flex-grow: 1; font-weight: bold;">'.mb_strtoupper($p['categoria_nombre'], 'UTF-8').'</span>
+                                                    <i class="fas fa-chevron-down acordeon-icono"></i>
+                                                </span>
+                                              </button>';
+                                        
+                                        // Contenido del acordeón (hijos)
+                                        echo '<div class="acordeon-contenido" style="display: none; padding-left: 15px;">';
+                                        foreach($todas as $h){
+                                            if($h['categoria_padre_id'] == $p['categoria_id']){
+                                                // Las subcategorías mantienen el enlace para filtrar productos
+                                                echo '<a href="'.APP_URL.$url[0].'/'.$h['categoria_id'].'/" class="button is-fullwidth is-small is-outlined is-link mb-1" style="justify-content: flex-start;">
+                                                        <i class="fas fa-arrow-right"></i> &nbsp; '.$h['categoria_nombre'].'
+                                                      </a>';
+                                            }
+                                        }
+                                        echo '</div></div>';
+                                        
+                                    } else {
+                                        // Mostrar como botón simple (sin hijos) - pero con enlace
+                                        echo '<a href="'.APP_URL.$url[0].'/'.$p['categoria_id'].'/" class="button is-fullwidth has-text-left p-2 mb-2" style="border: none; background-color: #f0f0f0; border-radius: 4px; text-decoration: none; color: inherit;">
+                                                <span style="display: flex; align-items: center;">
+                                                    <i class="fas fa-folder" style="margin-right: 8px;"></i>
+                                                    <span style="flex-grow: 1; font-weight: bold;">'.mb_strtoupper($p['categoria_nombre'], 'UTF-8').'</span>
+                                                </span>
+                                              </a>';
+                                    }
                                 }
                             }
-                            echo '<hr class="dropdown-divider">'; // Separador visual opcional entre grupos
+                        } else {
+                            echo '<p class="has-text-centered">No hay categorías registradas</p>';
                         }
-                    }
-                }else{
-                    echo '<p class="has-text-centered" >No hay categorías registradas</p>';
-                }
-            ?>
+                    ?>
+                </div>
+            </div>
         </div>
 
-        <div class="column pb-6">
+        <div class="column">
             <?php
-                $categoria_id=(isset($url[1])) ? $url[1] : 0;
+                $categoria_id = (isset($url[1])) ? $url[1] : 0;
 
-                $categoria=$insProducto->seleccionarDatos("Unico","categoria","categoria_id",$categoria_id);
-                if($categoria->rowCount()>0){
-
-                    $categoria=$categoria->fetch();
+                $categoria = $insProducto->seleccionarDatos("Unico","categoria","categoria_id",$categoria_id);
+                if($categoria->rowCount() > 0){
+                    $categoria = $categoria->fetch();
 
                     echo '
-                        <h2 class="title has-text-centered">'.$categoria['categoria_nombre'].'</h2>
-                        <p class="has-text-centered pb-6" >'.$categoria['categoria_ubicacion'].'</p>
-                    ';
-
-                    /*== EL ERROR ESTABA AQUÍ: El orden correcto es ($pagina, $registros, $url, $categoria_id, $busqueda) ==*/
-                    echo $insProducto->listarProductoControlador(isset($url[2]) ? $url[2] : 1, 10, $url[0], $categoria_id, "");
-                }else{
+                        <div class="card">
+                            <header class="card-header">
+                                <p class="card-header-title">
+                                    <i class="fas fa-folder-open"></i> &nbsp; '.$categoria['categoria_nombre'].'
+                                </p>
+                            </header>
+                            <div class="card-content">
+                                <p class="has-text-centered pb-4">'.$categoria['categoria_ubicacion'].'</p>';
+                                
+                                // Listar productos de la categoría seleccionada
+                                echo $insProducto->listarProductoControlador(
+                                    isset($url[2]) ? $url[2] : 1, 
+                                    10, 
+                                    $url[0], 
+                                    $categoria_id, 
+                                    ""
+                                );
+                    echo '  </div>
+                        </div>';
+                } else {
                     echo '
-                    <p class="has-text-centered pb-6"><i class="far fa-grin-wink fa-5x"></i></p>
-                    <h2 class="has-text-centered title" >Seleccione una categoría para empezar</h2>';
+                        <div class="card">
+                            <div class="card-content has-text-centered">
+                                <p class="pb-4"><i class="far fa-grin-wink fa-5x"></i></p>
+                                <h2 class="title is-4">Seleccione una categoría para empezar</h2>
+                                <p class="subtitle is-6">Haga clic en cualquier categoría de la izquierda para ver sus productos</p>
+                            </div>
+                        </div>';
                 }
             ?>
         </div>
     </div>
 </div>
+
+<script>
+    function toggleAcordeon(boton) {
+        let contenido = boton.nextElementSibling;
+        let icono = boton.querySelector('.acordeon-icono');
+        
+        if (contenido.style.display === 'none' || contenido.style.display === '') {
+            contenido.style.display = 'block';
+            if (icono) { 
+                icono.style.transform = 'rotate(180deg)'; 
+                icono.style.transition = 'transform 0.3s ease'; 
+            }
+        } else {
+            contenido.style.display = 'none';
+            if (icono) { 
+                icono.style.transform = 'rotate(0deg)'; 
+                icono.style.transition = 'transform 0.3s ease'; 
+            }
+        }
+    }
+</script>

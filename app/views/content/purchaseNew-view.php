@@ -156,9 +156,9 @@
                             <div class="field">
                                 <label class="label"><i class="fas fa-money-bill-wave"></i> Anticipo a Proveedor ($)</label>
                                 <div class="control">
-                                    <input class="input" type="number" step="0.01" name="compra_pago_inicial" value="0.00" min="0">
+                                    <input class="input" type="number" step="0.01" name="compra_pago_inicial" placeholder="0.00" min="0">
                                 </div>
-                                <p class="help">¿Le adelantaste dinero al proveedor?</p>
+                                <p class="help">Si se paga el total, la orden quedará como "Pagada"</p>
                             </div>
                         </div>
                         <div class="column is-4">
