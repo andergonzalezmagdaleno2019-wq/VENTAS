@@ -1,6 +1,6 @@
 -- --------------------------------------------------------
 -- Respaldo del Sistema de Ventas
--- Fecha de generación: 2026-03-15 13:55:44
+-- Fecha de generación: 2026-03-15 21:37:04
 -- --------------------------------------------------------
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -23,16 +23,18 @@ CREATE TABLE `bitacora` (
   PRIMARY KEY (`bitacora_id`),
   KEY `usuario_id` (`usuario_id`),
   CONSTRAINT `bitacora_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `bitacora`
 INSERT INTO `bitacora` VALUES
-("1", "1", "2026-03-15", "11:34:28 am", "Clientes", "Registro", "Se registró el cliente: Fabio Cadenas"),
-("2", "1", "2026-03-15", "12:35:49 pm", "Proveedores", "Registro", "Se registró el proveedor: 12121"),
-("3", "1", "2026-03-15", "12:35:53 pm", "Proveedores", "Eliminación", "Se eliminó el proveedor: 12121"),
-("4", "1", "2026-03-15", "12:43:35 pm", "Proveedores", "Registro", "Se registró el proveedor: Alexito"),
-("5", "1", "2026-03-15", "12:43:45 pm", "Proveedores", "Eliminación", "Se eliminó el proveedor: Alexito"),
-("6", "1", "2026-03-15", "01:54:56 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema.");
+("1", "1", "2026-03-15", "11:40:03 am", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("2", "1", "2026-03-15", "12:10:26 pm", "Productos", "Actualización", "Datos actualizados del producto: Laptop gamer"),
+("3", "1", "2026-03-15", "06:47:47 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("4", "1", "2026-03-15", "06:59:29 pm", "Categorías", "Registro", "Se registró la categoría: Computación"),
+("5", "1", "2026-03-15", "06:59:56 pm", "Categorías", "Registro", "Se registró la categoría: Laptops"),
+("6", "1", "2026-03-15", "07:01:59 pm", "Categorías", "Eliminación", "Se eliminó la categoría: Laptops"),
+("7", "1", "2026-03-15", "07:02:14 pm", "Categorías", "Registro", "Se registró la categoría: Laptops"),
+("8", "1", "2026-03-15", "07:02:57 pm", "Productos", "Registro", "Se registró el producto: Laptop Dell Latitude 5500 (Refurbished) | Intel Core i5 8va Gen (Inicia con stock 0)");
 
 
 -- --------------------------------------------------------
@@ -50,7 +52,7 @@ CREATE TABLE `caja` (
 
 -- Volcado de datos para la tabla `caja`
 INSERT INTO `caja` VALUES
-("1", "1", "Caja Principal", "960.00");
+("1", "1", "Caja Principal", "0.00");
 
 
 -- --------------------------------------------------------
@@ -65,22 +67,12 @@ CREATE TABLE `categoria` (
   `categoria_ubicacion` varchar(150) NOT NULL,
   `categoria_unidades` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`categoria_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `categoria`
 INSERT INTO `categoria` VALUES
-("1", "Computación", NULL, "", NULL),
-("2", "Laptops", "1", "", NULL),
-("3", "Monitores", "1", "", NULL),
-("4", "All in one", "1", "", NULL),
-("6", "PC de escritorio", "1", "", NULL),
-("7", "Impresión y oficina", NULL, "", NULL),
-("8", "Consumibles", "7", "", NULL),
-("9", "Componentes de PC", NULL, "", NULL),
-("10", "Unidades de almacenamiento", "9", "", NULL),
-("11", "Gabinetes", "9", "", NULL),
-("12", "Periféricos", NULL, "", NULL),
-("13", "Audífonos", "12", "", NULL);
+("1", "Computación", NULL, "", "Unidad"),
+("3", "Laptops", "1", "", "Unidad");
 
 
 -- --------------------------------------------------------
@@ -100,12 +92,11 @@ CREATE TABLE `cliente` (
   `cliente_telefono` varchar(20) NOT NULL,
   `cliente_email` varchar(50) NOT NULL,
   PRIMARY KEY (`cliente_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `cliente`
 INSERT INTO `cliente` VALUES
-("1", "Otro", "N/A", "Publico", "General", "N/A", "N/A", "N/A", "N/A", "N/A"),
-("2", "V", "31209801", "Fabio", "Cadenas", "Aragua", "Maracay", "Calle La Romana Número 11-B  Barrio Santa Rosaa", "04127465434", "fabio.informatico@gmail.com");
+("1", "Otro", "N/A", "Publico", "General", "N/A", "N/A", "N/A", "N/A", "N/A");
 
 
 -- --------------------------------------------------------
@@ -131,15 +122,8 @@ CREATE TABLE `compra` (
   KEY `proveedor_id` (`proveedor_id`),
   CONSTRAINT `compra_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`),
   CONSTRAINT `compra_ibfk_2` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedor` (`proveedor_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
--- Volcado de datos para la tabla `compra`
-INSERT INTO `compra` VALUES
-("1", "COM-000001", "2026-03-15", "700.00", "446.80", "1", "1", "Completado", "", "0.00", "Pagado", "2026-03-15"),
-("2", "COM-000002", "2026-03-15", "800.00", "446.80", "1", "1", "Completado", "", "0.00", "Pagado", "2026-03-15"),
-("3", "COM-000003", "2026-03-15", "800.00", "446.80", "1", "1", "Completado", "", "0.00", "Pagado", "2026-03-15"),
-("4", "COM-000004", "2026-03-15", "800.00", "446.80", "1", "1", "Completado", "", "-100.00", "Pagado", "2026-03-15"),
-("5", "COM-000005", "2026-03-15", "0.00", "446.80", "1", "1", "Pendiente", "", "0.00", "Pendiente", "2026-03-15");
 
 
 -- --------------------------------------------------------
@@ -158,15 +142,27 @@ CREATE TABLE `compra_detalle` (
   KEY `fk_detalle_compra` (`compra_id`),
   CONSTRAINT `compra_detalle_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`),
   CONSTRAINT `fk_detalle_compra` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
--- Volcado de datos para la tabla `compra_detalle`
-INSERT INTO `compra_detalle` VALUES
-("1", "1", "1", "1", "700.00"),
-("2", "2", "1", "1", "800.00"),
-("3", "3", "1", "1", "800.00"),
-("4", "4", "1", "1", "800.00"),
-("5", "5", "1", "1", "0.00");
+
+
+-- --------------------------------------------------------
+-- Estructura de tabla para la tabla `compra_factura`
+-- --------------------------------------------------------
+
+DROP TABLE IF EXISTS `compra_factura`;
+CREATE TABLE `compra_factura` (
+  `factura_id` int(11) NOT NULL AUTO_INCREMENT,
+  `compra_id` int(11) NOT NULL,
+  `factura_numero` varchar(50) NOT NULL,
+  `factura_emision` date NOT NULL,
+  `factura_vencimiento` date NOT NULL,
+  `factura_fecha_registro` datetime NOT NULL,
+  PRIMARY KEY (`factura_id`),
+  KEY `fk_factura_compra` (`compra_id`),
+  CONSTRAINT `fk_factura_compra` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 
 -- --------------------------------------------------------
@@ -177,7 +173,7 @@ DROP TABLE IF EXISTS `compra_pagos`;
 CREATE TABLE `compra_pagos` (
   `pago_id` int(11) NOT NULL AUTO_INCREMENT,
   `compra_id` int(11) NOT NULL,
-  `usuario_id` int(11) NOT NULL,
+  `usuario_id` int(7) NOT NULL,
   `pago_fecha` date NOT NULL,
   `pago_monto` decimal(30,2) NOT NULL,
   `pago_metodo` enum('Efectivo','Transferencia','Divisas','Debito','Anticipo') NOT NULL,
@@ -188,15 +184,8 @@ CREATE TABLE `compra_pagos` (
   KEY `usuario_id` (`usuario_id`),
   CONSTRAINT `compra_pagos_ibfk_1` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`),
   CONSTRAINT `compra_pagos_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Volcado de datos para la tabla `compra_pagos`
-INSERT INTO `compra_pagos` VALUES
-("1", "1", "1", "2026-03-15", "100.00", "Efectivo", "EFECTIVO/DIVISA", NULL),
-("2", "1", "1", "2026-03-15", "600.00", "Efectivo", "EFECTIVO/DIVISA", NULL),
-("3", "2", "1", "2026-03-15", "800.00", "Efectivo", "EFECTIVO/DIVISA", NULL),
-("4", "4", "1", "2026-03-15", "900.00", "Anticipo", "Pago al ordenar", NULL),
-("5", "3", "1", "2026-03-15", "800.00", "Efectivo", "EFECTIVO/DIVISA", NULL);
 
 
 -- --------------------------------------------------------
@@ -247,11 +236,8 @@ CREATE TABLE `producto` (
   PRIMARY KEY (`producto_id`),
   KEY `categoria_id` (`categoria_id`),
   CONSTRAINT `producto_ibfk_2` FOREIGN KEY (`categoria_id`) REFERENCES `categoria` (`categoria_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
--- Volcado de datos para la tabla `producto`
-INSERT INTO `producto` VALUES
-("1", "2498217649872", "Laptop gamer", "0", "", "0.00", "0.00", "HP", "I9 9700k", "Activo", "", "2", "800.00", "5", "100", "960.00", "8", "Unidad", "1");
 
 
 -- --------------------------------------------------------
@@ -266,7 +252,7 @@ CREATE TABLE `proveedor` (
   `proveedor_telefono` varchar(20) DEFAULT NULL,
   `proveedor_direccion` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`proveedor_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `proveedor`
 INSERT INTO `proveedor` VALUES
@@ -281,7 +267,7 @@ DROP TABLE IF EXISTS `recepcion`;
 CREATE TABLE `recepcion` (
   `recepcion_id` int(11) NOT NULL AUTO_INCREMENT,
   `compra_id` int(11) NOT NULL,
-  `usuario_id` int(11) NOT NULL,
+  `usuario_id` int(7) NOT NULL,
   `recepcion_fecha` date NOT NULL,
   `recepcion_nota` text DEFAULT NULL,
   PRIMARY KEY (`recepcion_id`),
@@ -289,14 +275,11 @@ CREATE TABLE `recepcion` (
   KEY `usuario_id` (`usuario_id`),
   CONSTRAINT `recepcion_ibfk_1` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`),
   CONSTRAINT `recepcion_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Volcado de datos para la tabla `recepcion`
 INSERT INTO `recepcion` VALUES
-("1", "1", "1", "2026-03-15", ""),
-("2", "2", "1", "2026-03-15", "Se subio el precio"),
-("3", "3", "1", "2026-03-15", ""),
-("4", "4", "1", "2026-03-15", "");
+("1", "1", "1", "2026-03-15", "Condición: Contado | ");
 
 
 -- --------------------------------------------------------
@@ -307,21 +290,18 @@ DROP TABLE IF EXISTS `recepcion_detalle`;
 CREATE TABLE `recepcion_detalle` (
   `recepcion_detalle_id` int(11) NOT NULL AUTO_INCREMENT,
   `recepcion_id` int(11) NOT NULL,
-  `producto_id` int(11) NOT NULL,
+  `producto_id` int(20) NOT NULL,
   `cantidad_recibida` int(11) NOT NULL,
   PRIMARY KEY (`recepcion_detalle_id`),
   KEY `recepcion_id` (`recepcion_id`),
   KEY `producto_id` (`producto_id`),
   CONSTRAINT `recepcion_detalle_ibfk_1` FOREIGN KEY (`recepcion_id`) REFERENCES `recepcion` (`recepcion_id`),
   CONSTRAINT `recepcion_detalle_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Volcado de datos para la tabla `recepcion_detalle`
 INSERT INTO `recepcion_detalle` VALUES
-("1", "1", "1", "1"),
-("2", "2", "1", "1"),
-("3", "3", "1", "1"),
-("4", "4", "1", "1");
+("1", "1", "1", "10");
 
 
 -- --------------------------------------------------------
@@ -400,11 +380,8 @@ CREATE TABLE `venta` (
   CONSTRAINT `venta_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`),
   CONSTRAINT `venta_ibfk_2` FOREIGN KEY (`cliente_id`) REFERENCES `cliente` (`cliente_id`),
   CONSTRAINT `venta_ibfk_3` FOREIGN KEY (`caja_id`) REFERENCES `caja` (`caja_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
--- Volcado de datos para la tabla `venta`
-INSERT INTO `venta` VALUES
-("1", "VEN-000001", "2026-03-15", "10:57 am", "960.00", "960.00", "0.00", "446.80", "1", "1", "1", "Efectivo", "");
 
 
 -- --------------------------------------------------------
@@ -426,11 +403,8 @@ CREATE TABLE `venta_detalle` (
   KEY `producto_id` (`producto_id`),
   CONSTRAINT `venta_detalle_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`),
   CONSTRAINT `venta_detalle_ibfk_3` FOREIGN KEY (`venta_codigo`) REFERENCES `venta` (`venta_codigo`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
--- Volcado de datos para la tabla `venta_detalle`
-INSERT INTO `venta_detalle` VALUES
-("1", "1", "800.00", "960.00", "960.00", "Laptop gamer", "VEN-000001", "1");
 
 
 -- Reactivar restricciones de llaves foráneas
