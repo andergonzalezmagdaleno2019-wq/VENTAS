@@ -63,7 +63,7 @@
 		  	<div class="column">
 		    	<div class="control">
 					<label class="label">Email</label>
-				  	<input class="input" type="email" name="empresa_email" value="<?php echo $datos['empresa_email']; ?>" maxlength="50" >
+				  	<input class="input" type="email" name="empresa_email" value="<?php echo $datos['empresa_emailKV'] ?? ''; ?>" maxlength="50" >
 				</div>
 		  	</div>
 		</div>
