@@ -45,32 +45,6 @@
             </div>
             <div class="column is-4">
                 <div class="control">
-                    <label>Tipo de Producto (Presentación) <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <div class="select is-fullwidth">
-                        <select name="producto_unidad" required>
-                            <option value="" selected="">Seleccione una opción</option>
-                            <?php echo $insLogin->generarSelect(PRODUCTO_UNIDAD, "VACIO"); ?>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="columns">
-            <div class="column is-4">
-                <div class="control">
-                    <label>Stock Mínimo (Alerta) <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="producto_stock_min" pattern="[0-9]{1,25}" maxlength="25" required value="5">
-                </div>
-            </div>
-            <div class="column is-4">
-                <div class="control">
-                    <label>Stock Máximo (Límite) <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="producto_stock_max" pattern="[0-9]{1,25}" maxlength="25" required value="100">
-                </div>
-            </div>
-            <div class="column is-4">
-                <div class="control">
                     <label>Categoría / Subcategoría <?php echo CAMPO_OBLIGATORIO; ?></label>
                     <div class="select is-fullwidth">
                         <select name="producto_categoria" required>
@@ -98,6 +72,34 @@
                     </div>
                 </div>
             </div>
+
+        </div>
+
+        <div class="columns">
+            <div class="column is-4">
+                <div class="control">
+                    <label>Stock Mínimo (Alerta) <?php echo CAMPO_OBLIGATORIO; ?></label>
+                    <input class="input" type="text" name="producto_stock_min" pattern="[0-9]{1,25}" maxlength="25" required value="5">
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="control">
+                    <label>Stock Máximo (Límite) <?php echo CAMPO_OBLIGATORIO; ?></label>
+                    <input class="input" type="text" name="producto_stock_max" pattern="[0-9]{1,25}" maxlength="25" required value="100">
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="control">
+                    <label>Tipo de Producto (Presentación) <?php echo CAMPO_OBLIGATORIO; ?></label>
+                    <div class="select is-fullwidth">
+                        <select name="producto_unidad" required>
+                            <option value="" selected="">Seleccione una opción</option>
+                            <?php echo $insLogin->generarSelect(PRODUCTO_UNIDAD, "VACIO"); ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
         </div>
 
         <div class="columns" id="div_unidades_caja" style="display: none;">

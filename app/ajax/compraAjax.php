@@ -10,6 +10,14 @@
     if(isset($_POST['modulo_compra'])){
         $insCompra = new purchaseController();
 
+        if($_POST['modulo_compra']=="registrar_factura"){
+            echo $insCompra->registrarFacturaCompraControlador();
+        }
+
+        if($_POST['modulo_compra']=="ver_historial_facturas"){
+           echo $insCompra->listarFacturaCompraControlador($_POST['compra_id']);
+        }
+        
         if($_POST['modulo_compra']=="buscar_producto"){
             echo $insCompra->buscarProductoCompraControlador();
         }

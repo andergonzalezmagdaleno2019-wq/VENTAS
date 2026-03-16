@@ -48,6 +48,52 @@
         </ul>
     </div>
 
+    <div class="modal" id="modal-factura">
+    <div class="modal-background" onclick="cerrarModalFactura()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Registrar Factura: <span id="factura_codigo_compra"></span></p>
+            <button class="delete" aria-label="close" onclick="cerrarModalFactura()"></button>
+        </header>
+        <section class="modal-card-body">
+            <form id="form-vincular-factura" autocomplete="off">
+                <input type="hidden" id="factura_compra_id" name="compra_id">
+                <input type="hidden" name="modulo_compra" value="registrar_factura">
+
+                <div class="field">
+                    <label class="label">Número de Factura</label>
+                    <div class="control">
+                        <input class="input" type="text" name="factura_numero" placeholder="Ej: FAC-0001" required>
+                    </div>
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Fecha de Emisión</label>
+                            <div class="control">
+                                <input class="input" type="date" name="factura_emision" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Fecha de Vencimiento</label>
+                            <div class="control">
+                                <input class="input" type="date" name="factura_vencimiento" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-success is-rounded" onclick="guardarFactura()">Guardar Factura</button>
+            <button class="button is-link is-rounded" onclick="cerrarModalFactura()">Cancelar</button>
+        </footer>
+    </div>
+</div>
+
     <div class="columns is-vcentered">
         <div class="column">
             <h2 class="subtitle">Buscar compra en <strong><?php echo $estado_actual; ?>s</strong></h2>
@@ -127,7 +173,7 @@
         document.getElementById('modal-historial').classList.remove('is-active');
     }
 
-    /* --- NUEVO: Ventana Emergente Inteligente para Anular --- */
+    /* --- Ventana Emergente Inteligente para Anular --- */
     function anularCompraConMotivo(id){
         Swal.fire({
             title: '¿Anular esta compra?',
@@ -164,6 +210,84 @@
             }
         });
     }
-</script>
+
+    /* --- Función para abrir el modal de factura --- */
+    function abrirModalFactura(id, codigo) {
+        document.getElementById('factura_compra_id').value = id;
+        document.getElementById('factura_codigo_compra').innerText = codigo;
+        document.getElementById('modal-factura').classList.add('is-active');
+    }
+
+    function cerrarModalFactura() {
+        document.getElementById('modal-factura').classList.remove('is-active');
+        document.getElementById('form-vincular-factura').reset();
+    }
+
+    /* --- Función para enviar los datos por AJAX --- */
+    function guardarFactura() {
+        let form = document.getElementById('form-vincular-factura');
+        let emision = form.querySelector('input[name="factura_emision"]').value;
+        let vencimiento = form.querySelector('input[name="factura_vencimiento"]').value;
+
+        /* --- Validación de fechas --- */
+        if (vencimiento < emision) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en las fechas',
+                text: 'La fecha de vencimiento no puede ser menor a la fecha de emisión.',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+
+        let datos = new FormData(form);
+
+        fetch("<?php echo APP_URL; ?>app/ajax/compraAjax.php", {
+            method: 'POST',
+            body: datos
+        })
+        .then(res => res.text()) // ← Cambia temporalmente a .text() para ver la respuesta cruda
+        .then(res => {
+            console.log('Respuesta cruda del servidor:', res); // ← Mira la consola del navegador
+            
+            try {
+                // Intenta parsear el JSON
+                let jsonRespuesta = JSON.parse(res);
+                cerrarModalFactura();
+                return alertas_ajax(jsonRespuesta);
+            } catch(e) {
+                console.error('Error al parsear JSON:', e);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error del servidor',
+                    text: 'La respuesta del servidor no es válida: ' + res.substring(0, 100),
+                    confirmButtonColor: '#3085d6'
+                });
+            }
+        });
+    }
+
+    function verHistorialFacturas(id) {
+        let datos = new FormData();
+        datos.append("modulo_compra", "ver_historial_facturas");
+        datos.append("compra_id", id);
+
+        fetch("<?php echo APP_URL; ?>app/ajax/compraAjax.php", {
+            method: 'POST',
+            body: datos
+        })
+        .then(res => res.text()) 
+        .then(res => {
+            Swal.fire({
+                title: '<i class="fas fa-file-invoice-dollar mr-2"></i> Historial de Facturas',
+                html: res, 
+                showCloseButton: true,
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido',
+                width: '700px'
+            });
+        });
+    }
+    </script>
 
 <?php include "./app/views/inc/print_invoice_script.php"; ?>

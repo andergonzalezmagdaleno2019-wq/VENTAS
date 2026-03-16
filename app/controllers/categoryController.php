@@ -52,7 +52,7 @@
                 }
                 $unidades_str = implode(",", $unidades);
             } else {
-                // Es Subcategoría: Heredamos las unidades del padre de forma silenciosa
+                // Es Subcategoría: Heredamos las unidades del padre
                 $check_padre = $this->ejecutarConsulta("SELECT categoria_unidades FROM categoria WHERE categoria_id='$padre_id'");
                 if($check_padre->rowCount() > 0){
                     $datos_padre = $check_padre->fetch();

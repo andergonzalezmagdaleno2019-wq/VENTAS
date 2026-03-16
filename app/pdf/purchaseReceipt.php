@@ -102,6 +102,23 @@
             $pdf->Ln(7);
             $pdf->SetTextColor(39,39,51); $pdf->Cell(18,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Dirección:'),0,0);
             $pdf->SetTextColor(97,97,97); $pdf->Cell(109,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_compra['proveedor_direccion']),0,0);
+            $pdf->Ln(7);
+
+            /* --- SECCIÓN NUEVA: FACTURAS DEL PROVEEDOR --- */
+            $pdf->SetTextColor(39,39,51); 
+            $pdf->SetFont('Arial','B',10);
+            $pdf->Cell(38,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Facturas Proveedor:'),0,0);
+            
+            // Consultamos los números registrados en compra_factura
+            $query_facturas = $ins_compra->ejecutarConsulta("SELECT factura_numero FROM compra_factura WHERE compra_id='$id'");
+            $facturas_lista = $query_facturas->fetchAll(PDO::FETCH_COLUMN);
+            
+            $pdf->SetFont('Arial','',10);
+            $pdf->SetTextColor(32,100,210); // Color azul distintivo
+            $texto_facturas = (count($facturas_lista) > 0) ? implode(", ", $facturas_lista) : "N/A";
+            $pdf->Cell(100,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT", $texto_facturas),0,0);
+            /* --- FIN SECCIÓN NUEVA --- */
+
             $pdf->Ln(9);
 
             // Encabezado de Tabla (CON COSTOS RECUPERADOS)
@@ -118,7 +135,6 @@
             $pdf->SetFont('Arial','',9);
             $pdf->SetTextColor(39,39,51);
 
-            // Buscamos el precio real de la compra_detalle
             $detalles = $ins_compra->ejecutarConsulta("SELECT rd.*, p.producto_nombre, p.producto_marca, p.producto_modelo, cd.compra_detalle_precio 
                 FROM recepcion_detalle rd 
                 INNER JOIN producto p ON rd.producto_id=p.producto_id 
@@ -133,7 +149,6 @@
                     $marca_modelo = trim(($item['producto_marca'] ?? "") . " " . ($item['producto_modelo'] ?? ""));
                     if($marca_modelo != ""){ $descripcion .= " - " . $marca_modelo; }
 
-                    // Obtenemos cantidades y calculamos subtotales
                     $cantidad = (isset($item['cantidad_recibida'])) ? $item['cantidad_recibida'] : 0;
                     $precio_unitario = (isset($item['compra_detalle_precio'])) ? $item['compra_detalle_precio'] : 0;
                     $subtotal_item = $cantidad * $precio_unitario;
@@ -177,7 +192,7 @@
                 $pdf->Cell(36,8,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Bs. '.number_format($total_bs, 2, ',', '.')),0,0,'R');
             }
 
-            // Espacio para firmas (Limpio)
+            // Espacio para firmas
             if($pdf->GetY() > 220){ $pdf->AddPage(); }
             
             $pdf->Ln(25);

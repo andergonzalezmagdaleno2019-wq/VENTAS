@@ -452,105 +452,293 @@
             return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Error al registrar el reintegro", "icono"=>"error"]);
         }
 
-		/*=============================================
-		=             LISTADOS Y TABLAS               =
-		=============================================*/
+            /*---------- Listar Órdenes para Recepción ----------*/
+            public function listarRecepcionesControlador($pagina, $registros, $url) {
+                $pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $url = APP_URL . $url . "/";
+                $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
-        /*---------- Listar Órdenes para Recepción ----------*/
-        public function listarRecepcionesControlador($pagina, $registros, $url) {
-            $pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $url = APP_URL . $url . "/";
-            $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
+                $datos = $this->ejecutarConsulta("SELECT c.*, p.proveedor_nombre FROM compra c INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id WHERE c.compra_estado IN ('Pendiente', 'Parcial') ORDER BY c.compra_id DESC LIMIT $inicio, $registros")->fetchAll();
 
-            $datos = $this->ejecutarConsulta("SELECT c.*, p.proveedor_nombre FROM compra c INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id WHERE c.compra_estado IN ('Pendiente', 'Parcial') ORDER BY c.compra_id DESC LIMIT $inicio, $registros")->fetchAll();
+                $tabla = '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-dark"><th class="has-text-centered has-text-white">Código</th><th class="has-text-centered has-text-white">Proveedor</th><th class="has-text-centered has-text-white">Estado Físico</th><th class="has-text-centered has-text-white">Progreso</th><th class="has-text-centered has-text-white">Acciones</th></tr></thead><tbody>';
 
-            $tabla = '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-dark"><th class="has-text-centered has-text-white">Código</th><th class="has-text-centered has-text-white">Proveedor</th><th class="has-text-centered has-text-white">Estado Físico</th><th class="has-text-centered has-text-white">Progreso</th><th class="has-text-centered has-text-white">Acciones</th></tr></thead><tbody>';
+                if (count($datos) >= 1) {
+                    foreach ($datos as $rows) {
+                        $compra_id = $rows['compra_id'];
+                        $pedido = (float) $this->ejecutarConsulta("SELECT SUM(compra_detalle_cantidad) FROM compra_detalle WHERE compra_id='$compra_id'")->fetchColumn();
+                        $recibido = (float) $this->ejecutarConsulta("SELECT SUM(rd.cantidad_recibida) FROM recepcion_detalle rd INNER JOIN recepcion r ON rd.recepcion_id=r.recepcion_id WHERE r.compra_id='$compra_id'")->fetchColumn();
+                        
+                        $porcentaje = ($pedido > 0) ? ($recibido * 100) / $pedido : 0;
+                        $color_tag = ($rows['compra_estado'] == 'Pendiente') ? 'is-info' : 'is-warning';
 
-            if (count($datos) >= 1) {
-                foreach ($datos as $rows) {
-                    $compra_id = $rows['compra_id'];
-                    $pedido = (float) $this->ejecutarConsulta("SELECT SUM(compra_detalle_cantidad) FROM compra_detalle WHERE compra_id='$compra_id'")->fetchColumn();
-                    $recibido = (float) $this->ejecutarConsulta("SELECT SUM(rd.cantidad_recibida) FROM recepcion_detalle rd INNER JOIN recepcion r ON rd.recepcion_id=r.recepcion_id WHERE r.compra_id='$compra_id'")->fetchColumn();
-                    
-                    $porcentaje = ($pedido > 0) ? ($recibido * 100) / $pedido : 0;
-                    $color_tag = ($rows['compra_estado'] == 'Pendiente') ? 'is-info' : 'is-warning';
-
-                    $tabla .= '<tr class="has-text-centered"><td>' . $rows['compra_codigo'] . '</td><td>' . $rows['proveedor_nombre'] . '</td><td><span class="tag ' . $color_tag . ' is-light">' . $rows['compra_estado'] . '</span></td><td style="vertical-align: middle;"><progress class="progress is-link is-small" value="' . $porcentaje . '" max="100">' . $porcentaje . '%</progress><small>' . $recibido . ' de ' . $pedido . ' cajas</small></td><td><a href="' . APP_URL . 'purchaseReceptionDetail/' . $compra_id . '/" class="button is-link is-rounded is-small"><i class="fas fa-boxes"></i> &nbsp; Recibir</a></td></tr>';
-                }
-            } else { $tabla .= '<tr class="has-text-centered"><td colspan="5">No hay mercancía pendiente de recibir</td></tr>'; }
-            return $tabla . '</tbody></table></div>';
-        }
-
-        /*---------- Listado Principal de Compras ----------*/
-        public function listarCompraControlador($pagina, $registros, $url, $busqueda) {
-            $pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $busqueda = $this->limpiarCadena($busqueda);
-            $url_split = explode("/", $url); $estado_view = (isset($url_split[1]) && $url_split[1] != "") ? $url_split[1] : "Pendiente";
-            $url = APP_URL . $url . "/"; $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
-
-            if(isset($busqueda) && $busqueda != ""){
-                $filtro_sql = "WHERE (c.compra_codigo LIKE '%$busqueda%' OR p.proveedor_nombre LIKE '%$busqueda%')";
-            } else {
-                if($estado_view == "Anulada"){ $filtro_sql = "WHERE c.compra_estado='Anulada'"; } 
-                elseif($estado_view == "Pagada"){ $filtro_sql = "WHERE c.compra_estado_pago='Pagado' AND c.compra_estado!='Anulada'"; } 
-                else { $filtro_sql = "WHERE c.compra_estado_pago!='Pagado' AND c.compra_estado!='Anulada'"; }
+                        $tabla .= '<tr class="has-text-centered"><td>' . $rows['compra_codigo'] . '</td><td>' . $rows['proveedor_nombre'] . '</td><td><span class="tag ' . $color_tag . ' is-light">' . $rows['compra_estado'] . '</span></td><td style="vertical-align: middle;"><progress class="progress is-link is-small" value="' . $porcentaje . '" max="100">' . $porcentaje . '%</progress><small>' . $recibido . ' de ' . $pedido . ' cajas</small></td><td><a href="' . APP_URL . 'purchaseReceptionDetail/' . $compra_id . '/" class="button is-link is-rounded is-small"><i class="fas fa-boxes"></i> &nbsp; Recibir</a></td></tr>';
+                    }
+                } else { $tabla .= '<tr class="has-text-centered"><td colspan="5">No hay mercancía pendiente de recibir</td></tr>'; }
+                return $tabla . '</tbody></table></div>';
             }
 
-            $datos = $this->ejecutarConsulta("SELECT c.*, p.proveedor_nombre FROM compra c INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id $filtro_sql ORDER BY c.compra_id DESC LIMIT $inicio, $registros")->fetchAll();
+    /*---------- Controlador Listar Compras (Versión Multifactura) ----------*/
+    public function listarCompraControlador($pagina, $registros, $url, $busqueda) {
+        $pagina = $this->limpiarCadena($pagina); 
+        $registros = $this->limpiarCadena($registros); 
+        $busqueda = $this->limpiarCadena($busqueda);
+        
+        $url_split = explode("/", $url); 
+        $estado_view = (isset($url_split[1]) && $url_split[1] != "") ? $url_split[1] : "Pendiente";
+        $url = APP_URL . $url . "/"; 
+        $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
-            $tabla = '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-dark"><th class="has-text-centered has-text-white">Código</th><th class="has-text-centered has-text-white">Proveedor</th><th class="has-text-centered has-text-white">Factura $</th><th class="has-text-centered has-text-white">Deuda $</th><th class="has-text-centered has-text-white">Pago</th><th class="has-text-centered has-text-white">Mercancía</th><th class="has-text-centered has-text-white">Opciones</th></tr></thead><tbody>';
+        // Lógica de filtrado
+        if(isset($busqueda) && $busqueda != ""){
+            $filtro_sql = "WHERE (c.compra_codigo LIKE '%$busqueda%' OR p.proveedor_nombre LIKE '%$busqueda%')";
+        } else {
+            if($estado_view == "Anulada"){ 
+                $filtro_sql = "WHERE c.compra_estado='Anulada'"; 
+            } elseif($estado_view == "Pagada"){ 
+                $filtro_sql = "WHERE c.compra_estado_pago='Pagado' AND c.compra_estado!='Anulada'"; 
+            } else { 
+                $filtro_sql = "WHERE c.compra_estado_pago!='Pagado' AND c.compra_estado!='Anulada'"; 
+            }
+        }
 
-            if (count($datos) >= 1) {
-                foreach ($datos as $rows) {
+        /*---------- CONSULTA SQL CON CONTEO DE FACTURAS ----------*/
+        $consulta_datos = "SELECT c.*, p.proveedor_nombre, 
+            (SELECT COUNT(factura_id) FROM compra_factura WHERE compra_id=c.compra_id) AS total_facturas 
+            FROM compra c 
+            INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
+            $filtro_sql ORDER BY c.compra_id DESC LIMIT $inicio, $registros";
+
+        $datos = $this->ejecutarConsulta($consulta_datos)->fetchAll();
+
+        $tabla = '<div class="table-container">
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+                <thead>
+                    <tr class="has-background-link-dark">
+                        <th class="has-text-centered has-text-white">Código / Facturas</th>
+                        <th class="has-text-centered has-text-white">Proveedor</th>
+                        <th class="has-text-centered has-text-white">Total $</th>
+                        <th class="has-text-centered has-text-white">Deuda $</th>
+                        <th class="has-text-centered has-text-white">Pago</th>
+                        <th class="has-text-centered has-text-white">Mercancía</th>
+                        <th class="has-text-centered has-text-white">Opciones</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        if (count($datos) >= 1) {
+            foreach ($datos as $rows) {
+                
+                // Colores de estado de pago
+                if($rows['compra_estado'] == "Anulada"){ 
+                    $color_pago = "is-dark"; $texto_pago = "Anulada"; 
+                } else {
+                    if($rows['compra_estado_pago'] == "Pagado"){ $color_pago = "is-success"; $texto_pago = "Pagado"; } 
+                    elseif($rows['compra_estado_pago'] == "Parcial"){ $color_pago = "is-warning"; $texto_pago = "Parcial"; } 
+                    else { $color_pago = "is-danger"; $texto_pago = "Pendiente"; }
+                }
+
+                // Color de estado físico de mercancía
+                $color_fisico = ($rows['compra_estado'] == "Completado") ? "has-text-success" : "has-text-warning-dark";
+
+                $tabla .= '<tr class="has-text-centered">
+                    <td>
+                        <strong>' . $rows['compra_codigo'] . '</strong><br>
+                        <span class="tag is-info is-light is-small">' . $rows['total_facturas'] . ' Factura(s)</span>
+                    </td>
+                    <td>' . $rows['proveedor_nombre'] . '</td>
+                    <td>$' . number_format($rows['compra_total'], 2) . '</td>
+                    <td class="has-text-weight-bold">$' . number_format($rows['compra_saldo_pendiente'], 2) . '</td>
+                    <td><span class="tag ' . $color_pago . ' is-rounded">' . $texto_pago . '</span></td>
+                    <td class="'.$color_fisico.' has-text-weight-bold">' . $rows['compra_estado'] . '</td>
+                    <td><div class="buttons is-centered is-flex-wrap-nowrap">';
+
+                /*========== LÓGICA DE OPCIONES (CONTROL DE FLUJO) ==========*/
+                
+                // SI NO HAY FACTURAS: Solo permitimos vincular la primera
+                if($rows['total_facturas'] == 0 && $rows['compra_estado'] != "Anulada"){
+                    $tabla .= '
+                    <button type="button" class="button is-warning is-rounded is-small has-text-weight-bold" 
+                        onclick="abrirModalFactura(\'' . $rows['compra_id'] . '\', \'' . $rows['compra_codigo'] . '\')" 
+                        title="Vincular Factura Obligatoria">
+                        <i class="fas fa-file-invoice mr-1"></i> Vincular Factura
+                    </button>';
+                } else {
+                    // SI YA HAY AL MENOS UNA: Liberamos las herramientas de consulta
                     
-                    if($rows['compra_estado'] == "Anulada"){ $color_pago = "is-dark"; $texto_pago = "Anulada"; } 
-                    else {
-                        if($rows['compra_estado_pago'] == "Pagado"){ $color_pago = "is-success"; $texto_pago = "Pagado"; } 
-                        elseif($rows['compra_estado_pago'] == "Parcial"){ $color_pago = "is-warning"; $texto_pago = "Parcial"; } 
-                        else { $color_pago = "is-danger"; $texto_pago = "Pendiente"; }
-                    }
+                    // 1. Ver Historial de Facturas (Botón Nuevo)
+                    $tabla .= '<button type="button" class="button is-link is-light is-rounded is-small" onclick="verHistorialFacturas(\'' . $rows['compra_id'] . '\')" title="Ver Historial de Facturas">
+                        <i class="fas fa-file-invoice"></i>
+                    </button>';
 
-                    $color_fisico = ($rows['compra_estado'] == "Completado") ? "has-text-success" : "has-text-warning-dark";
+                    // 2. Ver Historial de Abonos/Pagos
+                    $tabla .= '<button type="button" class="button is-link is-light is-rounded is-small" onclick="verHistorialAbonos(\'' . $rows['compra_id'] . '\', \'' . $rows['compra_codigo'] . '\')" title="Ver Pagos">
+                        <i class="fas fa-history"></i>
+                    </button>';
 
-                    $tabla .= '<tr class="has-text-centered">
-                        <td>' . $rows['compra_codigo'] . '</td>
-                        <td>' . $rows['proveedor_nombre'] . '</td>
-                        <td>$' . number_format($rows['compra_total'], 2) . '</td>
-                        <td class="has-text-weight-bold">$' . number_format($rows['compra_saldo_pendiente'], 2) . '</td>
-                        <td><span class="tag ' . $color_pago . ' is-rounded">' . $texto_pago . '</span></td>
-                        <td class="'.$color_fisico.' has-text-weight-bold">' . $rows['compra_estado'] . '</td>
-                        <td>
-                            <div class="buttons is-centered is-flex-wrap-nowrap">
-                                <button type="button" class="button is-link is-light is-rounded is-small" onclick="verHistorialAbonos(\'' . $rows['compra_id'] . '\', \'' . $rows['compra_codigo'] . '\')" title="Ver Pagos"><i class="fas fa-history"></i></button>
-                                <a href="' . APP_URL . 'purchaseDetail/' . $rows['compra_id'] . '/" class="button is-info is-rounded is-small" title="Ver Detalle"><i class="fas fa-eye"></i></a>';
+                    // 3. Ver Detalle de Productos
+                    $tabla .= '<a href="' . APP_URL . 'purchaseDetail/' . $rows['compra_id'] . '/" class="button is-info is-rounded is-small" title="Ver Detalle de Compra">
+                        <i class="fas fa-eye"></i>
+                    </a>';
 
                     if($rows['compra_estado'] != "Anulada"){
                         
-                        // Si falta mercancía:
-                        if($rows['compra_estado'] != "Completado"){
-                            $tabla .= '<a href="' . APP_URL . 'purchaseReceptionDetail/' . $rows['compra_id'] . '/" class="button is-success is-rounded is-small" title="Recibir Camión"><i class="fas fa-truck-loading"></i></a>
-                                       <form class="FormularioAjax ml-1" action="' . APP_URL . 'app/ajax/compraAjax.php" method="POST"><input type="hidden" name="modulo_compra" value="cerrar"><input type="hidden" name="compra_id" value="' . $rows['compra_id'] . '"><button type="submit" class="button is-link is-rounded is-small" title="Cerrar Incompleta"><i class="fas fa-check-double"></i></button></form>';
-                        }
-
-                        // Si hay deuda:
-                        if($rows['compra_saldo_pendiente'] > 0){
-                            $tabla .= '<a href="' . APP_URL . 'purchasePay/' . $rows['compra_id'] . '/" class="button is-primary is-rounded is-small" title="Abonar Dinero"><i class="fas fa-money-bill-wave"></i></a>';
-                        }
-
-                        // PDF
-                        if($rows['compra_estado'] == "Completado"){
-                            $tabla .= '<button type="button" class="button is-warning is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchaseReceipt.php?id=' . $rows['compra_id'] . '\')" title="Factura Interna"><i class="fas fa-file-invoice-dollar"></i></button>';
-                        } else {
-                            $tabla .= '<button type="button" class="button is-danger is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchase_order.php?code=' . $rows['compra_codigo'] . '\')" title="Orden a Proveedor"><i class="fas fa-file-pdf"></i></button>';
-                        }
-
-                        
-                        // Anular (Solo si no han pagado)
+                        // 4. Agregar Factura Adicional (OCULTO EN "PAGADAS")
                         if($rows['compra_estado_pago'] != "Pagado"){
-                            $tabla .= '<button type="button" class="button is-dark is-rounded is-small ml-1" onclick="anularCompraConMotivo(\'' . $rows['compra_id'] . '\')" title="Anular Compra"><i class="fas fa-ban"></i></button>';
+                            $tabla .= '<button type="button" class="button is-success is-light is-rounded is-small" onclick="abrirModalFactura(\'' . $rows['compra_id'] . '\', \'' . $rows['compra_codigo'] . '\')" title="Agregar otra Factura de Proveedor">
+                                <i class="fas fa-plus-circle"></i>
+                            </button>';
+                        }
+
+                        // 5. Recibir Mercancía (Solo si no está completada)
+                        if($rows['compra_estado'] != "Completado"){
+                            $tabla .= '<a href="' . APP_URL . 'purchaseReceptionDetail/' . $rows['compra_id'] . '/" class="button is-success is-rounded is-small" title="Recibir Camión/Mercancía">
+                                <i class="fas fa-truck-loading"></i>
+                            </a>';
+                        }
+
+                        // 6. Abonar Dinero (Solo si hay deuda)
+                        if($rows['compra_saldo_pendiente'] > 0){
+                            $tabla .= '<a href="' . APP_URL . 'purchasePay/' . $rows['compra_id'] . '/" class="button is-primary is-rounded is-small" title="Registrar Pago/Abono">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </a>';
+                        }
+
+                        // 7. Impresión de Documentos (Interno vs Orden)
+                        if($rows['compra_estado'] == "Completado"){
+                            $tabla .= '<button type="button" class="button is-warning is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchaseReceipt.php?id=' . $rows['compra_id'] . '\')" title="Imprimir Comprobante Interno">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </button>';
+                        } else {
+                            $tabla .= '<button type="button" class="button is-danger is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchase_order.php?code=' . $rows['compra_codigo'] . '\')" title="Imprimir Orden de Compra">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>';
+                        }
+
+                        // 8. Anulación (Solo si no está pagada totalmente)
+                        if($rows['compra_estado_pago'] != "Pagado"){
+                            $tabla .= '<button type="button" class="button is-dark is-rounded is-small ml-1" onclick="anularCompraConMotivo(\'' . $rows['compra_id'] . '\')" title="Anular Transacción">
+                                <i class="fas fa-ban"></i>
+                            </button>';
                         }
                     }
-                    $tabla .= '</div></td></tr>';
                 }
-            } else { $tabla .= '<tr class="has-text-centered"><td colspan="7">No hay registros</td></tr>'; }
-            return $tabla . '</tbody></table></div>';
+
+                $tabla .= '</div></td></tr>';
+            }
+        } else { 
+            $tabla .= '<tr class="has-text-centered"><td colspan="7">No se encontraron registros de compras.</td></tr>'; 
         }
-	}
+        
+        return $tabla . '</tbody></table></div>';
+    }
+
+      /*---------- Controlador registrar factura ----------*/
+    public function registrarFacturaCompraControlador() {
+        // Recibiendo datos
+        $id = $this->limpiarCadena($_POST['compra_id']);
+        $numero = $this->limpiarCadena($_POST['factura_numero']);
+        $emision = $this->limpiarCadena($_POST['factura_emision']);
+        $vencimiento = $this->limpiarCadena($_POST['factura_vencimiento']);
+
+        // 1. Verificación de campos vacíos
+        if($numero == "" || $emision == "" || $vencimiento == ""){
+            $alerta=[
+                "tipo"=>"simple",
+                "titulo"=>"Error en campos",
+                "texto"=>"Todos los campos son obligatorios, por favor completa la información de la factura.",
+                "icono"=>"error"
+            ];
+            echo json_encode($alerta);
+            exit(); // ← Detiene la ejecución aquí
+        }
+
+        // 2. Validación lógica de fechas
+        if(strtotime($vencimiento) < strtotime($emision)){
+            $alerta=[
+                "tipo"=>"simple",
+                "titulo"=>"Error en fechas",
+                "texto"=>"La fecha de vencimiento no puede ser anterior a la de emisión.",
+                "icono"=>"error"
+            ];
+            echo json_encode($alerta);
+            exit();
+        }
+
+        // 3. Verificando integridad de la compra
+        $check_compra = $this->ejecutarConsulta("SELECT * FROM compra WHERE compra_id='$id'");
+        if($check_compra->rowCount() <= 0){
+            $alerta=[
+                "tipo"=>"simple",
+                "titulo"=>"Ocurrió un error inesperado",
+                "texto"=>"La compra seleccionada no existe en el sistema.",
+                "icono"=>"error"
+            ];
+            echo json_encode($alerta);
+            exit();
+        }
+
+        // 4. Verificar factura duplicada
+        $check_factura_duplicada = $this->ejecutarConsulta("SELECT * FROM compra_factura 
+            WHERE compra_id='$id' AND factura_numero='$numero'");
+
+        if($check_factura_duplicada->rowCount() > 0){
+            $alerta=[
+                "tipo"=>"simple",
+                "titulo"=>"Factura duplicada",
+                "texto"=>"El número de factura $numero ya ha sido registrado para esta orden de compra. Por favor, verifica el documento.",
+                "icono"=>"warning"
+            ];
+            echo json_encode($alerta);
+            exit();
+        }
+
+        // 5. Insertando los datos en la tabla compra_factura
+        $datos_factura_reg = [
+            [
+                "campo_nombre" => "compra_id",
+                "campo_marcador" => ":ID",
+                "campo_valor" => $id
+            ],
+            [
+                "campo_nombre" => "factura_numero",
+                "campo_marcador" => ":Numero",
+                "campo_valor" => $numero
+            ],
+            [
+                "campo_nombre" => "factura_emision",
+                "campo_marcador" => ":Emision",
+                "campo_valor" => $emision
+            ],
+            [
+                "campo_nombre" => "factura_vencimiento",
+                "campo_marcador" => ":Vencimiento",
+                "campo_valor" => $vencimiento
+            ],
+            [
+                "campo_nombre" => "factura_fecha_registro",
+                "campo_marcador" => ":Fecha",
+                "campo_valor" => date("Y-m-d H:i:s")
+            ]
+        ];
+
+        $registrar_factura = $this->guardarDatos("compra_factura", $datos_factura_reg);
+
+        if($registrar_factura->rowCount() == 1){
+            $alerta=[
+                "tipo"=>"recargar",
+                "titulo"=>"Factura registrada",
+                "texto"=>"La factura de proveedor se ha vinculado correctamente a esta compra.",
+                "icono"=>"success"
+            ];
+        } else {
+            $alerta=[
+                "tipo"=>"simple",
+                "titulo"=>"Ocurrió un error inesperado",
+                "texto"=>"No hemos podido registrar la factura, por favor intente nuevamente.",
+                "icono"=>"error"
+            ];
+        }
+
+        echo json_encode($alerta);
+        exit();
+    }    
+}

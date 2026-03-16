@@ -36,7 +36,7 @@
         <div class="columns">
             <div class="column">
                 <p><strong>Proveedor:</strong> <?php echo $datos_compra['proveedor_nombre']; ?></p>
-                <p><strong>Fecha:</strong> <?php echo date("d-m-Y", strtotime($datos_compra['compra_fecha'])); ?></p>
+                <p><strong>Fecha de Orden:</strong> <?php echo date("d-m-Y", strtotime($datos_compra['compra_fecha'])); ?></p>
             </div>
             <div class="column">
                 <p><strong>Registrado por:</strong> <?php echo $datos_compra['usuario_nombre']." ".$datos_compra['usuario_apellido']; ?></p>
@@ -59,6 +59,45 @@
             </div>
         </div>
 
+        <hr>
+
+        <h3 class="subtitle is-5"><i class="fas fa-file-invoice mr-2"></i>Facturas de Proveedor Vinculadas</h3>
+        <?php
+            $facturas = $insCompra->ejecutarConsulta("SELECT * FROM compra_factura WHERE compra_id='$compra_id' ORDER BY factura_id ASC");
+            if($facturas->rowCount() > 0){
+                $facturas = $facturas->fetchAll();
+        ?>
+            <div class="table-container mb-5">
+                <table class="table is-bordered is-narrow is-fullwidth">
+                    <thead class="has-background-white-ter">
+                        <tr>
+                            <th class="has-text-centered">N° Factura</th>
+                            <th class="has-text-centered">Fecha Emisión</th>
+                            <th class="has-text-centered">Vencimiento</th>
+                            <th class="has-text-centered">Registrada el</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($facturas as $f){ ?>
+                            <tr class="has-text-centered">
+                                <td class="has-text-weight-bold"><?php echo $f['factura_numero']; ?></td>
+                                <td><?php echo date("d/m/Y", strtotime($f['factura_emision'])); ?></td>
+                                <td><?php echo date("d/m/Y", strtotime($f['factura_vencimiento'])); ?></td>
+                                <td class="is-size-7 has-text-grey"><?php echo date("d/m/Y H:i", strtotime($f['factura_fecha_registro'])); ?></td>
+                            </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php } else { ?>
+            <div class="notification is-warning is-light py-2 has-text-centered">
+                <i class="fas fa-exclamation-triangle mr-2"></i> No hay facturas de proveedor vinculadas a esta orden.
+            </div>
+        <?php } ?>
+
+        <hr>
+
+        <h3 class="subtitle is-5"><i class="fas fa-boxes mr-2"></i>Detalle de Productos</h3>
         <table class="table is-bordered is-striped is-hoverable is-fullwidth mt-4">
             <thead>
                 <tr class="has-background-link-dark">
@@ -78,7 +117,6 @@
                     $detalles_array = $detalles->fetchAll();
                     foreach($detalles_array as $items){
                         
-                        // LÓGICA INTELIGENTE DE PRECIOS
                         $precio_unitario = $items['compra_detalle_precio'];
                         $subtotal_item = $items['compra_detalle_cantidad'] * $precio_unitario;
 
