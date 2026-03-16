@@ -5,16 +5,8 @@
 
 <div class="container is-fluid pb-6">
     <?php
-        /*---------- Bloque de seguridad: Solo Admin (1) y Supervisor (3) ----------*/
         if($_SESSION['rol'] != 1 && $_SESSION['rol'] != 3){
-            echo '
-            <div class="notification is-danger is-light has-text-centered">
-                <i class="fas fa-ban fa-3x"></i><br>
-                <h1 class="title">¡Acceso Denegado!</h1>
-                <p>No tienes los permisos necesarios para acceder a este módulo.</p>
-                <br>
-                <a href="'.APP_URL.'dashboard/" class="button is-danger is-rounded">Regresar al Inicio</a>
-            </div>';
+            echo '<div class="notification is-danger is-light has-text-centered"><i class="fas fa-ban fa-3x"></i><br><h1 class="title">¡Acceso Denegado!</h1></div>';
             exit(); 
         }
     ?>
@@ -27,13 +19,13 @@
             <div class="column">
                 <div class="control">
                     <label>Nombre del Proveedor <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="proveedor_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required autocomplete="off">
+                    <input class="input" type="text" name="proveedor_nombre" data-filtro="empresa" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{3,70}" minlength="3" maxlength="70" required autocomplete="off" title="El nombre de la empresa debe tener al menos 3 caracteres.">
                 </div>
             </div>
             <div class="column">
                 <div class="control">
                     <label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="proveedor_rif" pattern="[0-9\-]{1,15}" maxlength="15" placeholder="Ej: 12345678-9" required autocomplete="off">
+                    <input class="input" type="text" name="proveedor_rif" data-filtro="rif" pattern="[0-9\-]{8,14}" minlength="8" maxlength="14" placeholder="Ej: 12345678-9" required autocomplete="off" title="Solo números y guiones (-). Mínimo 8 caracteres.">
                 </div>
             </div>
 
@@ -45,14 +37,14 @@
                     <div class="field has-addons">
                         <p class="control">
                             <span class="select">
-                                <select name="proveedor_telefono_codigo" required>
+                                <select name="proveedor_telefono_codigo" required title="Seleccione código de área.">
                                     <option value="" selected>Cód.</option>
                                     <?php echo $insLogin->generarSelect(PREFIJOS_TELEFONICOS, "VACIO"); ?>
                                 </select>
                             </span>
                         </p>
                         <p class="control is-expanded">
-                            <input class="input" type="text" name="proveedor_telefono" pattern="[0-9]{7}" maxlength="7" placeholder="1234567" required autocomplete="off">
+                            <input class="input only-numbers" type="text" name="proveedor_telefono" pattern="[0-9]{7}" minlength="7" maxlength="7" placeholder="1234567" required autocomplete="off" title="El teléfono debe tener 7 dígitos exactos.">
                         </p>
                     </div>
                 </div>
@@ -68,8 +60,7 @@
             <button type="reset" class="button is-link is-light is-rounded"><i class="fas fa-paint-roller"></i> &nbsp; Limpiar</button>
             <button type="submit" class="button is-info is-rounded"><i class="far fa-save"></i> &nbsp; Guardar</button>
         </p>
-        <p class="has-text-centered pt-6">
-            <small>Los campos marcados con <?php echo CAMPO_OBLIGATORIO; ?> son obligatorios</small>
-        </p>
     </form>
 </div>
+
+<?php include "./app/views/inc/script_validador.php"; ?>
