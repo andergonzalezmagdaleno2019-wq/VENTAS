@@ -67,7 +67,7 @@
 
                             <div class="field">
                                 <div class="control has-icons-left">
-                                    <input class="input is-rounded" type="text" id="respuesta_seguridad" placeholder="Escribe tu respuesta">
+                                    <input class="input is-rounded" type="text" id="respuesta_seguridad" placeholder="Escribe tu respuesta" autocomplete="off">
                                     <span class="icon is-left"><i class="fas fa-comment"></i></span>
                                 </div>
                             </div>
