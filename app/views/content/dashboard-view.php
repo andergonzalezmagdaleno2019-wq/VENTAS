@@ -201,3 +201,23 @@
     <?php endif; ?>
 
 </div>
+<?php if(isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']): ?>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        Swal.fire({
+            title: '¡Configuración Obligatoria!',
+            text: 'Por seguridad, debes configurar tus preguntas y cambiar tu clave antes de usar el sistema.',
+            icon: 'warning',
+            confirmButtonColor: '#004595',
+            confirmButtonText: 'Ir a Configurar Ahora',
+            allowOutsideClick: false, // No puede hacer clic fuera
+            allowEscapeKey: false,    // No puede usar la tecla Esc
+            allowEnterKey: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "<?php echo APP_URL; ?>userProfile/";
+            }
+        });
+    });
+</script>
+<?php endif; ?>

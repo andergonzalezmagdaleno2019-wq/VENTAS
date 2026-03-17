@@ -7,13 +7,12 @@
 			$listaBlanca=[
 				"dashboard",
 				"cashierNew","cashierList","cashierSearch","cashierUpdate",
-				"userNew","userList","userUpdate","userSearch","userPhoto",
+				"userNew","userList","userProfile", "userUpdate","userSearch","userPhoto",
 				"clientNew","clientList","clientSearch","clientUpdate",
 				"categoryNew","categoryList","categorySearch","categoryUpdate","subcategoryNew","subcategorylist","subcategorySearch","subcategoryUpdate","productNew","productList","productSearch","productUpdate","productPhoto","productCategory", "inventoryReport",
 				"companyNew",
 				"saleNew","saleList","saleSearch","saleDetail", "saleReport",
-				"logOut","backup",
-				"providerNew", "providerList", "providerUpdate",
+				"logOut", "backup","providerNew", "providerList", "providerUpdate",
 				"purchaseNew", "purchaseList","purchasePayment", "purchase_reception", "purchaseDetail", "purchaseReceptionDetail","purchaseReport", "purchaseSearch","purchasePay", "auditList",
 			];
 

@@ -1,19 +1,26 @@
 /*Mostrar ocultar menu principal*/
-let btn_menu=document.getElementById('btn-menu');
-btn_menu.addEventListener("click", function(e){
-    e.preventDefault();
+let btn_menu = document.getElementById('btn-menu');
 
-    let navLateral=document.getElementById('navLateral');
-    let pageContent=document.getElementById('pageContent');
+// Agregamos este IF para que solo se ejecute si el botón existe
+if (btn_menu) {
+    btn_menu.addEventListener("click", function(e){
+        e.preventDefault();
 
-    if(navLateral.classList.contains('navLateral-change') && pageContent.classList.contains('pageContent-change')){
-        navLateral.classList.remove('navLateral-change');
-        pageContent.classList.remove('pageContent-change');
-    }else{
-        navLateral.classList.add('navLateral-change');
-        pageContent.classList.add('pageContent-change');
-    }
-});
+        let navLateral = document.getElementById('navLateral');
+        let pageContent = document.getElementById('pageContent');
+
+        // Verificamos que navLateral y pageContent también existan antes de tocar clases
+        if (navLateral && pageContent) {
+            if(navLateral.classList.contains('navLateral-change') && pageContent.classList.contains('pageContent-change')){
+                navLateral.classList.remove('navLateral-change');
+                pageContent.classList.remove('pageContent-change');
+            } else {
+                navLateral.classList.add('navLateral-change');
+                pageContent.classList.add('pageContent-change');
+            }
+        }
+    });
+}
 
 /*Mostrar y ocultar submenus*/
 let btn_subMenu=document.querySelectorAll(".btn-subMenu");

@@ -1047,3 +1047,8 @@ body.dark-mode .has-background-white-ter {
 .dark-mode .dropdown-divider {
     background-color: #444;
 }
+
+.dark-mode /* Color para el icono de seguridad */
+.icon-security {
+    color: #00a7d1 !important; /* Un verde turquesa */
+}

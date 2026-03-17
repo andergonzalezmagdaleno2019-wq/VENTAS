@@ -8,8 +8,77 @@
         /*----------  Controlador iniciar sesion  ----------*/
         public function iniciarSesionControlador(){
 
-            $email=$this->limpiarCadena($_POST['login_email']);
-            $clave=$this->limpiarCadena($_POST['login_clave']);
+    /*============= NUEVO: Verificación AJAX para recuperar contraseña =============*/
+    /* Este bloque DEBE IR PRIMERO, antes que cualquier otra cosa */
+    if(isset($_POST['verificar_email_ajax']) && $_POST['verificar_email_ajax'] == "true"){
+        
+        // Limpiar cualquier salida previa
+        while (ob_get_level()) ob_end_clean();
+        
+        // Establecer cabecera JSON
+        header('Content-Type: application/json');
+        
+        // Verificar que llegó el email
+        if(isset($_POST['recuperar_email_ajax']) && $_POST['recuperar_email_ajax'] != ""){
+            
+            $email = $this->limpiarCadena($_POST['recuperar_email_ajax']);
+            
+            // Verificar si existe en la base de datos
+            $check_email = $this->ejecutarConsulta("SELECT usuario_id FROM usuario WHERE usuario_email='$email'");
+
+            if($check_email && $check_email->rowCount() == 1){
+                $email_codificado = base64_encode($email);
+                echo json_encode([
+                    'existe' => true,
+                    'mensaje' => 'Correo encontrado',
+                    'redirect' => APP_URL."loginAnswer/".$email_codificado."/"
+                ]);
+            } else {
+                echo json_encode([
+                    'existe' => false,
+                    'mensaje' => 'El correo electrónico ingresado no está registrado en nuestro sistema.'
+                ]);
+            }
+        } else {
+            echo json_encode([
+                'existe' => false,
+                'mensaje' => 'No se recibió el correo electrónico'
+            ]);
+        }
+        exit; // Salir inmediatamente, NO ejecutar nada más
+    }
+    /*============= FIN NUEVO BLOQUE =============*/
+
+    /*---------- RECUPERACIÓN DE CUENTA (Paso 1) ----------*/
+    if(isset($_POST['recuperar_email']) && $_POST['recuperar_email'] != ""){
+        $email = $this->limpiarCadena($_POST['recuperar_email']);
+        
+        $check_email = $this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_email='$email'");
+
+        if($check_email->rowCount() == 1){
+            $email_codificado = base64_encode($email);
+            $url_final = APP_URL."loginAnswer/".$email_codificado."/";
+            
+            // 1. Intentamos por PHP
+            if(!headers_sent()){
+                header("Location: ".$url_final);
+            }
+            
+            // 2. Si PHP falla, este JS lo hace sí o sí
+            echo "<script> window.location.replace('".$url_final."'); </script>";
+            exit(); // IMPORTANTE: Detenemos todo aquí
+        } else {
+            echo '<article class="message is-danger"><div class="message-body"><strong>Error:</strong> El correo ingresado no está registrado.</div></article>';
+            return;
+        }
+    } 
+
+            /*---------- LOGIN NORMAL ----------*/
+            // Solo se ejecuta si NO se envió recuperar_email
+            if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
+                
+                $email=$this->limpiarCadena($_POST['login_email']);
+                $clave=$this->limpiarCadena($_POST['login_clave']);
             
             $captcha = isset($_POST['login_captcha']) ? $this->limpiarCadena($_POST['login_captcha']) : "";
 
@@ -70,16 +139,24 @@
                                 $_SESSION['email']=$check_usuario['usuario_email'];
                                 $_SESSION['foto']=$check_usuario['usuario_foto'];
                                 $_SESSION['caja']=$check_usuario['caja_id'];
-                                $_SESSION['rol']=$check_usuario['rol_id']; // <--- LA SOLUCIÓN
+                                $_SESSION['rol']=$check_usuario['rol_id']; 
 
                                 /*== AUDITORIA INICIO SESION ==*/
                                 $this->guardarBitacora("Seguridad", "Inicio de Sesión", "El usuario ".$check_usuario['usuario_usuario']." entró al sistema.");
 
-                                if(headers_sent()){
-                                    echo "<script> window.location.href='".APP_URL."dashboard/'; </script>";
-                                }else{
+                                /*== MARCAR PENDIENTES (Solo para Vendedores ID 2) ==*/
+                                if($_SESSION['rol'] == 2 && ($check_usuario['usuario_pregunta_1'] == "" || is_null($check_usuario['usuario_pregunta_1']))){
+                                    $_SESSION['seguridad_pendiente'] = true;
+                                } else {
+                                    $_SESSION['seguridad_pendiente'] = false;
+                                }
+
+                                /*== REDIRECCIÓN DIRECTA PARA TODOS ==*/
+                                if(!headers_sent()){
                                     header("Location: ".APP_URL."dashboard/");
                                 }
+                                echo "<script> window.location.replace('".APP_URL."dashboard/'); </script>";
+                                exit();
 
                             }else{
                                 # ====================================================================
@@ -120,6 +197,7 @@
                 }
             }
         }
+        }
         /*----------  Controlador cerrar sesion  ----------*/
         public function cerrarSesionControlador(){
             if(isset($_SESSION['usuario'])){
@@ -144,4 +222,39 @@
             }
             return $this->ejecutarConsulta($consulta);
         }
+
+        /*----------  Controlador para verificar email via AJAX  ----------*/
+        public function verificarEmailAjaxControlador(){
+            // Limpiar buffer de salida
+            if (ob_get_level()) ob_clean();
+            header('Content-Type: application/json');
+            
+            if(isset($_POST['recuperar_email_ajax']) && $_POST['recuperar_email_ajax'] != ""){
+                $email = $this->limpiarCadena($_POST['recuperar_email_ajax']);
+                
+                $check_email = $this->ejecutarConsulta("SELECT usuario_id FROM usuario WHERE usuario_email='$email'");
+
+                if($check_email->rowCount() == 1){
+                    // Email existe
+                    $email_codificado = base64_encode($email);
+                    echo json_encode([
+                        'existe' => true,
+                        'mensaje' => 'Correo encontrado',
+                        'redirect' => APP_URL."loginAnswer/".$email_codificado."/"
+                    ]);
+                } else {
+                    // Email no existe
+                    echo json_encode([
+                        'existe' => false,
+                        'mensaje' => 'El correo electrónico ingresado no está registrado en nuestro sistema.'
+                    ]);
+                }
+            } else {
+                echo json_encode([
+                    'existe' => false,
+                    'mensaje' => 'No se recibió el correo electrónico'
+                ]);
+            }
+            exit;
+}
     }

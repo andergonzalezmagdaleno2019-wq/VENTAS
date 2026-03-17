@@ -1,3 +1,41 @@
+<?php
+if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] === 'true' && isset($_POST['recuperar_email'])) {
+    ob_clean();
+    header('Content-Type: application/json');
+    
+    $email = $_POST['recuperar_email'];
+    $email_codificado = base64_encode($email); // Codificamos para la URL
+
+    // Aquí iría tu consulta real a la BD...
+    $existe = (strpos($email, '@') !== false); 
+    
+    if($existe) {
+        echo json_encode([
+            'existe' => true, 
+            'mensaje' => 'Correo encontrado',
+            'redirect' => APP_URL . "loginAnswer/" . $email_codificado . "/" // <-- ESTO ES VITAL
+        ]);
+    } else {
+        echo json_encode(['existe' => false, 'mensaje' => 'Correo no registrado']);
+    }
+    exit; 
+}
+// Tu código PHP existente para login
+if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
+    $insLogin->iniciarSesionControlador();
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Asegúrate de incluir SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Tus otros estilos CSS -->
+</head>
+<body>
 <div class="main-container">
 
     <div class="box login" id="login-espejismo">
@@ -5,12 +43,6 @@
             <i class="fas fa-user-circle fa-5x"></i>
         </p>
 		<h5 class="title is-5 has-text-centered">Inicia sesión con tu cuenta</h5>
-
-		<?php
-			if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
-				$insLogin->iniciarSesionControlador();
-			}
-		?>
 
         <div class="field">
             <label class="label"><i class="fas fa-envelope"></i> &nbsp; Correo Electrónico</label>
@@ -43,12 +75,13 @@
 		</p>
 
         <div class="has-text-centered mb-4 mt-4">
-            <a href="#" onclick="Swal.fire('Atención', 'Contacte al administrador del sistema para crear una cuenta o restablecer su clave', 'info');" class="is-size-7" style="color: #777;">¿Problemas para ingresar?</a>
+            <a href="#" onclick="recuperarCuenta()" class="is-size-7" style="color: #777;">¿Olvidaste tu contraseña o tienes problemas?</a>
         </div>
 
 	</div>
 
     <script>
+        // Función original de login (sin cambios)
         function ejecutarLoginInmune() {
             let email = document.getElementById('fake_email').value.trim();
             let clave = document.getElementById('fake_clave').value.trim();
@@ -59,18 +92,22 @@
                 return;
             }
 
-            
+            // Validar formato de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                Swal.fire('Error', 'Por favor ingresa un correo electrónico válido', 'error');
+                return;
+            }
+
             document.getElementById('fake_email').value = '';
             document.getElementById('fake_clave').value = '';
             document.getElementById('fake_captcha').value = '';
 
-            
             let formFantasma = document.createElement('form');
             formFantasma.method = 'POST';
             formFantasma.action = '';
             formFantasma.style.display = 'none';
 
-            
             let inputEmail = document.createElement('input');
             inputEmail.type = 'hidden';
             inputEmail.name = 'login_email';
@@ -89,7 +126,6 @@
             inputCaptcha.value = captcha;
             formFantasma.appendChild(inputCaptcha);
 
-            
             document.body.appendChild(formFantasma);
             formFantasma.submit();
         }
@@ -100,5 +136,120 @@
                 ejecutarLoginInmune();
             }
         });
+
+        // ===== FUNCIONES DE RECUPERACIÓN CORREGIDAS =====
+
+function recuperarCuenta() {
+    Swal.fire({
+        title: 'Recuperar Cuenta',
+        text: 'Ingresa tu correo electrónico registrado:',
+        input: 'email',
+        inputPlaceholder: 'tu-correo@ejemplo.com',
+        showCancelButton: true,
+        confirmButtonText: 'Verificar correo',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#3085d6',
+        didOpen: () => {
+            const input = Swal.getInput();
+            input.setAttribute('autocomplete', 'off');
+        },
+        preConfirm: (email) => {
+            if (!email) {
+                Swal.showValidationMessage('Por favor ingresa un correo electrónico');
+                return false;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                Swal.showValidationMessage('Por favor ingresa un correo válido');
+                return false;
+            }
+            return email;
+        }
+    }).then((result) => {
+        if (result.value) {
+            verificarCorreoEnBD(result.value);
+        }
+    });
+}
+
+function verificarCorreoEnBD(email) {
+    // Mostrar loading
+    Swal.fire({
+        title: 'Verificando correo...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // Crear FormData
+    let formData = new FormData();
+    formData.append('recuperar_email_ajax', email);
+    formData.append('verificar_email_ajax', 'true');
+
+    // Usar fetch con la ruta CORRECTA al archivo AJAX
+    fetch('<?php echo APP_URL; ?>app/ajax/verificarEmail.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        // Verificar el content-type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.error('Respuesta no JSON:', text.substring(0, 200));
+                throw new Error('El servidor no respondió correctamente');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        Swal.close();
+        
+        if (data.existe) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Correo verificado',
+                text: 'Redirigiendo...',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = data.redirect;
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Correo no registrado',
+                text: data.mensaje,
+                confirmButtonText: 'Intentar de nuevo',
+                confirmButtonColor: '#3085d6',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    recuperarCuenta();
+                }
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor. Intenta de nuevo.',
+            confirmButtonColor: '#3085d6'
+        });
+    });
+}
+
+// Mantener función original por compatibilidad
+function enviarRecuperacionPaso1(email) {
+    window.location.href = '<?php echo APP_URL; ?>loginAnswer/' + btoa(email) + '/';
+}
     </script>
 </div>
+</body>
+</html>

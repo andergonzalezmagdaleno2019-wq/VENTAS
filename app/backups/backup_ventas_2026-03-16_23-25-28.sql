@@ -1,6 +1,6 @@
 -- --------------------------------------------------------
 -- Respaldo del Sistema de Ventas
--- Fecha de generación: 2026-03-15 21:37:04
+-- Fecha de generación: 2026-03-16 23:25:28
 -- --------------------------------------------------------
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -23,7 +23,7 @@ CREATE TABLE `bitacora` (
   PRIMARY KEY (`bitacora_id`),
   KEY `usuario_id` (`usuario_id`),
   CONSTRAINT `bitacora_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `bitacora`
 INSERT INTO `bitacora` VALUES
@@ -34,7 +34,35 @@ INSERT INTO `bitacora` VALUES
 ("5", "1", "2026-03-15", "06:59:56 pm", "Categorías", "Registro", "Se registró la categoría: Laptops"),
 ("6", "1", "2026-03-15", "07:01:59 pm", "Categorías", "Eliminación", "Se eliminó la categoría: Laptops"),
 ("7", "1", "2026-03-15", "07:02:14 pm", "Categorías", "Registro", "Se registró la categoría: Laptops"),
-("8", "1", "2026-03-15", "07:02:57 pm", "Productos", "Registro", "Se registró el producto: Laptop Dell Latitude 5500 (Refurbished) | Intel Core i5 8va Gen (Inicia con stock 0)");
+("8", "1", "2026-03-15", "07:02:57 pm", "Productos", "Registro", "Se registró el producto: Laptop Dell Latitude 5500 (Refurbished) | Intel Core i5 8va Gen (Inicia con stock 0)"),
+("9", "1", "2026-03-15", "09:37:04 pm", "Sistema", "Backup", "Se generó una copia de seguridad: backup_ventas_2026-03-15_21-37-04.sql"),
+("10", "1", "2026-03-16", "06:58:35 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("11", "1", "2026-03-16", "07:13:51 pm", "Seguridad", "Cierre de Sesión", "El usuario Administrador salió del sistema."),
+("14", "1", "2026-03-16", "08:10:46 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("15", "1", "2026-03-16", "08:11:36 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("16", "1", "2026-03-16", "08:19:55 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("17", "1", "2026-03-16", "08:26:39 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("18", "1", "2026-03-16", "08:29:04 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("19", "1", "2026-03-16", "08:29:14 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("20", "1", "2026-03-16", "08:29:40 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("21", "1", "2026-03-16", "08:30:40 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("22", "1", "2026-03-16", "08:33:55 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("23", "1", "2026-03-16", "08:37:03 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("24", "1", "2026-03-16", "08:37:07 pm", "Seguridad", "Cierre de Sesión", "El usuario Administrador salió del sistema."),
+("25", "1", "2026-03-16", "08:46:28 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("26", "1", "2026-03-16", "08:49:55 pm", "Seguridad", "Cierre de Sesión", "El usuario Administrador salió del sistema."),
+("28", "5", "2026-03-16", "09:12:11 pm", "Seguridad", "Cierre de Sesión", "El usuario Andflizzz salió del sistema."),
+("29", "5", "2026-03-16", "09:12:23 pm", "Seguridad", "Inicio de Sesión", "El usuario Andflizzz entró al sistema."),
+("30", "5", "2026-03-16", "09:13:30 pm", "Seguridad", "Cierre de Sesión", "El usuario Andflizzz salió del sistema."),
+("31", "5", "2026-03-16", "09:13:40 pm", "Seguridad", "Inicio de Sesión", "El usuario Andflizzz entró al sistema."),
+("32", "5", "2026-03-16", "09:14:48 pm", "Seguridad", "Cierre de Sesión", "El usuario Andflizzz salió del sistema."),
+("33", "1", "2026-03-16", "09:15:14 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("34", "1", "2026-03-16", "09:15:33 pm", "Seguridad", "Cierre de Sesión", "El usuario Administrador salió del sistema."),
+("35", "1", "2026-03-16", "09:41:01 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("36", "1", "2026-03-16", "09:41:06 pm", "Seguridad", "Cierre de Sesión", "El usuario Administrador salió del sistema."),
+("37", "5", "2026-03-16", "11:16:30 pm", "Seguridad", "Inicio de Sesión", "El usuario Andflizzz entró al sistema."),
+("38", "5", "2026-03-16", "11:16:37 pm", "Seguridad", "Cierre de Sesión", "El usuario Andflizzz salió del sistema."),
+("39", "1", "2026-03-16", "11:24:44 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema.");
 
 
 -- --------------------------------------------------------
@@ -339,18 +367,24 @@ CREATE TABLE `usuario` (
   `usuario_foto` varchar(200) NOT NULL,
   `caja_id` int(5) NOT NULL,
   `rol_id` int(11) NOT NULL DEFAULT 2,
+  `usuario_pregunta_1` varchar(150) DEFAULT NULL,
+  `usuario_respuesta_1` varchar(150) DEFAULT NULL,
+  `usuario_pregunta_2` varchar(150) DEFAULT NULL,
+  `usuario_respuesta_2` varchar(150) DEFAULT NULL,
+  `usuario_pregunta_3` varchar(150) DEFAULT NULL,
+  `usuario_respuesta_3` varchar(150) DEFAULT NULL,
   `usuario_estado` varchar(20) DEFAULT 'Activo',
   PRIMARY KEY (`usuario_id`),
   KEY `caja_id` (`caja_id`),
   KEY `fk_usuario_rol` (`rol_id`),
   CONSTRAINT `fk_usuario_caja` FOREIGN KEY (`caja_id`) REFERENCES `caja` (`caja_id`),
   CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`rol_id`) REFERENCES `rol` (`rol_id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `usuario`
 INSERT INTO `usuario` VALUES
-("1", "V", "0", "Administrador", "Principal", "Administrador@gmail.com", "Administrador", "$2y$10$Jgm6xFb5Onz/BMdIkNK2Tur8yg/NYEMb/tdnhoV7kB1BwIG4R05D2", "", "1", "1", "Activo"),
-("2", "V", "31209801", "Fabio", "Cadenas", "fabio.informatico@gmail.com", "Fabio123", "$2y$10$xQNJn7GW1Ds0q.DNap8IDOJTtGVviz.BScZ/G8pJTvCV98Pqq4oHi", "", "1", "2", "Activo");
+("1", "V", "0", "Administrador", "Principal", "Administrador@gmail.com", "Administrador", "$2y$10$Jgm6xFb5Onz/BMdIkNK2Tur8yg/NYEMb/tdnhoV7kB1BwIG4R05D2", "", "1", "1", NULL, NULL, NULL, NULL, NULL, NULL, "Activo"),
+("5", "V", "32600641", "Ander alexander", "Peña gonzalez", "ander@gmail.com", "Andflizzz", "$2y$10$9HHm0cf84Jl5xCZbPUPMpuCFS3US6eVvwIBf1dpoSmx9ARbCffu9u", "", "1", "2", "Ciudad de nacimiento", "Maracay", "Color favorito", "Negro", "Nombre de tu abuelo", "Jose", "Activo");
 
 
 -- --------------------------------------------------------

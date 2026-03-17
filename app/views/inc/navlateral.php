@@ -297,6 +297,20 @@
                 
 				<li class="full-width divider-menu-h"></li>
 
+				<?php if($_SESSION['rol'] == 2){ ?>
+                <li class="full-width">
+                    <a href="<?php echo APP_URL; ?>userProfile/" class="full-width">
+                        <div class="navLateral-body-cl">
+                            <i class="fas fa-user-shield fa-fw icon-security"></i>
+                        </div>
+                        <div class="navLateral-body-cr">
+                            MI SEGURIDAD
+                        </div>
+                    </a>
+                </li>
+                <li class="full-width divider-menu-h"></li>
+                <?php } ?>
+
 				<li class="full-width mt-5">
 					<a href="<?php echo APP_URL."logOut/"; ?>" class="full-width btn-exit" >
 						<div class="navLateral-body-cl"><i class="fas fa-power-off"></i></div>

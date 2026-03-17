@@ -310,104 +310,101 @@
             }
             return json_encode($alerta);
         }
-
         /*----------  Controlador actualizar usuario  ----------*/
         public function actualizarUsuarioControlador(){
 
             $id=$this->limpiarCadena($_POST['usuario_id']);
             $datos=$this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_id='$id'");
+            
             if($datos->rowCount()<=0){ 
                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado","icono"=>"error"]; 
                 return json_encode($alerta); exit(); 
             }
             $datos=$datos->fetch();
 
-            // Capturamos los nuevos campos de identidad y los de siempre
-            $tipo_doc=$this->limpiarCadena($_POST['usuario_tipo_documento']);
-            $dni=$this->limpiarCadena($_POST['usuario_dni']);
-            $nombre=$this->limpiarCadena($_POST['usuario_nombre']);
-            $apellido=$this->limpiarCadena($_POST['usuario_apellido']);
-            $usuario=$this->limpiarCadena($_POST['usuario_usuario']);
-            $email=$this->limpiarCadena($_POST['usuario_email']);
-            $clave1=$this->limpiarCadena($_POST['usuario_clave_1']);
-            $clave2=$this->limpiarCadena($_POST['usuario_clave_2']);
-            $caja=$this->limpiarCadena($_POST['usuario_caja']);
-            
-            $rol = isset($_POST['usuario_rol']) ? $this->limpiarCadena($_POST['usuario_rol']) : $datos['rol_id'];
+            // Verificamos si es una actualización de PERFIL (Vendedor) o de ADMINISTRACIÓN
+            $tipo_edicion = isset($_POST['tipo_edicion']) && $_POST['tipo_edicion'] == "perfil" ? "perfil" : "admin";
 
-            /*== Verificando campos obligatorios ==*/
-            if($tipo_doc=="" || $dni=="" || $nombre=="" || $apellido=="" || $usuario==""){
-                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
-            }
+            if($tipo_edicion == "perfil"){
+                /*========== EDICIÓN LIMITADA PARA VENDEDOR ==========*/
+                $nombre = $datos['usuario_nombre'];
+                $apellido = $datos['usuario_apellido'];
+                $usuario = $datos['usuario_usuario'];
+                $dni = $datos['usuario_dni'];
+                $tipo_doc = $datos['usuario_tipo_documento'];
+                $email = $datos['usuario_email'];
+                $caja = $datos['caja_id'];
+                $rol = $datos['rol_id'];
 
-            /*== VALIDACIÓN: Nombre (Solo letras) ==*/
-            if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $nombre)){
-                $alerta=["tipo"=>"simple","titulo"=>"Nombre no válido","texto"=>"El nombre '$nombre' contiene caracteres no permitidos. Solo se permiten letras.","icono"=>"error"];
-                return json_encode($alerta); exit();
-            }
-
-            /*== VALIDACIÓN: Apellido (Solo letras) ==*/
-            if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $apellido)){
-                $alerta=["tipo"=>"simple","titulo"=>"Apellido no válido","texto"=>"El apellido '$apellido' contiene caracteres no permitidos. Solo se permiten letras.","icono"=>"error"];
-                return json_encode($alerta); exit();
-            }
-
-            /*== VALIDACIÓN: Cédula (Solo números y longitud) ==*/
-            if(!preg_match("/^[0-9]{7,10}$/", $dni)){
-                $msj_dni = (is_numeric($dni)) 
-                    ? "La cédula debe tener entre 7 y 10 dígitos (escribiste ".strlen($dni).")." 
-                    : "La cédula '$dni' no es válida. No debe incluir letras ni símbolos.";
+                // Captura de las 3 PREGUNTAS Y RESPUESTAS
+                $p1 = $this->limpiarCadena($_POST['usuario_pregunta_1']);
+                $r1 = $this->limpiarCadena($_POST['usuario_respuesta_1']);
+                $p2 = $this->limpiarCadena($_POST['usuario_pregunta_2']);
+                $r2 = $this->limpiarCadena($_POST['usuario_respuesta_2']);
+                $p3 = $this->limpiarCadena($_POST['usuario_pregunta_3']);
+                $r3 = $this->limpiarCadena($_POST['usuario_respuesta_3']);
                 
-                $alerta=["tipo"=>"simple","titulo"=>"Error en Documento","texto"=>$msj_dni,"icono"=>"error"];
-                return json_encode($alerta); exit();
-            }
+                $clave1=$this->limpiarCadena($_POST['usuario_clave_1']);
+                $clave2=$this->limpiarCadena($_POST['usuario_clave_2']);
 
-            /*== Verificando DNI repetido (Excluyendo al usuario actual) ==*/
-            if($datos['usuario_dni']!=$dni){
-                $check_dni=$this->ejecutarConsulta("SELECT usuario_dni FROM usuario WHERE usuario_dni='$dni'");
-                if($check_dni->rowCount()>0){ 
-                    $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El número de CÉDULA ya se encuentra registrado","icono"=>"error"]; 
-                    return json_encode($alerta); exit(); 
-                }
-            }
-
-            /*== Verificando Usuario repetido ==*/
-            if($datos['usuario_usuario']!=$usuario){
-                $check_usuario=$this->ejecutarConsulta("SELECT usuario_usuario FROM usuario WHERE usuario_usuario='$usuario'");
-                if($check_usuario->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El USUARIO ya existe","icono"=>"error"]; return json_encode($alerta); exit(); }
-            }
-
-            /*== Verificando Email ==*/
-            if($email!="" && $datos['usuario_email']!=$email){
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $alerta = ["tipo" => "simple", "titulo" => "Email inválido", "texto" => "Formato de correo incorrecto", "icono" => "error"];
+                // Validación de obligatoriedad para las 3 preguntas
+                if($r1=="" || $r2=="" || $r3==""){
+                    $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Debes responder las 3 preguntas de seguridad obligatoriamente","icono"=>"error"];
                     return json_encode($alerta); exit();
                 }
-                $check_email=$this->ejecutarConsulta("SELECT usuario_email FROM usuario WHERE usuario_email='$email'");
-                if($check_email->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El EMAIL ya existe","icono"=>"error"]; return json_encode($alerta); exit(); }
+            } else {
+                /*========== EDICIÓN COMPLETA (ADMINISTRADOR) ==========*/
+                $tipo_doc=$this->limpiarCadena($_POST['usuario_tipo_documento']);
+                $dni=$this->limpiarCadena($_POST['usuario_dni']);
+                $nombre=$this->limpiarCadena($_POST['usuario_nombre']);
+                $apellido=$this->limpiarCadena($_POST['usuario_apellido']);
+                $usuario=$this->limpiarCadena($_POST['usuario_usuario']);
+                $email=$this->limpiarCadena($_POST['usuario_email']);
+                $clave1=$this->limpiarCadena($_POST['usuario_clave_1']);
+                $clave2=$this->limpiarCadena($_POST['usuario_clave_2']);
+                $caja=$this->limpiarCadena($_POST['usuario_caja']);
+                $rol = isset($_POST['usuario_rol']) ? $this->limpiarCadena($_POST['usuario_rol']) : $datos['rol_id'];
+                
+                // El admin mantiene las preguntas que ya existían
+                $p1 = $datos['usuario_pregunta_1']; $r1 = $datos['usuario_respuesta_1'];
+                $p2 = $datos['usuario_pregunta_2']; $r2 = $datos['usuario_respuesta_2'];
+                $p3 = $datos['usuario_pregunta_3']; $r3 = $datos['usuario_respuesta_3'];
+
+                if($tipo_doc=="" || $dni=="" || $nombre=="" || $apellido=="" || $usuario==""){
+                    $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
+                }
             }
 
             /*== Gestión de Claves ==*/
             if($clave1!="" || $clave2!=""){
                 if (strlen($clave1) < 7) {
-                    $alerta = ["tipo" => "simple", "titulo" => "Error en Clave", "texto" => "La nueva contraseña debe tener al menos 7 caracteres.", "icono" => "error"];
+                    $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "La clave debe tener al menos 7 caracteres.", "icono" => "error"];
                     return json_encode($alerta); exit();
                 }
-                if($clave1!=$clave2){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Las contraseñas no coinciden","icono"=>"error"]; return json_encode($alerta); exit(); }
-                else{ $clave=password_hash($clave1,PASSWORD_BCRYPT,["cost"=>10]); }
+                if($clave1!=$clave2){ 
+                    $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Las contraseñas no coinciden","icono"=>"error"]; 
+                    return json_encode($alerta); exit(); 
+                }
+                $clave=password_hash($clave1,PASSWORD_BCRYPT,["cost"=>10]);
             }else{
                 $clave=$datos['usuario_clave'];
             }
 
-            /*== Preparando Array de Actualización ==*/
+            /*== Preparando datos para el query de actualización ==*/
             $usuario_datos_up=[
                 ["campo_nombre"=>"usuario_tipo_documento","campo_marcador"=>":Tipo","campo_valor"=>$tipo_doc],
-                ["campo_nombre"=>"usuario_dni","campo_marcador"=>":Dni","campo_valor"=>$dni],
+                ["campo_nombre"=>"usuario_dni","campo_marcador"=>":DNI","campo_valor"=>$dni],
                 ["campo_nombre"=>"usuario_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
                 ["campo_nombre"=>"usuario_apellido","campo_marcador"=>":Apellido","campo_valor"=>$apellido],
-                ["campo_nombre"=>"usuario_usuario","campo_marcador"=>":Usuario","campo_valor"=>$usuario],
                 ["campo_nombre"=>"usuario_email","campo_marcador"=>":Email","campo_valor"=>$email],
+                ["campo_nombre"=>"usuario_usuario","campo_marcador"=>":Usuario","campo_valor"=>$usuario],
                 ["campo_nombre"=>"usuario_clave","campo_marcador"=>":Clave","campo_valor"=>$clave],
+                ["campo_nombre"=>"usuario_pregunta_1","campo_marcador"=>":P1","campo_valor"=>$p1],
+                ["campo_nombre"=>"usuario_respuesta_1","campo_marcador"=>":R1","campo_valor"=>$r1],
+                ["campo_nombre"=>"usuario_pregunta_2","campo_marcador"=>":P2","campo_valor"=>$p2],
+                ["campo_nombre"=>"usuario_respuesta_2","campo_marcador"=>":R2","campo_valor"=>$r2],
+                ["campo_nombre"=>"usuario_pregunta_3","campo_marcador"=>":P3","campo_valor"=>$p3],
+                ["campo_nombre"=>"usuario_respuesta_3","campo_marcador"=>":R3","campo_valor"=>$r3],
                 ["campo_nombre"=>"caja_id","campo_marcador"=>":Caja","campo_valor"=>$caja],
                 ["campo_nombre"=>"rol_id","campo_marcador"=>":Rol","campo_valor"=>$rol]
             ];
@@ -415,18 +412,18 @@
             $condicion=["condicion_campo"=>"usuario_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
             if($this->actualizarDatos("usuario",$usuario_datos_up,$condicion)){
-                if($id==$_SESSION['id']){
-                    $_SESSION['nombre']=$nombre;
-                    $_SESSION['apellido']=$apellido;
-                    $_SESSION['usuario']=$usuario;
+                
+                // Bloque agregado para limpiar la alerta de seguridad
+                if($id == $_SESSION['id']){
+                    unset($_SESSION['seguridad_pendiente']);
                 }
-                $alerta=["tipo"=>"redireccionar","titulo"=>"Éxito","texto"=>"Usuario actualizado correctamente","icono"=>"success","url" => APP_URL."userList/"];
+
+                $alerta=["tipo"=>"recargar","titulo"=>"¡Usuario actualizado!","texto"=>"Los datos se actualizaron correctamente","icono"=>"success"];
             }else{
-                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo actualizar el usuario","icono"=>"error"];
+                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudieron actualizar los datos","icono"=>"error"];
             }
             return json_encode($alerta);
         }
-
         /*----------  Controladores de fotos  ----------*/
         public function actualizarFotoUsuarioControlador(){
             $id=$this->limpiarCadena($_POST['usuario_id']);
