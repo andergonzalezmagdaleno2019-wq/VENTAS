@@ -306,7 +306,7 @@
     <div class="modal-card">
         <header class="modal-card-head"><p class="modal-card-title is-uppercase"><i class="fas fa-search"></i> Buscar cliente</p><button class="delete" aria-label="close"></button></header>
         <section class="modal-card-body">
-            <div class="field mt-2 mb-4"><div class="control"><input class="input" type="text" placeholder="Documento, Nombre o Apellido" name="input_cliente" id="input_cliente"></div></div>
+            <div class="field mt-2 mb-4"><div class="control"><input class="input" type="text" placeholder="Documento, Nombre o Apellido" name="input_cliente" id="input_cliente" autocomplete="off"></div></div>
             <div class="container" id="tabla_clientes"></div>
         </section>
     </div>
