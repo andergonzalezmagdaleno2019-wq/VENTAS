@@ -297,7 +297,7 @@
                 
 				<li class="full-width divider-menu-h"></li>
 
-				<?php if($_SESSION['rol'] == 2){ ?>
+				<?php if($_SESSION['id'] != 1){?>
                 <li class="full-width">
                     <a href="<?php echo APP_URL; ?>userProfile/" class="full-width">
                         <div class="navLateral-body-cl">

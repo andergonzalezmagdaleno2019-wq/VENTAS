@@ -4,23 +4,22 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
     header('Content-Type: application/json');
     
     $email = $_POST['recuperar_email'];
-    $email_codificado = base64_encode($email); // Codificamos para la URL
+    $email_codificado = base64_encode($email); 
 
-    // Aquí iría tu consulta real a la BD...
     $existe = (strpos($email, '@') !== false); 
     
     if($existe) {
         echo json_encode([
             'existe' => true, 
             'mensaje' => 'Correo encontrado',
-            'redirect' => APP_URL . "loginAnswer/" . $email_codificado . "/" // <-- ESTO ES VITAL
+            'redirect' => APP_URL . "loginAnswer/" . $email_codificado . "/" 
         ]);
     } else {
         echo json_encode(['existe' => false, 'mensaje' => 'Correo no registrado']);
     }
     exit; 
 }
-// Tu código PHP existente para login
+
 if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
     $insLogin->iniciarSesionControlador();
 }
@@ -31,9 +30,8 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <!-- Asegúrate de incluir SweetAlert2 -->
+    <!--  SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Tus otros estilos CSS -->
 </head>
 <body>
 <div class="main-container">
@@ -81,7 +79,7 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
 	</div>
 
     <script>
-        // Función original de login (sin cambios)
+        // Función de login 
         function ejecutarLoginInmune() {
             let email = document.getElementById('fake_email').value.trim();
             let clave = document.getElementById('fake_clave').value.trim();
@@ -137,7 +135,7 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
             }
         });
 
-        // ===== FUNCIONES DE RECUPERACIÓN CORREGIDAS =====
+        // ===== FUNCIONES DE RECUPERACIÓN =====
 
 function recuperarCuenta() {
     Swal.fire({

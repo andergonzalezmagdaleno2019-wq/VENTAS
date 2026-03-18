@@ -201,7 +201,7 @@
     <?php endif; ?>
 
 </div>
-<?php if(isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']): ?>
+<?php if(isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente'] && $_SESSION['id'] != 1): ?>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         Swal.fire({

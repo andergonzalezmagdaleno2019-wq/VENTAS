@@ -136,7 +136,15 @@
 					$tabla.='<tr><td class="has-text-left" ><i class="fas fa-male fa-fw"></i> &nbsp; '.$rows['cliente_nombre'].' '.$rows['cliente_apellido'].' ('.$rows['cliente_numero_documento'].')</td><td class="has-text-centered" ><button type="button" class="button is-link is-rounded is-small" onclick="agregar_cliente('.$rows['cliente_id'].')"><i class="fas fa-user-plus"></i></button></td></tr>';
 				}
 				$tabla.='</tbody></table></div>'; return $tabla;
-			}else{ return '<article class="message is-warning"><div class="message-body">Cliente no encontrado</div></article>'; exit(); }
+			}else{ return '<article class="message is-warning">
+                    <div class="message-body has-text-centered">
+                        <p class="mb-3">El cliente <strong>"'.$cliente.'"</strong> no existe.</p>
+                        <a href="'.APP_URL.'clientNew/" class="button is-info is-rounded is-small">
+                            <i class="fas fa-user-plus"></i> &nbsp; Crear nuevo cliente
+                        </a>
+                    </div>
+                </article>'; 
+                exit(); }
         }
 
         /*---------- Controlador agregar cliente ----------*/

@@ -18,12 +18,12 @@ if (isset($_POST['modulo_recuperacion'])) {
         // Definimos las columnas según el número enviado desde el JS
         $columna_respuesta = "usuario_respuesta_" . $num;
 
-        $check_user = $insLogin->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_email='$email'");
+        $check_user = $insLogin->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_email='$email' AND usuario_id != '1'");
 
         if ($check_user->rowCount() == 1) {
             $datos = $check_user->fetch();
             
-            // Comparamos la respuesta (puedes usar password_verify si están encriptadas o string simple)
+            // Comparamos la respuesta 
             if ($datos[$columna_respuesta] == $respuesta_usuario) {
                 echo json_encode([
                     "error" => false,
@@ -45,7 +45,7 @@ if (isset($_POST['modulo_recuperacion'])) {
         $email = $insLogin->limpiarCadena($_POST['user_email']);
         $nueva_clave = password_hash($insLogin->limpiarCadena($_POST['nueva_clave']), PASSWORD_BCRYPT, ["cost" => 10]);
 
-        $actualizar = $insLogin->ejecutarConsulta("UPDATE usuario SET usuario_clave='$nueva_clave' WHERE usuario_email='$email'");
+        $actualizar = $insLogin->ejecutarConsulta("UPDATE usuario SET usuario_clave='$nueva_clave' WHERE usuario_email='$email' AND usuario_id != '1'");
 
         if ($actualizar) {
             echo json_encode([

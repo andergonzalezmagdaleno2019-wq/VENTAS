@@ -1,5 +1,4 @@
 <?php
-// Esto debe ser lo PRIMERO, sin espacios ni nada antes
 require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../autoload.php';
 
@@ -23,7 +22,7 @@ if(isset($_POST['recuperar_email_ajax']) && $_POST['recuperar_email_ajax'] != ""
     $email = $insLogin->limpiarCadena($email);
     
     // Verificar en base de datos
-    $check_email = $insLogin->ejecutarConsulta("SELECT usuario_id FROM usuario WHERE usuario_email='$email'");
+    $check_email = $insLogin->ejecutarConsulta("SELECT usuario_id FROM usuario WHERE usuario_email='$email' AND usuario_id != '1'");
 
     if($check_email && $check_email->rowCount() == 1) {
         $email_codificado = base64_encode($email);

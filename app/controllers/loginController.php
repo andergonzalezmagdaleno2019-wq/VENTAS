@@ -8,8 +8,7 @@
         /*----------  Controlador iniciar sesion  ----------*/
         public function iniciarSesionControlador(){
 
-    /*============= NUEVO: Verificación AJAX para recuperar contraseña =============*/
-    /* Este bloque DEBE IR PRIMERO, antes que cualquier otra cosa */
+    /*============= Verificación AJAX para recuperar contraseña =============*/
     if(isset($_POST['verificar_email_ajax']) && $_POST['verificar_email_ajax'] == "true"){
         
         // Limpiar cualquier salida previa
@@ -24,7 +23,7 @@
             $email = $this->limpiarCadena($_POST['recuperar_email_ajax']);
             
             // Verificar si existe en la base de datos
-            $check_email = $this->ejecutarConsulta("SELECT usuario_id FROM usuario WHERE usuario_email='$email'");
+            $check_email = $this->ejecutarConsulta("SELECT usuario_id FROM usuario WHERE usuario_email='$email' AND usuario_id != '1'");
 
             if($check_email && $check_email->rowCount() == 1){
                 $email_codificado = base64_encode($email);
@@ -35,8 +34,8 @@
                 ]);
             } else {
                 echo json_encode([
-                    'existe' => false,
-                    'mensaje' => 'El correo electrónico ingresado no está registrado en nuestro sistema.'
+                'existe' => false,
+                'mensaje' => 'El correo electrónico ingresado no está registrado o no tiene permisos de recuperación.'
                 ]);
             }
         } else {
@@ -45,28 +44,25 @@
                 'mensaje' => 'No se recibió el correo electrónico'
             ]);
         }
-        exit; // Salir inmediatamente, NO ejecutar nada más
+        exit; 
     }
-    /*============= FIN NUEVO BLOQUE =============*/
 
     /*---------- RECUPERACIÓN DE CUENTA (Paso 1) ----------*/
     if(isset($_POST['recuperar_email']) && $_POST['recuperar_email'] != ""){
         $email = $this->limpiarCadena($_POST['recuperar_email']);
         
-        $check_email = $this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_email='$email'");
+        $check_email = $this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_email='$email' AND usuario_id != '1'");
 
         if($check_email->rowCount() == 1){
             $email_codificado = base64_encode($email);
             $url_final = APP_URL."loginAnswer/".$email_codificado."/";
-            
-            // 1. Intentamos por PHP
+        
             if(!headers_sent()){
                 header("Location: ".$url_final);
             }
-            
-            // 2. Si PHP falla, este JS lo hace sí o sí
+       
             echo "<script> window.location.replace('".$url_final."'); </script>";
-            exit(); // IMPORTANTE: Detenemos todo aquí
+            exit(); 
         } else {
             echo '<article class="message is-danger"><div class="message-body"><strong>Error:</strong> El correo ingresado no está registrado.</div></article>';
             return;
