@@ -1,3 +1,27 @@
+/* 1. Importación de Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap');
+
+/* 2. Aplicación Global (Fuentes del Sistema) */
+html, body {
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+/* 3. Forzar componentes de Bulma */
+/* Añadimos .table, .navbar y .menu para cubrir todo el dashboard */
+.title, 
+.subtitle, 
+.button, 
+.input, 
+.label, 
+.select select, 
+.textarea, 
+.table, 
+.navbar-item, 
+.menu-list a, 
+.message-body {
+    font-family: 'Montserrat', sans-serif !important;
+}
+
 /*!
  * Font Awesome Free 5.13.0 by @fontawesome - https://fontawesome.com
  * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)

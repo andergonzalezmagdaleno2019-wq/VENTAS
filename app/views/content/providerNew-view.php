@@ -25,7 +25,24 @@
             <div class="column">
                 <div class="control">
                     <label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="proveedor_rif" data-filtro="rif" pattern="[0-9\-]{8,14}" minlength="8" maxlength="14" placeholder="Ej: 12345678-9" required autocomplete="off" title="Solo números y guiones (-). Mínimo 8 caracteres.">
+                    <div class="field has-addons">
+                        <p class="control">
+                            <span class="select">
+                                <select name="proveedor_rif_tipo" required>
+                                    <option value="V">V</option>
+                                    <option value="E">E</option>
+                                    <option value="J">J</option>
+                                    <option value="G">G</option>
+                                </select>
+                            </span>
+                        </p>
+                        <p class="control is-expanded">
+                            <input class="input" type="text" name="proveedor_rif_numero" 
+                                pattern="[0-9]{6,10}" minlength="6" maxlength="10" 
+                                placeholder="12345678" required autocomplete="off" 
+                                title="Solo números. Entre 6 y 10 dígitos.">
+                        </p>
+                    </div>
                 </div>
             </div>
 

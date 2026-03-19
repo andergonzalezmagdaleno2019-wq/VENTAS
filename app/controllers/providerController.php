@@ -4,56 +4,56 @@
 
 	class providerController extends mainModel{
 
-		/*----------  Controlador registrar proveedor  ----------*/
+	/*----------  Controlador registrar proveedor  ----------*/
 		public function registrarProveedorControlador(){
 			$nombre=$this->limpiarCadena($_POST['proveedor_nombre']);
-			$rif=$this->limpiarCadena($_POST['proveedor_rif']);
 			$direccion=$this->limpiarCadena($_POST['proveedor_direccion']);
+			
+			// RIF Unificado
+			$rif_tipo = $this->limpiarCadena($_POST['proveedor_rif_tipo']);
+			$rif_numero = $this->limpiarCadena($_POST['proveedor_rif_numero']);
+			$rif = $rif_tipo . "-" . $rif_numero;
 
-            // CAPTURAMOS EL TELÉFONO DIVIDIDO
-            $telefono_prefijo = $this->limpiarCadena($_POST['proveedor_telefono_codigo']);
-            $telefono_numero = $this->limpiarCadena($_POST['proveedor_telefono']);
+			// Teléfono
+			$telefono_prefijo = $this->limpiarCadena($_POST['proveedor_telefono_codigo']);
+			$telefono_numero = $this->limpiarCadena($_POST['proveedor_telefono']);
 
-			if($nombre=="" || $rif==""){
-				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
+			// Validaciones básicas
+			if($nombre=="" || $rif_numero==""){
+				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; 
+				return json_encode($alerta); exit();
 			}
 			
-            # VALIDACIÓN: El nombre debe tener letras #
-            if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
-                $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre del proveedor no puede ser solo números, debe contener letras.", "icono" => "error"]; return json_encode($alerta); exit();
-            }
-
-			if($this->verificarDatos("[0-9\-]{1,15}", $rif)){
-				$alerta=["tipo"=>"simple","titulo"=>"Formato Inválido","texto"=>"El RIF solo permite números y guiones (-).","icono"=>"error"]; return json_encode($alerta); exit();
+			// Unificación lógica del teléfono
+			$telefono_final = ""; 
+			if ($telefono_numero != "") {
+				if($telefono_prefijo == ""){ 
+					$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Seleccione código de área.","icono" => "error"]; 
+					return json_encode($alerta); exit(); 
+				}
+				$telefono_final = $telefono_prefijo . $telefono_numero;
 			}
 
-            # VALIDACIÓN Y UNIFICACIÓN DE TELÉFONO #
-            $telefono = "";
-            if ($telefono_numero != "" || $telefono_prefijo != "") {
-                if($telefono_prefijo == ""){ $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Debe seleccionar un código de área.", "icono" => "error"]; return json_encode($alerta); exit(); }
-                if (!preg_match("/^[0-9]{7}$/", $telefono_numero)) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número de teléfono debe tener exactamente 7 dígitos.", "icono" => "error"]; return json_encode($alerta); exit(); }
-                $telefono = $telefono_prefijo . $telefono_numero;
-            }
-
+			// Verificar RIF duplicado
 			$check_rif=$this->ejecutarConsulta("SELECT proveedor_rif FROM proveedor WHERE proveedor_rif='$rif'");
 			if($check_rif->rowCount()>0){
-				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El RIF ingresado ya se encuentra registrado","icono"=>"error"]; return json_encode($alerta); exit();
+				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El RIF ya está registrado","icono"=>"error"]; 
+				return json_encode($alerta); exit();
 			}
 
-			$datos_proveedor_reg=[
+			$datos_proveedor_reg = [
 				["campo_nombre"=>"proveedor_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
 				["campo_nombre"=>"proveedor_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
-				["campo_nombre"=>"proveedor_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono],
+				["campo_nombre"=>"proveedor_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono_final],
 				["campo_nombre"=>"proveedor_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
 			];
 
 			$registrar_proveedor=$this->guardarDatos("proveedor",$datos_proveedor_reg);
 
 			if($registrar_proveedor->rowCount()==1){
-                $this->guardarBitacora("Proveedores", "Registro", "Se registró el proveedor: ".$nombre);
-				$alerta=["tipo"=>"limpiar","titulo"=>"Proveedor registrado","texto"=>"Registrado con éxito","icono"=>"success"];
+				$alerta=["tipo"=>"limpiar","titulo"=>"¡Éxito!","texto"=>"Proveedor registrado correctamente","icono"=>"success"];
 			}else{
-				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar el proveedor","icono"=>"error"];
+				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar","icono"=>"error"];
 			}
 			return json_encode($alerta);
 		}
@@ -122,57 +122,90 @@
 		}
 
 		/*----------  Controlador actualizar proveedor ----------*/
-		public function actualizarProveedorControlador(){
-			$id=$this->limpiarCadena($_POST['proveedor_id']);
+        public function actualizarProveedorControlador(){
+            $id=$this->limpiarCadena($_POST['proveedor_id']);
+
+            // Verificando proveedor
             $datos=$this->ejecutarConsulta("SELECT * FROM proveedor WHERE proveedor_id='$id'");
-		    if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Proveedor no encontrado","icono"=>"error"]; return json_encode($alerta); exit(); }
+            if($datos->rowCount()<=0){ 
+                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Proveedor no encontrado","icono"=>"error"]; 
+                return json_encode($alerta); exit(); 
+            }
             $datos = $datos->fetch();
 
-			$nombre=$this->limpiarCadena($_POST['proveedor_nombre']);
-            $rif=$this->limpiarCadena($_POST['proveedor_rif']);
-			$direccion=$this->limpiarCadena($_POST['proveedor_direccion']);
+            $nombre=$this->limpiarCadena($_POST['proveedor_nombre']);
+            $direccion=$this->limpiarCadena($_POST['proveedor_direccion']);
+
+            // --- NUEVO: CAPTURAMOS EL RIF DIVIDIDO ---
+            $rif_tipo = $this->limpiarCadena($_POST['proveedor_rif_tipo']);
+            $rif_numero = $this->limpiarCadena($_POST['proveedor_rif_numero']);
+            $rif = $rif_tipo . "-" . $rif_numero; 
 
             // CAPTURAMOS EL TELÉFONO DIVIDIDO
             $telefono_prefijo = $this->limpiarCadena($_POST['proveedor_telefono_codigo']);
             $telefono_numero = $this->limpiarCadena($_POST['proveedor_telefono']);
 
-			if($nombre=="" || $rif==""){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Los campos Nombre y RIF son obligatorios","icono"=>"error"]; return json_encode($alerta); exit(); }
-			
+            if($nombre=="" || $rif_numero==""){ 
+                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Los campos Nombre y RIF son obligatorios","icono"=>"error"]; 
+                return json_encode($alerta); exit(); 
+            }
+            
             # VALIDACIÓN: El nombre debe tener letras #
             if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
-                $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre del proveedor no puede ser solo números, debe contener letras.", "icono" => "error"]; return json_encode($alerta); exit();
+                $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre del proveedor debe contener letras.", "icono" => "error"]; 
+                return json_encode($alerta); exit();
             }
 
-            if($this->verificarDatos("[0-9\-]{1,15}", $rif)){ $alerta=["tipo"=>"simple","titulo"=>"Formato Inválido","texto"=>"El RIF solo permite números y guiones.","icono"=>"error"]; return json_encode($alerta); exit(); }
-			
+            // Validamos formato de RIF unificado
+            if(!preg_match("/^[V|E|J|G|P]-[0-9]{6,10}$/", $rif)){ 
+                $alerta=["tipo"=>"simple","titulo"=>"Formato Inválido","texto"=>"El RIF no tiene un formato válido (Letra-Número).","icono"=>"error"]; 
+                return json_encode($alerta); exit(); 
+            }
+            
             # VALIDACIÓN Y UNIFICACIÓN DE TELÉFONO #
-            $telefono = "";
-            if ($telefono_numero != "" || $telefono_prefijo != "") {
-                if($telefono_prefijo == ""){ $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Debe seleccionar un código de área.", "icono" => "error"]; return json_encode($alerta); exit(); }
-                if (!preg_match("/^[0-9]{7}$/", $telefono_numero)) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número de teléfono debe tener exactamente 7 dígitos.", "icono" => "error"]; return json_encode($alerta); exit(); }
-                $telefono = $telefono_prefijo . $telefono_numero;
+            $telefono_final = "";
+            if ($telefono_numero != "") {
+                if($telefono_prefijo == ""){ 
+                    $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Debe seleccionar un código de área.", "icono" => "error"]; 
+                    return json_encode($alerta); exit(); 
+                }
+                if (!preg_match("/^[0-9]{7}$/", $telefono_numero)) { 
+                    $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número de teléfono debe tener 7 dígitos.", "icono" => "error"]; 
+                    return json_encode($alerta); exit(); 
+                }
+                $telefono_final = $telefono_prefijo . $telefono_numero;
             }
 
+            // Verificar si el RIF cambió y si el nuevo ya existe
             if($datos['proveedor_rif'] != $rif){
                 $check_rif=$this->ejecutarConsulta("SELECT proveedor_rif FROM proveedor WHERE proveedor_rif='$rif'");
-                if($check_rif->rowCount()>0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El RIF ingresado ya está asignado a otro proveedor","icono"=>"error"]; return json_encode($alerta); exit(); }
+                if($check_rif->rowCount()>0){ 
+                    $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El RIF ingresado ya está asignado a otro proveedor","icono"=>"error"]; 
+                    return json_encode($alerta); exit(); 
+                }
             }
 
-			$proveedor_datos_up=[
-				["campo_nombre"=>"proveedor_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
+            $proveedor_datos_up=[
+                ["campo_nombre"=>"proveedor_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
                 ["campo_nombre"=>"proveedor_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
-				["campo_nombre"=>"proveedor_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono],
-				["campo_nombre"=>"proveedor_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
-			];
+                ["campo_nombre"=>"proveedor_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono_final],
+                ["campo_nombre"=>"proveedor_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
+            ];
 
-			$condicion=["condicion_campo"=>"proveedor_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
+            $condicion=["condicion_campo"=>"proveedor_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
-			if($this->actualizarDatos("proveedor",$proveedor_datos_up,$condicion)){
+            if($this->actualizarDatos("proveedor",$proveedor_datos_up,$condicion)){
                 $this->guardarBitacora("Proveedores", "Actualización", "Se actualizaron datos del proveedor: ".$nombre);
-				$alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"Proveedor actualizado correctamente","icono"=>"success"];
-			}else{
-				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo actualizar los datos","icono"=>"error"];
-			}
-			return json_encode($alerta);
-		}
+                $alerta=[
+					"tipo"=>"redireccionar",
+					"titulo"=>"¡Éxito!",
+					"texto"=>"Proveedor actualizado correctamente",
+					"icono"=>"success",
+					"url"=>APP_URL."providerList/" 
+				];
+            }else{
+                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo actualizar los datos","icono"=>"error"];
+            }
+            return json_encode($alerta);
+        }
 	}

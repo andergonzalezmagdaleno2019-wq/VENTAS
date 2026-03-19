@@ -238,6 +238,13 @@ class productController extends mainModel
 			                    	<button type="submit" class="button is-' . $btn_estado . ' is-rounded is-small" title="Cambiar a ' . $txt_estado . '"><i class="fas fa-' . $icon_estado . '"></i></button>
 			                    </form>
                             </td>
+
+                            <td>
+                                <button class="button is-link is-rounded is-small js-modal-trigger" data-target="modal-detalle-' . $rows['producto_id'] . '" title="Ver detalle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+
 			                <td>
 			                    <a href="' . APP_URL . 'productUpdate/' . $rows['producto_id'] . '/" class="button is-success is-rounded is-small" title="Actualizar"><i class="fas fa-sync"></i></a>
 			                </td>
@@ -249,6 +256,52 @@ class productController extends mainModel
 			                    </form>
 			                </td>
 						</tr>';
+
+                        // MODAL DE DETALLE 
+                            $tabla .= '
+                            <div id="modal-detalle-' . $rows['producto_id'] . '" class="modal">
+                                <div class="modal-background"></div>
+                                <div class="modal-card">
+                                    <header class="modal-card-head">
+                                        <p class="modal-card-title has-text-dark">Detalle de Producto</p>
+                                        <button class="delete" aria-label="close"></button>
+                                    </header>
+                                    <section class="modal-card-body has-text-dark has-text-left">
+                                        <div class="columns">
+                                            <div class="column is-one-third">
+                                                <figure class="image is-4by3">';
+                                                    
+                                                    // Lógica de validación de imagen
+                                                    $foto_ruta = "./app/views/productos/" . $rows['producto_foto'];
+                                                    
+                                                    if (is_file($foto_ruta)) {
+                                                        $tabla .= '<img src="' . APP_URL . 'app/views/productos/' . $rows['producto_foto'] . '" alt="Producto" style="border-radius: 8px; object-fit: cover;">';
+                                                    } else {
+                                                        $tabla .= '<img src="' . APP_URL . 'app/views/productos/default.png" alt="Sin foto" style="border-radius: 8px;">';
+                                                    }
+
+                                    $tabla .= ' </figure>
+                                            </div>
+                                            <div class="column">
+                                                <p class="is-size-4 has-text-weight-bold">' . $rows['producto_nombre'] . '</p>
+                                                <hr style="margin: 10px 0;">
+                                                <p><strong>Código:</strong> ' . $rows['producto_codigo'] . '</p>
+                                                <p><strong>Marca/Modelo:</strong> ' . $rows['producto_marca'] . ' ' . $rows['producto_modelo'] . '</p>
+                                                <p><strong>Categoría:</strong> ' . ($rows['categoria_padre_nombre'] ?? 'Sin Categoría') . '</p>
+                                                <p><strong>Stock Actual:</strong> ' . $rows['producto_stock'] . ' ' . $rows['producto_unidad'] . '</p>
+                                                <p><strong>Tipo de Producto:</strong> ' . $rows['producto_unidad'] . '</p>
+                                                <br>
+                                                <div class="notification is-light is-info">
+                                                    <p class="is-size-5"><strong>Precio:</strong> <span class="has-text-link">$' . $rows['producto_precio'] . '</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                    <footer class="modal-card-foot is-justify-content-flex-end">
+                                        <button class="button is-info js-modal-close">Cerrar</button>
+                                    </footer>
+                                </div>
+                            </div>';
 				$contador++;
 			}
 			$pag_final = $contador - 1;
@@ -414,6 +467,73 @@ class productController extends mainModel
         } else {
             $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo actualizar o no hubo cambios", "icono" => "error"];
         }
+        return json_encode($alerta);
+    }
+/*---------- Controlador actualizar foto producto  ----------*/
+    public function actualizarFotoProductoControlador()
+    {
+        $id = $this->limpiarCadena($_POST['producto_id']);
+
+        // Verificando producto
+        $datos = $this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='$id'");
+        if ($datos->rowCount() <= 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Producto no encontrado", "icono" => "error"];
+            return json_encode($alerta);
+        }
+        $datos = $datos->fetch();
+
+    
+        $img_dir = $_SERVER['DOCUMENT_ROOT'] . '/VENTAS/app/views/productos/';
+
+        if ($_FILES['producto_foto']['name'] == "" && $_FILES['producto_foto']['size'] <= 0) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No ha seleccionado una imagen válida", "icono" => "error"];
+            return json_encode($alerta);
+        }
+
+        // 2. Validar que sea imagen
+        $tipo_archivo = mime_content_type($_FILES['producto_foto']['tmp_name']);
+        if (strpos($tipo_archivo, "image/") === false) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El archivo seleccionado no es una imagen válida", "icono" => "error"];
+            return json_encode($alerta);
+        }
+
+        // 3. Obtener extensión y limpiar nombre
+        $extension = pathinfo($_FILES['producto_foto']['name'], PATHINFO_EXTENSION);
+        $nombre_limpio = preg_replace('/[|\\/<>:*?"]/', '', $datos['producto_nombre']);
+        $nombre_limpio = str_ireplace(" ", "_", $nombre_limpio);
+
+        // 4. Nombre final único
+        $foto = $nombre_limpio . "_" . rand(0, 1000) . "." . $extension;
+
+        // Verificar permisos y carpeta (Sin chmod en Windows)
+        if (!file_exists($img_dir)) {
+            mkdir($img_dir, 0777, true);
+        }
+
+        // 5. MOVER EL ARCHIVO 
+        if (!move_uploaded_file($_FILES['producto_foto']['tmp_name'], $img_dir . $foto)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "PHP no pudo mover el archivo. Verifique permisos en Windows de la carpeta 'productos'.", "icono" => "error"];
+            return json_encode($alerta);
+        }
+
+        // 6. Eliminar foto anterior si existe y no es la por defecto
+        if (is_file($img_dir . $datos['producto_foto']) && $datos['producto_foto'] != "default.png") {
+            unlink($img_dir . $datos['producto_foto']);
+        }
+
+        // 7. Actualizar DB
+        $producto_datos_up = [
+            ["campo_nombre" => "producto_foto", "campo_marcador" => ":Foto", "campo_valor" => $foto]
+        ];
+
+        $condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
+
+        if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
+            $alerta = ["tipo" => "recargar", "titulo" => "¡Foto actualizada!", "texto" => "La imagen se actualizó con éxito", "icono" => "success"];
+        } else {
+            $alerta = ["tipo" => "recargar", "titulo" => "Foto subida", "texto" => "La foto se guardó pero el nombre no cambió en la BD", "icono" => "warning"];
+        }
+
         return json_encode($alerta);
     }
 }

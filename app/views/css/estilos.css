@@ -1,40 +1,87 @@
-/*=====================================================
-                    Tipografia
-======================================================*/
-@font-face{
+/* 1. Importación desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+
+/* 2. Tipografías locales (Mantener solo si las usas para algo específico, 
+   si no, puedes borrarlas para que el sitio cargue más rápido) 
+*/
+@font-face {
     font-family: "RobotoCondensedLight";
-    src: url("../webfonts/robotocondensed-light.ttf"), 
-    url("../webfonts/robotocondensed-light.eot"), 
-    url("../webfonts/robotocondensed-light.woff"), 
-    url("../webfonts/robotocondensed-light.woff2"), 
-    url("../webfonts/robotocondensed-light.svg");
-}
-@font-face{
-    font-family: "RobotoRegular";
-    src: url("../webfonts/roboto-regular.ttf"), 
-    url("../webfonts/roboto-regular.eot"), 
-    url("../webfonts/roboto-regular.woff"), 
-    url("../webfonts/roboto-regular.woff2"), 
-    url("../webfonts/roboto-regular.svg");
-}
-@font-face{
-    font-family: "OswaldLight";
-    src: url("../webfonts/oswald-light.ttf"), 
-    url("../webfonts/oswald-light.eot"), 
-    url("../webfonts/oswald-light.woff"), 
-    url("../webfonts/oswald-light.woff2"), 
-    url("../webfonts/oswald-light.svg");
+    src: url("../webfonts/robotocondensed-light.ttf");
 }
 
-body,html{
+/* =====================================================
+    REGLAS ESPECÍFICAS PARA NAVLATERAL
+====================================================== */
+
+/* 1. Contenedor principal y textos generales */
+#navLateral, 
+.navLateral-body, 
+.navLateral-body-cr, 
+.navLateral-body-cl {
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+/* 2. Títulos del sistema y secciones del menú (is-uppercase) */
+.tittles, 
+.navLateral-body-logo, 
+.navLateral-body-tittle-menu {
+    font-family: 'Montserrat', sans-serif !important;
+    letter-spacing: 1px; /* Para que el texto en mayúsculas respire mejor */
+}
+
+/* 3. Enlaces del menú y submenús */
+.menu-principal li a, 
+.sub-menu-options li a {
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 400; /* Peso normal para los ítems */
+}
+
+/* 4. Nombre del usuario y etiquetas pequeñas (small) */
+.navLateral-body-cr span, 
+.navLateral-body-cr small {
+    font-family: 'Montserrat', sans-serif !important;
+    display: block;
+}
+
+.navLateral-body-cr small {
+    font-weight: 300; /* Un poco más delgado para el nombre de usuario */
+    font-size: 0.85rem;
+}
+/* ... las otras @font-face ... */
+
+/* 3. Aplicación Global Unificada */
+html, body {
     height: 100%;
     width: 100%;
     margin: 0;
     padding: 0;
     font-size: 16px;
-    font-family: "RobotoRegular";
     position: relative;
     background-color: #fff;
+    /* La fuente principal del sistema */
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+/* 4. Forzar Componentes de Bulma y Elementos de Formulario */
+.title, 
+.subtitle, 
+.button, 
+.input, 
+.label, 
+.select select, 
+.textarea, 
+.table,
+.navbar-item,
+.menu-list a {
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+/* 5. Ajuste de peso para Títulos (Opcional pero recomendado) */
+.title {
+    font-weight: 700;
+}
+.label {
+    font-weight: 600;
 }
 
 .main-container{

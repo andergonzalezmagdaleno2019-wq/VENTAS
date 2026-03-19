@@ -27,12 +27,38 @@
 				  	<input class="input" type="text" name="proveedor_nombre" data-filtro="empresa" value="<?php echo $datos['proveedor_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,\- ]{3,70}" minlength="3" maxlength="70" required autocomplete="off" title="El nombre de la empresa debe tener al menos 3 caracteres.">
 				</div>
 		  	</div>
-            <div class="column">
-					<div class="control">
-						<label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
-						<input class="input" type="text" name="proveedor_rif" data-filtro="rif" value="<?php echo $datos['proveedor_rif']; ?>" pattern="[0-9\-]{8,14}" minlength="8" maxlength="14" required autocomplete="off" title="Solo números y guiones (-). Mínimo 8 caracteres.">
+			<div class="column">
+				<div class="control">
+					<label>RIF / Identificación <?php echo CAMPO_OBLIGATORIO; ?></label>
+					<div class="field has-addons">
+						<p class="control">
+							<span class="select">
+								<select name="proveedor_rif_tipo" required>
+									<?php
+										// Extraemos la letra actual si ya existe (Ej: "V-123456")
+										$rif_actual = $datos['proveedor_rif'];
+										$tipo_actual = (strpos($rif_actual, '-') !== false) ? explode('-', $rif_actual)[0] : "V";
+										$numero_actual = (strpos($rif_actual, '-') !== false) ? explode('-', $rif_actual)[1] : $rif_actual;
+
+										$opciones = ["V", "E", "J", "G", "P"];
+										foreach($opciones as $op){
+											$selected = ($tipo_actual == $op) ? "selected" : "";
+											echo '<option value="'.$op.'" '.$selected.'>'.$op.'</option>';
+										}
+									?>
+								</select>
+							</span>
+						</p>
+						<p class="control is-expanded">
+							<input class="input" type="text" name="proveedor_rif_numero" 
+								value="<?php echo $numero_actual; ?>" 
+								pattern="[0-9]{6,10}" minlength="6" maxlength="10" 
+								required autocomplete="off" 
+								title="Solo números. Entre 6 y 10 dígitos.">
+						</p>
 					</div>
-		  	</div>
+				</div>
+			</div>
 		</div>
 
 		<?php
