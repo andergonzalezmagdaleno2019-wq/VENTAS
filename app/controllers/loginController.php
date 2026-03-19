@@ -127,7 +127,7 @@
                                     unset($_SESSION['intentos_fallidos'][$email]);
                                 }
 
-                                // VARIABLES DE SESIÓN (¡AQUÍ ESTABA EL ERROR DEL ROL!)
+                                // VARIABLES DE SESIÓN 
                                 $_SESSION['id']=$check_usuario['usuario_id'];
                                 $_SESSION['nombre']=$check_usuario['usuario_nombre'];
                                 $_SESSION['apellido']=$check_usuario['usuario_apellido'];
@@ -140,14 +140,25 @@
                                 /*== AUDITORIA INICIO SESION ==*/
                                 $this->guardarBitacora("Seguridad", "Inicio de Sesión", "El usuario ".$check_usuario['usuario_usuario']." entró al sistema.");
 
-                                /*== MARCAR PENDIENTES (Solo para Vendedores ID 2) ==*/
-                                if($_SESSION['rol'] == 2 && ($check_usuario['usuario_pregunta_1'] == "" || is_null($check_usuario['usuario_pregunta_1']))){
-                                    $_SESSION['seguridad_pendiente'] = true;
+                                /*== MARCAR PENDIENTES DE SEGURIDAD (Para todos excepto el Admin ID 1) ==*/
+                                if($_SESSION['id'] != 1){
+                                    // Si alguna de las 3 preguntas está vacía, marcamos como pendiente
+                                    if(empty($check_usuario['usuario_pregunta_1']) || 
+                                    empty($check_usuario['usuario_pregunta_2']) || 
+                                    empty($check_usuario['usuario_pregunta_3'])){
+                                        
+                                        $_SESSION['seguridad_pendiente'] = true;
+                                    } else {
+                                        $_SESSION['seguridad_pendiente'] = false;
+                                    }
                                 } else {
                                     $_SESSION['seguridad_pendiente'] = false;
                                 }
 
-                                /*== REDIRECCIÓN DIRECTA PARA TODOS ==*/
+                                /*== REGISTRO EN BITÁCORA (Auditoría) ==*/
+                                $this->guardarBitacora("Seguridad", "Inicio de Sesión", "El usuario ".$_SESSION['usuario']." entró al sistema.");
+
+                                /*== REDIRECCIÓN AL DASHBOARD ==*/
                                 if(!headers_sent()){
                                     header("Location: ".APP_URL."dashboard/");
                                 }

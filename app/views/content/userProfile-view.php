@@ -28,18 +28,21 @@
             
             <div class="columns is-multiline">
                 <div class="column is-6">
-                    <label class="label">Nueva Contraseña</label>
+                    <label class="label">Nueva Contraseña <small class="has-text-grey">(mínimo 7 caracteres)</small></label>
                     <input class="input" type="password" name="usuario_clave_1" 
                         pattern="[a-zA-Z0-9$@.-]{7,100}" maxlength="100"
+                        title="La contraseña debe tener al menos 7 caracteres y puede incluir letras, números y los caracteres $ @ . -"
                         <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?>>
                 </div>
                 <div class="column is-6">
-                    <label class="label">Repetir Nueva Contraseña</label>
+                    <label class="label">Repetir Nueva Contraseña <small class="has-text-grey">(mínimo 7 caracteres)</small></label>
                     <input class="input" type="password" name="usuario_clave_2" 
                         pattern="[a-zA-Z0-9$@.-]{7,100}" maxlength="100"
+                        title="La contraseña debe tener al menos 7 caracteres y puede incluir letras, números y los caracteres $ @ . -"
                         <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?>>
                 </div>
             </div>
+            <p class="help is-info"><i class="fas fa-info-circle"></i> La contraseña debe tener mínimo 7 caracteres (letras, números y/o $ @ . -)</p>
 
             <hr>
 

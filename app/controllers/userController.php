@@ -310,7 +310,7 @@
             }
             return json_encode($alerta);
         }
-        /*----------  Controlador actualizar usuario  ----------*/
+       /*----------  Controlador actualizar usuario  ----------*/
         public function actualizarUsuarioControlador(){
 
             $id=$this->limpiarCadena($_POST['usuario_id']);
@@ -322,11 +322,11 @@
             }
             $datos=$datos->fetch();
 
-            // Verificamos si es una actualización de PERFIL (Vendedor) o de ADMINISTRACIÓN
+            // Verificamos si es una actualización de PERFIL (Usuario normal) o de ADMINISTRACIÓN
             $tipo_edicion = isset($_POST['tipo_edicion']) && $_POST['tipo_edicion'] == "perfil" ? "perfil" : "admin";
 
             if($tipo_edicion == "perfil"){
-                /*========== EDICIÓN LIMITADA PARA VENDEDOR ==========*/
+                /*========== EDICIÓN LIMITADA PARA USUARIOS NO ADMIN ==========*/
                 $nombre = $datos['usuario_nombre'];
                 $apellido = $datos['usuario_apellido'];
                 $usuario = $datos['usuario_usuario'];
@@ -413,12 +413,45 @@
 
             if($this->actualizarDatos("usuario",$usuario_datos_up,$condicion)){
                 
-                // Bloque agregado para limpiar la alerta de seguridad
-                if($id == $_SESSION['id']){
+                // ========== CORRECCIÓN PARA CUALQUIER USER MENOS ID 1 ==========
+                // Si el usuario que se actualizó es el mismo que está en sesión Y NO ES EL ADMIN
+                if($id == $_SESSION['id'] && $_SESSION['id'] != 1){
+                    
+                    // Limpiar la variable de seguridad pendiente
                     unset($_SESSION['seguridad_pendiente']);
+                    
+                    // Actualizar datos de sesión si es necesario (nombre, usuario, etc.)
+                    $_SESSION['nombre'] = $nombre;
+                    $_SESSION['usuario'] = $usuario;
+                    
+                    // SIEMPRE redirigir al dashboard para cualquier usuario no admin
+                    $url_redireccion = APP_URL."dashboard/";
+                    
+                    $mensaje_titulo = "¡Perfil actualizado!";
+                    $mensaje_texto = "Tus preguntas de seguridad se guardaron correctamente";
+                    
+                } else if($id == $_SESSION['id'] && $_SESSION['id'] == 1) {
+                    // Es el admin editándose a sí mismo
+                    $_SESSION['nombre'] = $nombre;
+                    $_SESSION['usuario'] = $usuario;
+                    $url_redireccion = APP_URL."userList/";
+                    $mensaje_titulo = "¡Perfil actualizado!";
+                    $mensaje_texto = "Tus datos se actualizaron correctamente";
+                    
+                } else {
+                    // Es admin actualizando OTRO usuario
+                    $url_redireccion = APP_URL."userList/";
+                    $mensaje_titulo = "¡Usuario actualizado!";
+                    $mensaje_texto = "Los datos se actualizaron correctamente";
                 }
 
-                $alerta=["tipo"=>"recargar","titulo"=>"¡Usuario actualizado!","texto"=>"Los datos se actualizaron correctamente","icono"=>"success"];
+                $alerta = [
+                    "tipo" => "redireccionar",
+                    "url" => $url_redireccion, 
+                    "titulo" => $mensaje_titulo,
+                    "texto" => $mensaje_texto,
+                    "icono" => "success"
+                ];
             }else{
                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudieron actualizar los datos","icono"=>"error"];
             }
