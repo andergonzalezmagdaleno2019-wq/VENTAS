@@ -1,11 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap');
+/* 1. Importación de Google Fonts: INTER (Pesos 400, 500, 600 y 700) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* 2. Aplicación Global */
 html, body {
-    font-family: 'Montserrat', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
 }
 
-.title, .subtitle, .button, .input, .label {
-    font-family: 'Montserrat', sans-serif;
+/* 3. Elementos específicos de la interfaz */
+.title, .subtitle, .button, .input, .label, .select select, .control {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* 4. Ajuste de pesos para jerarquía visual */
+.title, .label {
+    font-weight: 600 !important; /* Más marcado para encabezados */
+    letter-spacing: -0.022em;
+}
+
+.subtitle, .button, .input {
+    font-weight: 500 !important; /* Peso medio para mejor lectura */
 }
 
 

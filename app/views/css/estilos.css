@@ -1,12 +1,21 @@
-/* 1. Importación desde Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+/* 1. Importación desde Google Fonts: INTER (Optimizado para legibilidad en sistemas) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* 2. Tipografías locales (Mantener solo si las usas para algo específico, 
-   si no, puedes borrarlas para que el sitio cargue más rápido) 
-*/
-@font-face {
-    font-family: "RobotoCondensedLight";
-    src: url("../webfonts/robotocondensed-light.ttf");
+/* 2. Aplicación Global: Reemplaza a Montserrat y RobotoCondensed */
+html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. Definición de jerarquías para el Dashboard y Formularios */
+.title, .label, b, strong {
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+}
+
+.subtitle, .button, .input, .select select {
+    font-weight: 500 !important;
 }
 
 /* =====================================================

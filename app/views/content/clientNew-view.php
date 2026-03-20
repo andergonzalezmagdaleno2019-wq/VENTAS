@@ -1,9 +1,10 @@
+<?php include './app/views/content/logo.php'; ?>
 <div class="container is-fluid mb-6">
 	<h1 class="title">Clientes</h1>
 	<h2 class="subtitle"><i class="fas fa-male fa-fw"></i> &nbsp; Nuevo cliente</h2>
 </div>
 
-<div class="container pb-6 pt-6">
+<div class="container pb-4 pt-4">
 	<form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/clienteAjax.php" method="POST" autocomplete="off">
 		<input type="hidden" name="modulo_cliente" value="registrar">
 

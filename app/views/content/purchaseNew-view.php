@@ -1,4 +1,5 @@
-<div class="container is-fluid mb-6">
+<?php include './app/views/content/logo.php'; ?>
+<div class="container is-fluid mb-4">
     <h1 class="title">Compras</h1>
     <h2 class="subtitle">Generar Orden de Compra - <strong>FastNet</strong></h2>
 </div>
@@ -279,7 +280,7 @@
         }
 
         // ==========================================
-        // 4. LÓGICA: CÁLCULOS Y VALIDACIÓN EN VIVO (FASE 1)
+        // 4. LÓGICA: CÁLCULOS Y VALIDACIÓN EN VIVO 
         // ==========================================
         let tasaBcvGlobal = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
         

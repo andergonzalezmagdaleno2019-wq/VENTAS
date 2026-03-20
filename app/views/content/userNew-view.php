@@ -1,9 +1,10 @@
+<?php include './app/views/content/logo.php'; ?>
 <div class="container is-fluid mb-6">
 	<h1 class="title">Usuarios</h1>
 	<h2 class="subtitle"><i class="fas fa-user-plus fa-fw"></i> &nbsp; Nuevo usuario</h2>
 </div>
 
-<div class="container pb-6 pt-6">
+<div class="container pb-4 pt-4">
 	<form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/usuarioAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data">
 
 		<input type="hidden" name="modulo_usuario" value="registrar">

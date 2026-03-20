@@ -1,3 +1,4 @@
+<?php include './app/views/content/logo.php'; ?>
 <div class="container is-fluid mb-6">
 	<h1 class="title">Categorías</h1>
 	<h2 class="subtitle"><i class="fas fa-tag fa-fw"></i> &nbsp; Nueva categoría</h2>

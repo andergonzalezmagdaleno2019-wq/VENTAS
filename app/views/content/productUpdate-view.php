@@ -44,7 +44,7 @@
             <div class="column">
                 <div class="control">
                     <label>Nombre <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="producto_nombre" value="<?php echo $datos['producto_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" required autocomplete="off">
+                    <input class="input" type="text" name="producto_nombre" value="<?php echo $datos['producto_nombre']; ?>" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,100}" maxlength="100" required autocomplete="off">
                 </div>
             </div>
         </div>

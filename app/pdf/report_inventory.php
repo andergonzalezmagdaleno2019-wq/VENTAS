@@ -15,17 +15,19 @@
 	$pdf->AddPage();
 	if(is_file('../views/img/logo.png')){ $pdf->Image('../views/img/logo.png',165,12,35,35,'PNG'); }
 
-    // Encabezado
+    // Encabezado de la empresa
 	$pdf->SetFont('Arial','B',16);
 	$pdf->SetTextColor(32,100,210);
 	$pdf->Cell(150,10,iconv("UTF-8", "ISO-8859-1",strtoupper($datos_empresa['empresa_nombre'])),0,0,'L');
 	$pdf->Ln(9);
 	$pdf->SetFont('Arial','',10);
 	$pdf->SetTextColor(39,39,51);
-	$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","RIF: ".$datos_empresa['empresa_rif']),0,0,'L');
-	$pdf->Ln(5);
 	$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1",$datos_empresa['empresa_direccion']),0,0,'L');
-	$pdf->Ln(15);
+	$pdf->Ln(5);
+	$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","Teléfono: ".$datos_empresa['empresa_telefono']),0,0,'L');
+	$pdf->Ln(5);
+    $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","RIF: ".$datos_empresa['empresa_rif']),0,0,'L');
+    $pdf->Ln(15);
 
     /*---------- LÓGICA DE FILTROS ----------*/
     $cat = isset($_GET['categoria']) ? $_GET['categoria'] : 'todas';

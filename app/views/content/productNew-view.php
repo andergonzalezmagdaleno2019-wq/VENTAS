@@ -23,7 +23,7 @@
             <div class="column is-8">
                 <div class="control">
                     <label>Nombre del Producto <?php echo CAMPO_OBLIGATORIO; ?></label>
-                    <input class="input" type="text" name="producto_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,70}" maxlength="70" placeholder="Ej: Laptop Gamer ASUS" required autocomplete="off">
+                    <input class="input" type="text" name="producto_nombre" pattern="[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,$#\-\/ ]{1,100}" maxlength="100" placeholder="Ej: Laptop Gamer ASUS" required autocomplete="off">
                 </div>
             </div>
         </div>
