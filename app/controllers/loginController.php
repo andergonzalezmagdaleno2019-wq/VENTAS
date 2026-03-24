@@ -69,142 +69,131 @@
         }
     } 
 
-            /*---------- LOGIN NORMAL ----------*/
-            // Solo se ejecuta si NO se envió recuperar_email
+           /*---------- LOGIN NORMAL ----------*/
             if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
                 
                 $email=$this->limpiarCadena($_POST['login_email']);
                 $clave=$this->limpiarCadena($_POST['login_clave']);
-            
-            $captcha = isset($_POST['login_captcha']) ? $this->limpiarCadena($_POST['login_captcha']) : "";
+                $captcha = isset($_POST['login_captcha']) ? $this->limpiarCadena($_POST['login_captcha']) : "";
 
-            if($email=="" || $clave=="" || $captcha==""){
-                echo '<article class="message is-danger"><div class="message-body"><strong>Ocurrió un error inesperado</strong><br>No has llenado todos los campos que son obligatorios</div></article>';
-            }else{
+                /*== 1. VERIFICAR CORREO ==*/
+                if($email==""){
+                    echo '<article class="message is-danger"><div class="message-body"><strong>Campo Requerido:</strong><br>Por favor, ingresa tu <strong>Correo Electrónico</strong> para continuar.</div></article>';
+                    return;
+                }
+                if($this->verificarDatos("[a-zA-Z0-9@.-]{7,100}",$email)){
+                    echo '<article class="message is-danger"><div class="message-body"><strong>Formato de correo incorrecto</strong><br>El correo electrónico no es válido. Asegúrese de que no contenga espacios en blanco.</div></article>';
+                    return;
+                }
 
+                /*== 2. VERIFICAR CONTRASEÑA ==*/
+                if($clave==""){
+                    echo '<article class="message is-danger"><div class="message-body"><strong>Campo Requerido:</strong><br>Por favor, ingresa tu <strong>Clave (Contraseña)</strong> para continuar.</div></article>';
+                    return;
+                }
+                if($this->verificarDatos("[a-zA-Z0-9$@.-]{7,100}",$clave)){
+                    echo '<article class="message is-danger"><div class="message-body"><strong>Formato de clave incorrecto</strong><br>La contraseña no cumple con los requisitos de seguridad. Debe tener entre 7 y 100 caracteres.</div></article>';
+                    return;
+                }
+
+                /*== 3. VERIFICAR CAPTCHA ==*/
+                if($captcha==""){
+                    echo '<article class="message is-danger"><div class="message-body"><strong>Campo Requerido:</strong><br>Por favor, resuelve el <strong>Captcha matemático</strong> para verificar que no eres un robot.</div></article>';
+                    return;
+                }
                 if(!isset($_SESSION['captcha_resultado']) || $_SESSION['captcha_resultado'] != $captcha){
                     echo '<article class="message is-danger"><div class="message-body"><strong>Error de Seguridad</strong><br>La suma del captcha es incorrecta. Intenta de nuevo.</div></article>';
                     return; 
                 }
 
-                if($this->verificarDatos("[a-zA-Z0-9@.-]{7,100}",$email)){
-                    echo '<article class="message is-danger">
-                            <div class="message-body">
-                                <strong>Formato de correo incorrecto</strong><br>
-                                El correo electrónico no es válido. Asegúrese de que cumple con lo siguiente:<br>
-                                • Tener entre <strong>7 y 100 caracteres</strong>.<br>
-                                • Solo se permiten letras, números y los símbolos <strong>@ . -</strong><br>
-                                <em>(No se permiten espacios en blanco ni caracteres especiales como #, !, %, etc.)</em>
-                            </div>
-                          </article>';
-                }else{
-                    if($this->verificarDatos("[a-zA-Z0-9$@.-]{7,100}",$clave)){
-                        echo '<article class="message is-danger">
-                                <div class="message-body">
-                                    <strong>Formato de clave incorrecto</strong><br>
-                                    La contraseña no cumple con los requisitos de seguridad. Debe tener:<br>
-                                    • Entre <strong>7 y 100 caracteres</strong>.<br>
-                                    • Solo se permiten letras, números y los símbolos especiales <strong>$ @ . -</strong>
-                                </div>
-                              </article>';
+                /*== 4. VERIFICAR EN BASE DE DATOS ==*/
+                $check_usuario=$this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_email='$email'");
+
+                if($check_usuario->rowCount()==1){
+                    $check_usuario=$check_usuario->fetch();
+
+                    /*== VALIDACIÓN: ESTADO DEL USUARIO ==*/
+                    if($check_usuario['usuario_estado'] == "Inactivo" || $check_usuario['usuario_estado'] == "Inhabilitado" || $check_usuario['usuario_estado'] == "Bloqueado"){
+                        echo '<article class="message is-danger"><div class="message-body"><strong>Acceso Restringido</strong><br>Tu cuenta ha sido bloqueada o inhabilitada. Por favor, contacta al administrador del sistema.</div></article>';
+                        return;
+                    }
+
+                    if(password_verify($clave,$check_usuario['usuario_clave'])){
+
+                        # (ÉXITO) RESETEAR INTENTOS FALLIDOS #
+                        if(isset($_SESSION['intentos_fallidos'][$email])){
+                            unset($_SESSION['intentos_fallidos'][$email]);
+                        }
+
+                        // VARIABLES DE SESIÓN 
+                        $_SESSION['id']=$check_usuario['usuario_id'];
+                        $_SESSION['nombre']=$check_usuario['usuario_nombre'];
+                        $_SESSION['apellido']=$check_usuario['usuario_apellido'];
+                        $_SESSION['usuario']=$check_usuario['usuario_usuario'];
+                        $_SESSION['email']=$check_usuario['usuario_email'];
+                        $_SESSION['foto']=$check_usuario['usuario_foto'];
+                        $_SESSION['caja']=$check_usuario['caja_id'];
+                        $_SESSION['rol']=$check_usuario['rol_id']; 
+
+                        /*== MARCAR PENDIENTES DE SEGURIDAD ==*/
+                        if($_SESSION['id'] != 1){
+                            if(empty($check_usuario['usuario_pregunta_1']) || 
+                            empty($check_usuario['usuario_pregunta_2']) || 
+                            empty($check_usuario['usuario_pregunta_3'])){
+                                
+                                $_SESSION['seguridad_pendiente'] = true;
+                            } else {
+                                $_SESSION['seguridad_pendiente'] = false;
+                            }
+                        } else {
+                            $_SESSION['seguridad_pendiente'] = false;
+                        }
+
+                        /*== REGISTRO EN BITÁCORA ==*/
+                        $this->guardarBitacora("Seguridad", "Inicio de Sesión", "El usuario ".$_SESSION['usuario']." entró al sistema.");
+
+                        /*== REDIRECCIÓN AL DASHBOARD ==*/
+                        if(!headers_sent()){
+                            header("Location: ".APP_URL."dashboard/");
+                        }
+                        echo "<script> window.location.replace('".APP_URL."dashboard/'); </script>";
+                        exit();
+
                     }else{
-                        // Buscamos por correo 
-                        $check_usuario=$this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_email='$email'");
+                        # ====================================================================
+                        # (FALLO) LÍMITE DE INTENTOS FALLIDOS
+                        # ====================================================================
+                        if($check_usuario['usuario_id'] != 1){ 
+                            
+                            if(!isset($_SESSION['intentos_fallidos'][$email])){
+                                $_SESSION['intentos_fallidos'][$email] = 1;
+                            } else {
+                                $_SESSION['intentos_fallidos'][$email]++;
+                            }
 
-                        if($check_usuario->rowCount()==1){
-                            $check_usuario=$check_usuario->fetch();
+                            $intentos_restantes = 3 - $_SESSION['intentos_fallidos'][$email];
 
-                            /*== VALIDACIÓN: ESTADO DEL USUARIO ==*/
-                            if($check_usuario['usuario_estado'] == "Inactivo" || $check_usuario['usuario_estado'] == "Inhabilitado" || $check_usuario['usuario_estado'] == "Bloqueado"){
-                                echo '<article class="message is-danger"><div class="message-body"><strong>Acceso Restringido</strong><br>Tu cuenta ha sido bloqueada o inhabilitada. Por favor, contacta al administrador del sistema.</div></article>';
+                            if($_SESSION['intentos_fallidos'][$email] >= 3){
+                                $this->ejecutarConsulta("UPDATE usuario SET usuario_estado='Inactivo' WHERE usuario_id='".$check_usuario['usuario_id']."'");
+                                unset($_SESSION['intentos_fallidos'][$email]); 
+                                
+                                echo '<article class="message is-danger"><div class="message-body"><strong>¡Cuenta Bloqueada!</strong><br>Ha superado el límite de 3 intentos fallidos. Por seguridad, su cuenta ha sido bloqueada automáticamente. Contacte al Administrador.</div></article>';
+                                return;
+                            }else{
+                                echo '<article class="message is-warning"><div class="message-body"><strong>Credenciales incorrectas</strong><br>La contraseña es incorrecta. Le quedan '.$intentos_restantes.' intento(s) antes de que la cuenta sea bloqueada.</div></article>';
                                 return;
                             }
-
-                            if(password_verify($clave,$check_usuario['usuario_clave'])){
-
-                                # (ÉXITO) RESETEAR INTENTOS FALLIDOS #
-                                if(isset($_SESSION['intentos_fallidos'][$email])){
-                                    unset($_SESSION['intentos_fallidos'][$email]);
-                                }
-
-                                // VARIABLES DE SESIÓN 
-                                $_SESSION['id']=$check_usuario['usuario_id'];
-                                $_SESSION['nombre']=$check_usuario['usuario_nombre'];
-                                $_SESSION['apellido']=$check_usuario['usuario_apellido'];
-                                $_SESSION['usuario']=$check_usuario['usuario_usuario'];
-                                $_SESSION['email']=$check_usuario['usuario_email'];
-                                $_SESSION['foto']=$check_usuario['usuario_foto'];
-                                $_SESSION['caja']=$check_usuario['caja_id'];
-                                $_SESSION['rol']=$check_usuario['rol_id']; 
-
-                                /*== AUDITORIA INICIO SESION ==*/
-                                $this->guardarBitacora("Seguridad", "Inicio de Sesión", "El usuario ".$check_usuario['usuario_usuario']." entró al sistema.");
-
-                                /*== MARCAR PENDIENTES DE SEGURIDAD (Para todos excepto el Admin ID 1) ==*/
-                                if($_SESSION['id'] != 1){
-                                    // Si alguna de las 3 preguntas está vacía, marcamos como pendiente
-                                    if(empty($check_usuario['usuario_pregunta_1']) || 
-                                    empty($check_usuario['usuario_pregunta_2']) || 
-                                    empty($check_usuario['usuario_pregunta_3'])){
-                                        
-                                        $_SESSION['seguridad_pendiente'] = true;
-                                    } else {
-                                        $_SESSION['seguridad_pendiente'] = false;
-                                    }
-                                } else {
-                                    $_SESSION['seguridad_pendiente'] = false;
-                                }
-
-                                /*== REGISTRO EN BITÁCORA (Auditoría) ==*/
-                                $this->guardarBitacora("Seguridad", "Inicio de Sesión", "El usuario ".$_SESSION['usuario']." entró al sistema.");
-
-                                /*== REDIRECCIÓN AL DASHBOARD ==*/
-                                if(!headers_sent()){
-                                    header("Location: ".APP_URL."dashboard/");
-                                }
-                                echo "<script> window.location.replace('".APP_URL."dashboard/'); </script>";
-                                exit();
-
-                            }else{
-                                # ====================================================================
-                                # (FALLO) SISTEMA DE SEGURIDAD: LÍMITE DE INTENTOS FALLIDOS
-                                # ====================================================================
-                                if($check_usuario['usuario_id'] != 1){ // Si NO es el administrador (id=1)
-                                    
-                                    if(!isset($_SESSION['intentos_fallidos'][$email])){
-                                        $_SESSION['intentos_fallidos'][$email] = 1;
-                                    } else {
-                                        $_SESSION['intentos_fallidos'][$email]++;
-                                    }
-
-                                    $intentos_restantes = 3 - $_SESSION['intentos_fallidos'][$email];
-
-                                    if($_SESSION['intentos_fallidos'][$email] >= 3){
-                                        // Bloqueo directo en la base de datos
-                                        $this->ejecutarConsulta("UPDATE usuario SET usuario_estado='Inactivo' WHERE usuario_id='".$check_usuario['usuario_id']."'");
-                                        unset($_SESSION['intentos_fallidos'][$email]); 
-                                        
-                                        echo '<article class="message is-danger"><div class="message-body"><strong>¡Cuenta Bloqueada!</strong><br>Ha superado el límite de 3 intentos fallidos. Por seguridad, su cuenta ha sido bloqueada automáticamente. Contacte al Administrador.</div></article>';
-                                        return;
-                                    }else{
-                                        echo '<article class="message is-warning"><div class="message-body"><strong>Credenciales incorrectas</strong><br>La contraseña es incorrecta. Le quedan '.$intentos_restantes.' intento(s) antes de que la cuenta sea bloqueada.</div></article>';
-                                        return;
-                                    }
-                                }else{
-                                    // El Admin falla, pero es INMUNE al bloqueo
-                                    echo '<article class="message is-danger"><div class="message-body"><strong>Atención Administrador</strong><br>La CONTRASEÑA ingresada es incorrecta.</div></article>';
-                                    return;
-                                }
-                                # ====================================================================
-                            }
                         }else{
-                            echo '<article class="message is-warning"><div class="message-body"><strong>Atención</strong><br>El correo electrónico ingresado no existe en el sistema.</div></article>';
+                            echo '<article class="message is-danger"><div class="message-body"><strong>Atención Administrador</strong><br>La CONTRASEÑA ingresada es incorrecta.</div></article>';
+                            return;
                         }
                     }
+                }else{
+                    echo '<article class="message is-warning"><div class="message-body"><strong>Atención</strong><br>El correo electrónico ingresado no existe en el sistema.</div></article>';
                 }
             }
         }
-        }
+
         /*----------  Controlador cerrar sesion  ----------*/
         public function cerrarSesionControlador(){
             if(isset($_SESSION['usuario'])){

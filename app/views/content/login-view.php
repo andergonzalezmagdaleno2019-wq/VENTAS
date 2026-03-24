@@ -19,10 +19,6 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
     }
     exit; 
 }
-
-if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
-    $insLogin->iniciarSesionControlador();
-}
 ?>
 <!DOCTYPE html>
 <html>
@@ -30,7 +26,6 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <!--  SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
@@ -42,7 +37,13 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
         </p>
 		<h5 class="title is-5 has-text-centered">Inicia sesión con tu cuenta</h5>
 
-        <div class="field">
+        <?php
+        if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
+            $insLogin->iniciarSesionControlador();
+        }
+        ?>
+
+        <div class="field mt-2">
             <label class="label"><i class="fas fa-envelope"></i> &nbsp; Correo Electrónico</label>
             <div class="control">
                 <input class="input" type="email" id="fake_email" maxlength="70" placeholder="ejemplo@correo.com" autocomplete="off" spellcheck="false">
@@ -79,28 +80,18 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
 	</div>
 
     <script>
-        // Función de login 
+       // Función de login 
         function ejecutarLoginInmune() {
             let email = document.getElementById('fake_email').value.trim();
             let clave = document.getElementById('fake_clave').value.trim();
             let captcha = document.getElementById('fake_captcha').value.trim();
 
-            if(email === '' || clave === '' || captcha === ''){
-                Swal.fire('Atención', 'Por favor, completa todos los campos para ingresar.', 'warning');
-                return;
-            }
-
-            // Validar formato de email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                Swal.fire('Error', 'Por favor ingresa un correo electrónico válido', 'error');
-                return;
-            }
-
+            // Vaciamos los campos visuales por seguridad
             document.getElementById('fake_email').value = '';
             document.getElementById('fake_clave').value = '';
             document.getElementById('fake_captcha').value = '';
 
+            // Enviamos todo por POST oculto para que PHP procese y muestre la alerta exacta
             let formFantasma = document.createElement('form');
             formFantasma.method = 'POST';
             formFantasma.action = '';
@@ -127,7 +118,7 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
             document.body.appendChild(formFantasma);
             formFantasma.submit();
         }
-
+        
         // Hacer que funcione al presionar Enter
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -135,118 +126,109 @@ if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
             }
         });
 
-        // ===== FUNCIONES DE RECUPERACIÓN =====
+        // ===== FUNCIONES DE RECUPERACIÓN (Mantenemos SweetAlert solo para esto) =====
 
-function recuperarCuenta() {
-    Swal.fire({
-        title: 'Recuperar Cuenta',
-        text: 'Ingresa tu correo electrónico registrado:',
-        input: 'email',
-        inputPlaceholder: 'tu-correo@ejemplo.com',
-        showCancelButton: true,
-        confirmButtonText: 'Verificar correo',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#3085d6',
-        didOpen: () => {
-            const input = Swal.getInput();
-            input.setAttribute('autocomplete', 'off');
-        },
-        preConfirm: (email) => {
-            if (!email) {
-                Swal.showValidationMessage('Por favor ingresa un correo electrónico');
-                return false;
-            }
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                Swal.showValidationMessage('Por favor ingresa un correo válido');
-                return false;
-            }
-            return email;
-        }
-    }).then((result) => {
-        if (result.value) {
-            verificarCorreoEnBD(result.value);
-        }
-    });
-}
-
-function verificarCorreoEnBD(email) {
-    // Mostrar loading
-    Swal.fire({
-        title: 'Verificando correo...',
-        text: 'Por favor espera',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-
-    // Crear FormData
-    let formData = new FormData();
-    formData.append('recuperar_email_ajax', email);
-    formData.append('verificar_email_ajax', 'true');
-
-    // Usar fetch con la ruta CORRECTA al archivo AJAX
-    fetch('<?php echo APP_URL; ?>app/ajax/verificarEmail.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        // Verificar el content-type
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            return response.text().then(text => {
-                console.error('Respuesta no JSON:', text.substring(0, 200));
-                throw new Error('El servidor no respondió correctamente');
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        Swal.close();
-        
-        if (data.existe) {
+        function recuperarCuenta() {
             Swal.fire({
-                icon: 'success',
-                title: 'Correo verificado',
-                text: 'Redirigiendo...',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                window.location.href = data.redirect;
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Correo no registrado',
-                text: data.mensaje,
-                confirmButtonText: 'Intentar de nuevo',
-                confirmButtonColor: '#3085d6',
+                title: 'Recuperar Cuenta',
+                text: 'Ingresa tu correo electrónico registrado:',
+                input: 'email',
+                inputPlaceholder: 'tu-correo@ejemplo.com',
                 showCancelButton: true,
-                cancelButtonText: 'Cancelar'
+                confirmButtonText: 'Verificar correo',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#3085d6',
+                didOpen: () => {
+                    const input = Swal.getInput();
+                    input.setAttribute('autocomplete', 'off');
+                },
+                preConfirm: (email) => {
+                    if (!email) {
+                        Swal.showValidationMessage('Por favor ingresa un correo electrónico');
+                        return false;
+                    }
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        Swal.showValidationMessage('Por favor ingresa un correo válido');
+                        return false;
+                    }
+                    return email;
+                }
             }).then((result) => {
-                if (result.isConfirmed) {
-                    recuperarCuenta();
+                if (result.value) {
+                    verificarCorreoEnBD(result.value);
                 }
             });
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        Swal.close();
-        Swal.fire({
-            icon: 'error',
-            title: 'Error de conexión',
-            text: 'No se pudo conectar con el servidor. Intenta de nuevo.',
-            confirmButtonColor: '#3085d6'
-        });
-    });
-}
 
-// Mantener función original por compatibilidad
-function enviarRecuperacionPaso1(email) {
-    window.location.href = '<?php echo APP_URL; ?>loginAnswer/' + btoa(email) + '/';
-}
+        function verificarCorreoEnBD(email) {
+            Swal.fire({
+                title: 'Verificando correo...',
+                text: 'Por favor espera',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            let formData = new FormData();
+            formData.append('recuperar_email_ajax', email);
+            formData.append('verificar_email_ajax', 'true');
+
+            fetch('<?php echo APP_URL; ?>app/ajax/verificarEmail.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        console.error('Respuesta no JSON:', text.substring(0, 200));
+                        throw new Error('El servidor no respondió correctamente');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                Swal.close();
+                
+                if (data.existe) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Correo verificado',
+                        text: 'Redirigiendo...',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = data.redirect;
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Correo no registrado',
+                        text: data.mensaje,
+                        confirmButtonText: 'Intentar de nuevo',
+                        confirmButtonColor: '#3085d6',
+                        showCancelButton: true,
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            recuperarCuenta();
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor. Intenta de nuevo.',
+                    confirmButtonColor: '#3085d6'
+                });
+            });
+        }
     </script>
 </div>
 </body>
