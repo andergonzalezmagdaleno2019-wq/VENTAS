@@ -204,10 +204,10 @@
                         <div class="control"><label>Método de Pago</label>
                             <div class="select is-fullwidth">
                                 <select name="pago_metodo" id="pago_metodo">
-                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Zelle">Zelle</option>
                                     <option value="Transferencia">Transferencia</option>
-                                    <option value="Divisas">Divisas</option>
-                                    <option value="Debito">Débito</option>
+                                    <option value="Binance">Binance</option>
+                                    <option value="Zinli">Zinli</option>
                                 </select>
                             </div>
                         </div>
@@ -215,7 +215,15 @@
                     <div class="column">
                         <div class="control">
                             <label>Referencia Operación</label>
-                            <input class="input" type="text" name="pago_referencia" id="pago_referencia" placeholder="Solo números" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                            <input 
+                                class="input" 
+                                type="text" 
+                                name="pago_referencia" 
+                                id="pago_referencia" 
+                                placeholder="Ej: 123456" 
+                                maxlength="6" 
+                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); validarReferenciaDinamica(this)"
+                            >
                         </div>
                     </div>
                 </div>
@@ -239,6 +247,22 @@
 </div>
 
 <script>
+
+        function validarReferenciaDinamica(input) {
+            input.value = input.value.replace(/[^0-9]/g, '');
+            const btn = document.getElementById('btn-procesar-abono');
+            
+            // Solo se habilita si tiene exactamente 6
+            if (input.value.length === 6) {
+                input.classList.remove('is-danger');
+                input.classList.add('is-success');
+                if(btn) btn.disabled = false;
+            } else {
+                input.classList.add('is-danger');
+                input.classList.remove('is-success');
+                if(btn) btn.disabled = true;
+            }
+        }
     /* BÚSQUEDA EN TIEMPO REAL */
     document.addEventListener('DOMContentLoaded', () => {
         const buscador = document.getElementById('buscador_cxp');
@@ -263,17 +287,18 @@
     const inputReferencia = document.querySelector('#pago_referencia');
 
     if(selectMetodo && inputReferencia){
+
+        inputReferencia.readOnly = false;
+        inputReferencia.classList.remove('is-static');
+        inputReferencia.placeholder = "Nro de operación (Solo números)";
+
         selectMetodo.addEventListener('change', function() {
-            if (this.value === "Efectivo" || this.value === "Divisas") {
-                inputReferencia.value = "EFECTIVO/DIVISA";
-                inputReferencia.readOnly = true;
-                inputReferencia.classList.add('is-static');
-            } else {
-                inputReferencia.value = "";
-                inputReferencia.readOnly = false;
-                inputReferencia.classList.remove('is-static');
-                inputReferencia.placeholder = "Nro de operación (Solo números)";
-            }
+
+            inputReferencia.value = "";
+            inputReferencia.readOnly = false;
+            inputReferencia.classList.remove('is-static');
+            inputReferencia.placeholder = "Referencia de " + this.value;
+            inputReferencia.focus(); 
         });
     }
 
@@ -297,10 +322,12 @@
         document.getElementById('pago_monto').max = saldo;
         document.getElementById('pago_monto').value = "";
         
-        selectMetodo.value = "Efectivo"; 
-        inputReferencia.value = "EFECTIVO/DIVISA";
-        inputReferencia.readOnly = true;
-        inputReferencia.classList.add('is-static');
+        selectMetodo.value = "Transferencia"; 
+        
+        inputReferencia.value = "";
+        inputReferencia.readOnly = false;
+        inputReferencia.classList.remove('is-static');
+        inputReferencia.placeholder = "Ingrese nro. de referencia";
 
         document.getElementById('modal-abono').classList.add('is-active');
     }
@@ -309,7 +336,7 @@
     function aplicarPagoTotal() {
         let maxMonto = document.getElementById('pago_monto').max;
         document.getElementById('pago_monto').value = maxMonto;
-        calcularConversionBs(); // Actualiza los bolívares automáticamente
+        calcularConversionBs();
     }
 
     // CÁLCULO EN TIEMPO REAL CON TOPE DE SEGURIDAD

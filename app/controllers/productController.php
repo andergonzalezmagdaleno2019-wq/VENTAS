@@ -15,6 +15,9 @@ class productController extends mainModel
         $marca = $this->limpiarCadena($_POST['producto_marca']);
         $modelo = $this->limpiarCadena($_POST['producto_modelo']);
 
+        //Capturar el proveedor
+        $proveedores = isset($_POST['producto_proveedores']) ? $_POST['producto_proveedores'] : [];
+
         // FORZAMOS LOS VALORES FINANCIEROS A CERO (Se llenarán por Compras)
         $precio = "0.00";
         $costo = "0.00";
@@ -26,7 +29,18 @@ class productController extends mainModel
         $categoria = $this->limpiarCadena($_POST['producto_categoria']);
         $unidad = $this->limpiarCadena($_POST['producto_unidad']);
 
-        /*---------- NUEVAS VALIDACIONES DE INTEGRIDAD ----------*/
+        // VALIDACIÓN OBLIGATORIA DE PROVEEDORES
+        if (empty($proveedores)) {
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Falta Proveedor", 
+                "texto" => "Debe asignar al menos un proveedor para poder registrar este producto.", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
+
         # Validando Código de Barras (Solo números, máx 13) #
         if ($this->verificarDatos("[0-9]{1,13}", $codigo)) {
             $alerta = ["tipo" => "simple", "titulo" => "Error en Código", "texto" => "El código de barras solo permite números (máx. 13)", "icono" => "error"];
@@ -48,14 +62,39 @@ class productController extends mainModel
         }
 
         /*---------- VALIDACIONES LOGICAS DE STOCK ----------*/
+    
+        // Validación para Stock Máximo
         if ((int)$stock_max <= 0) {
-            $alerta = ["tipo" => "simple", "titulo" => "Límite de Stock Inválido", "texto" => "El Stock Máximo (Límite) debe ser mayor a 0", "icono" => "error"];
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Error en Límite de Stock", 
+                "texto" => "El stock máximo debe ser mayor a cero para poder registrar el producto.", 
+                "icono" => "error"
+            ];
             return json_encode($alerta);
             exit();
         }
 
+        // Validación para Stock Mínimo 
+        if ((int)$stock_min <= 0) {
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Stock Mínimo Insuficiente", 
+                "texto" => "Debe establecer un stock mínimo (alerta) mayor a cero para el control de inventario.", 
+                "icono" => "error"
+            ];
+            return json_encode($alerta);
+            exit();
+        }
+
+        // Validación de coherencia
         if ((int)$stock_min >= (int)$stock_max) {
-            $alerta = ["tipo" => "simple", "titulo" => "Lógica de Stock Incorrecta", "texto" => "El Stock Mínimo (Alerta) no puede ser mayor o igual al Stock Máximo", "icono" => "error"];
+            $alerta = [
+                "tipo" => "simple", 
+                "titulo" => "Incoherencia de Valores", 
+                "texto" => "El stock mínimo no puede superar o ser igual al límite máximo permitido.", 
+                "icono" => "error"
+            ];
             return json_encode($alerta);
             exit();
         }
@@ -105,8 +144,23 @@ class productController extends mainModel
         $registrar_producto = $this->guardarDatos("producto", $producto_datos_reg);
 
         if ($registrar_producto->rowCount() == 1) {
-            $this->guardarBitacora("Productos", "Registro", "Se registró el producto: " . $nombre . " (Inicia con stock 0)");
-            $alerta = ["tipo" => "redireccionar", "titulo" => "Catálogo Actualizado", "texto" => "Producto registrado. Costo y Stock en 0 hasta procesar su primera Orden de Compra.", "icono" => "success", "url" => APP_URL."productList/"];
+            
+            // REGISTRO DE RELACIÓN PRODUCTO-PROVEEDOR
+            // Primero obtenemos el ID del producto que acabamos de registrar
+            $check_id = $this->ejecutarConsulta("SELECT producto_id FROM producto WHERE producto_codigo='$codigo' ORDER BY producto_id DESC LIMIT 1");
+            $prod_id = $check_id->fetch()['producto_id'];
+
+            foreach ($proveedores as $prov_id) {
+                $relacion_datos = [
+                    ["campo_nombre" => "producto_id", "campo_marcador" => ":ProdID", "campo_valor" => $prod_id],
+                    ["campo_nombre" => "proveedor_id", "campo_marcador" => ":ProvID", "campo_valor" => $prov_id]
+                ];
+                $this->guardarDatos("producto_proveedor", $relacion_datos);
+            }
+
+            $this->guardarBitacora("Productos", "Registro", "Se registró el producto: " . $nombre . " con sus proveedores correspondientes.");
+            
+            $alerta = ["tipo" => "redireccionar", "titulo" => "Catálogo Actualizado", "texto" => "Producto registrado y vinculado a sus proveedores correctamente.", "icono" => "success", "url" => APP_URL."productList/"];
         } else {
             if (is_file($img_dir . $foto)) { chmod($img_dir . $foto, 0777); unlink($img_dir . $foto); }
             $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar en la base de datos.", "icono" => "error"];
@@ -257,7 +311,7 @@ class productController extends mainModel
 			                </td>
 						</tr>';
 
-                        // MODAL DE DETALLE 
+                            // MODAL DE DETALLE 
                             $tabla .= '
                             <div id="modal-detalle-' . $rows['producto_id'] . '" class="modal">
                                 <div class="modal-background"></div>
@@ -281,6 +335,26 @@ class productController extends mainModel
                                                     }
 
                                     $tabla .= ' </figure>
+                                                <div class="mt-4">
+                                                    <p class="is-size-7 has-text-grey"><strong>Distribuido por:</strong></p>
+                                                    <div class="tags">';
+                                                        /* --- CONSULTA DE PROVEEDORES --- */
+                                                        $id_p = $rows['producto_id'];
+                                                        $cons_prov = $this->ejecutarConsulta("SELECT p.proveedor_nombre 
+                                                            FROM producto_proveedor pp 
+                                                            INNER JOIN proveedor p ON pp.proveedor_id = p.proveedor_id 
+                                                            WHERE pp.producto_id = '$id_p'");
+                                                        
+                                                        if($cons_prov->rowCount() > 0){
+                                                            while($prov = $cons_prov->fetch()){
+                                                                $tabla .= '<span class="tag is-link is-light">' . $prov['proveedor_nombre'] . '</span>';
+                                                            }
+                                                        } else {
+                                                            $tabla .= '<span class="tag is-warning is-light">Sin proveedores</span>';
+                                                        }
+                                           
+                                    $tabla .= '     </div>
+                                                </div>
                                             </div>
                                             <div class="column">
                                                 <p class="is-size-4 has-text-weight-bold">' . $rows['producto_nombre'] . '</p>
@@ -377,7 +451,7 @@ class productController extends mainModel
 		return json_encode($alerta);
 	}
 
-    /*----------  Controlador actualizar producto (BLINDADO) ----------*/
+    /*----------  Controlador actualizar producto (BLINDADO + MULTI-PROVEEDOR) ----------*/
     public function actualizarProductoControlador()
     {
         $id = $this->limpiarCadena($_POST['producto_id']);
@@ -405,15 +479,16 @@ class productController extends mainModel
         $categoria = $this->limpiarCadena($_POST['producto_categoria']);
         $unidad = $this->limpiarCadena($_POST['producto_unidad']);
 
+        /* Recepción de proveedores */
+        $proveedores = (isset($_POST['producto_proveedores'])) ? $_POST['producto_proveedores'] : [];
+
         /*---------- NUEVAS VALIDACIONES DE INTEGRIDAD ----------*/
-        # Validando que el nombre no sea solo números #
         if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
             $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre debe contener letras", "icono" => "error"];
             return json_encode($alerta);
             exit();
         }
 
-        # Validando Código de Barras #
         if ($this->verificarDatos("[0-9]{1,13}", $codigo)) {
             $alerta = ["tipo" => "simple", "titulo" => "Error en Código", "texto" => "El código de barras solo permite números (máx. 13)", "icono" => "error"];
             return json_encode($alerta);
@@ -422,6 +497,13 @@ class productController extends mainModel
 
         if ($codigo == "" || $nombre == "" || $categoria == "" || $unidad == "" || $stock_min == "" || $stock_max == "") {
             $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Faltan campos obligatorios", "icono" => "error"];
+            return json_encode($alerta);
+            exit();
+        }
+
+        /* Validación de que haya al menos un proveedor*/
+        if (empty($proveedores)) {
+            $alerta = ["tipo" => "simple", "titulo" => "Error de Proveedor", "texto" => "Debe seleccionar al menos un proveedor", "icono" => "error"];
             return json_encode($alerta);
             exit();
         }
@@ -462,6 +544,29 @@ class productController extends mainModel
         $condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
 
         if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
+            /*Actualización de Proveedores*/
+            $this->ejecutarConsulta("DELETE FROM producto_proveedor WHERE producto_id='$id'");
+            
+            foreach ($proveedores as $prov_id) {
+                $id_p = $this->limpiarCadena($prov_id);
+                
+                $datos_prov_reg = [
+                    [
+                        "campo_nombre" => "producto_id", 
+                        "campo_marcador" => ":ProdID", // ESTO ES LO QUE FALTA
+                        "campo_valor" => $id
+                    ],
+                    [
+                        "campo_nombre" => "proveedor_id", 
+                        "campo_marcador" => ":ProvID", // ESTO ES LO QUE FALTA
+                        "campo_valor" => $id_p
+                    ]
+                ];
+                
+                // Ahora guardarDatos() encontrará los índices y no dará error en la línea 57 y 63
+                $this->guardarDatos("producto_proveedor", $datos_prov_reg);
+            }
+
             $this->guardarBitacora("Productos", "Actualización", "Datos actualizados del producto: " . $nombre);
             $alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "Producto actualizado con éxito", "icono" => "success"];
         } else {

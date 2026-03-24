@@ -5,13 +5,39 @@
 </div>
 
 <div class="container is-fluid pb-6">
+    <div class="box mb-5">
+        <div class="columns is-vcentered">
+            <div class="column is-5">
+                <label class="label"><i class="fas fa-truck"></i> Seleccione Proveedor</label>
+                <div class="field">
+                    <div class="control has-icons-left">
+                        <div class="select is-fullwidth">
+                            <select name="compra_proveedor" id="compra_proveedor" required onchange="actualizarEstadoProveedor()">
+                                <option value="" selected="">Seleccione una opción</option>
+                                <?php
+                                    $datos_proveedores=$insLogin->seleccionarDatos("Normal","proveedor","*",0);
+                                    while($campos_proveedor=$datos_proveedores->fetch()){
+                                        echo '<option value="'.$campos_proveedor['proveedor_id'].'">'.$campos_proveedor['proveedor_nombre'].' (RIF: '.$campos_proveedor['proveedor_rif'].')</option>';
+                                    }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="icon is-small is-left"><i class="fas fa-handshake"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="column has-text-right">
+                <h3 class="title is-4 has-text-link mt-0"><i class="fas fa-clipboard-list"></i> Orden de Compra</h3>
+                <p class="subtitle is-6 has-text-grey">Tasa BCV del día: <strong class="has-text-success">Bs <span id="display_tasa_bcv">0.00</span></strong></p>
+            </div>
+        </div>
+    </div>
+
     <div class="columns">
         <div class="column is-one-third">
             <div class="card">
                 <header class="card-header">
-                    <p class="card-header-title">
-                        <i class="fas fa-tags"></i> &nbsp; Categorías
-                    </p>
+                    <p class="card-header-title"><i class="fas fa-tags"></i> &nbsp; Categorías</p>
                 </header>
                 <div class="card-content" style="max-height: 450px; overflow-y: auto;">
                     <?php
@@ -24,37 +50,35 @@
                                     foreach($todas as $h){
                                         if($h['categoria_padre_id'] == $p['categoria_id']){ $tiene_hijos = true; break; }
                                     }
-                                    if($tiene_hijos) {
-                                        echo '<div class="mb-2">';
-                                        echo '<button class="button is-fullwidth has-text-left p-2 mb-1 acordeon-btn" style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;" onclick="toggleAcordeon(this)">
-                                                <span style="display: flex; align-items: center; width: 100%;">
-                                                    <i class="fas fa-folder-open" style="margin-right: 8px;"></i>
-                                                    <span style="flex-grow: 1; font-weight: bold;">'.mb_strtoupper($p['categoria_nombre'], 'UTF-8').'</span>
-                                                    <i class="fas fa-chevron-down acordeon-icono"></i>
-                                                </span>
-                                              </button>';
-                                        echo '<div class="acordeon-contenido" style="display: none; padding-left: 15px;">';
-                                        foreach($todas as $h){
-                                            if($h['categoria_padre_id'] == $p['categoria_id']){
-                                                echo '<button type="button" class="button is-fullwidth is-small is-outlined is-link mb-1" onclick="cargar_por_categoria_compra('.$h['categoria_id'].')">
-                                                        <i class="fas fa-arrow-right"></i> &nbsp; '.$h['categoria_nombre'].'
-                                                      </button>';
-                                            }
+                                   if($tiene_hijos) {
+                                    echo '<div class="mb-2">';
+                                    echo '<button class="button is-fullwidth has-text-left p-2 mb-1 acordeon-btn" style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;" onclick="toggleAcordeon(this)">
+                                            <span style="display: flex; align-items: center; width: 100%;">
+                                                <i class="fas fa-folder-open" style="margin-right: 8px;"></i>
+                                                <span style="flex-grow: 1; font-weight: bold;">'.mb_strtoupper($p['categoria_nombre'], 'UTF-8').'</span>
+                                                <i class="fas fa-chevron-down acordeon-icono"></i>
+                                            </span>
+                                        </button>';
+                                    echo '<div class="acordeon-contenido" style="display: none; padding-left: 15px;">';
+                                    foreach($todas as $h){
+                                        if($h['categoria_padre_id'] == $p['categoria_id']){
+                                            echo '<button type="button" class="button is-fullwidth is-small is-outlined is-link mb-1" onclick="cargar_por_categoria_compra('.$h['categoria_id'].', \''.addslashes($h['categoria_nombre']).'\')">
+                                                    <i class="fas fa-arrow-right"></i> &nbsp; '.$h['categoria_nombre'].'
+                                                </button>';
                                         }
-                                        echo '</div></div>';
-                                    } else {
-                                        echo '<button type="button" class="button is-fullwidth has-text-left p-2 mb-2" style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;" onclick="cargar_por_categoria_compra('.$p['categoria_id'].')">
-                                                <span style="display: flex; align-items: center;">
-                                                    <i class="fas fa-folder" style="margin-right: 8px;"></i>
-                                                    <span style="flex-grow: 1; font-weight: bold;">'.mb_strtoupper($p['categoria_nombre'], 'UTF-8').'</span>
-                                                </span>
-                                              </button>';
                                     }
+                                    echo '</div></div>';
+                                } else {
+                                    echo '<button type="button" class="button is-fullwidth has-text-left p-2 mb-2" style="border: none; background-color: #f0f0f0; border-radius: 4px; cursor: pointer;" onclick="cargar_por_categoria_compra('.$p['categoria_id'].', \''.addslashes($p['categoria_nombre']).'\')">
+                                            <span style="display: flex; align-items: center;">
+                                                <i class="fas fa-folder" style="margin-right: 8px;"></i>
+                                                <span style="flex-grow: 1; font-weight: bold;">'.mb_strtoupper($p['categoria_nombre'], 'UTF-8').'</span>
+                                            </span>
+                                        </button>';
+                                }
                                 }
                             }
-                        } else {
-                            echo '<p class="has-text-centered">No hay categorías registradas</p>';
-                        }
+                        } else { echo '<p class="has-text-centered">No hay categorías registradas</p>'; }
                     ?>
                 </div>
             </div>
@@ -62,23 +86,34 @@
 
         <div class="column">
             <div class="card">
-                <header class="card-header">
-                    <p class="card-header-title">
-                        <i class="fas fa-search"></i> &nbsp; Buscar producto a pedir
-                    </p>
+                <header class="card-header" style="display: flex; align-items: center; justify-content: space-between; padding: 0 15px; min-height: 3.25rem;">
+                    <p class="card-header-title mb-0" style="padding: 0;"><i class="fas fa-search"></i> &nbsp; Buscar producto</p>
+                    <div class="field mb-0">
+                        <div class="control has-icons-left">
+                            <div class="select"> 
+                                <select id="filtro_stock" onchange="aplicarFiltroStock()" style="max-width: 220px; border-radius: 6px;">
+                                    <option value="todos" selected>📦 Todos los productos</option>
+                                    <option value="bajo">📉 Stock Bajo (Crítico)</option>
+                                    <option value="alto">📈 Stock Suficiente</option>
+                                </select>
+                            </div>
+                            <div class="icon is-left"><i class="fas fa-filter"></i></div>
+                        </div>
+                    </div>
                 </header>
+
                 <div class="card-content">
                     <form action="" method="POST" autocomplete="off" id="form-buscar-compra">
                         <div class="field has-addons">
                             <div class="control is-expanded">
-                                <input class="input" type="text" name="buscar_producto" id="buscar_producto" placeholder="Nombre o código del producto" required autocomplete="off">
+                                <input class="input" type="text" name="buscar_producto" id="buscar_producto" placeholder="Nombre o código" required>
                             </div>
                             <div class="control">
                                 <button type="submit" class="button is-info"><i class="fas fa-search"></i></button>
                             </div>
                         </div>
                     </form>
-                    <div id="resultados_busqueda" class="mt-4" style="max-height: 250px; overflow-y: auto;"></div>
+                    <div id="resultados_busqueda" class="mt-4" style="max-height: 400px; overflow-y: auto;"></div>
                 </div>
             </div>
         </div>
@@ -86,32 +121,10 @@
 
     <div class="columns mt-4">
         <div class="column">
-            <form action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" method="POST" autocomplete="off" name="formpurchase" id="form-generar-orden">
+            <form action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" class="FormularioAjax" method="POST" autocomplete="off" id="form-generar-orden">
                 <input type="hidden" name="modulo_compra" value="registrar">
                 
                 <div class="box">
-                    <div class="columns">
-                        <div class="column is-4">
-                            <label class="label">Seleccione Proveedor</label>
-                            <div class="select is-fullwidth">
-                                <select name="compra_proveedor" required>
-                                    <option value="" selected="">Seleccione una opción</option>
-                                    <?php
-                                        $datos_proveedores=$insLogin->seleccionarDatos("Normal","proveedor","*",0);
-                                        while($campos_proveedor=$datos_proveedores->fetch()){
-                                            echo '<option value="'.$campos_proveedor['proveedor_id'].'">'.$campos_proveedor['proveedor_nombre'].' (RIF: '.$campos_proveedor['proveedor_rif'].')</option>';
-                                        }
-                                    ?>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="column is-8 has-text-right pt-2">
-                            <h3 class="title is-4 has-text-link mt-0"><i class="fas fa-clipboard-list"></i> Orden de Compra (Cotización)</h3>
-                            <p class="subtitle is-6 has-text-grey">Tasa BCV del día: <strong class="has-text-success">Bs <span id="display_tasa_bcv">0.00</span></strong></p>
-                        </div>
-                    </div>
-
                     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth mt-4">
                         <thead>
                             <tr class="has-background-link-light">
@@ -130,94 +143,52 @@
                                     foreach($_SESSION['datos_compra'] as $detalle){
                                         $id_prod = $detalle['producto_id'];
                                         $cant_actual = $detalle['compra_cantidad'];
-                                        $costo_ref = (isset($detalle['costo_referencia']) && $detalle['costo_referencia'] > 0) ? $detalle['costo_referencia'] : 0;
-                                        
+                                        $costo_ref = (isset($detalle['costo_referencia'])) ? $detalle['costo_referencia'] : 0;
                                         $subtotal_est = $cant_actual * $costo_ref;
                                         $total_estimado_orden += $subtotal_est;
 
-                                        $costo_ref_txt = ($costo_ref > 0) ? "$".number_format($costo_ref, 2) : 'Nuevo ($0.00)';
-
                                         echo '<tr class="fila-producto">
                                             <td style="vertical-align: middle;"><strong>'.$detalle['producto_nombre'].'</strong></td>
-                                            <td class="has-text-centered has-text-grey" style="vertical-align: middle;">'.$costo_ref_txt.'</td>
-                                            
-                                            <td style="vertical-align: middle;">
-                                                <div class="control">
-                                                    <input class="input input-precio has-text-centered has-text-weight-bold is-primary" type="number" step="0.01" name="detalle_precio['.$id_prod.']" value="'.$costo_ref.'" min="'.$costo_ref.'" data-min="'.$costo_ref.'" required oninput="recalcularTotales()">
-                                                </div>
-                                            </td>
-                                            
-                                            <td style="vertical-align: middle;">
-                                                <div class="control">
-                                                    <input class="input input-cantidad has-text-centered" type="number" name="detalle_cantidad['.$id_prod.']" value="'.$cant_actual.'" min="1" required oninput="recalcularTotales()">
-                                                </div>
-                                            </td>
-
-                                            <td class="has-text-centered has-text-weight-bold subtotal-txt" style="vertical-align: middle; font-size: 1.1em;">$'.number_format($subtotal_est, 2).'</td>
-                                            
-                                            <td class="has-text-centered" style="vertical-align: middle;">
-                                                <button type="button" class="button is-danger is-small is-rounded" onclick="eliminarDelCarrito('.$id_prod.')"><i class="fas fa-trash-alt"></i></button>
+                                            <td class="has-text-centered has-text-grey">'.($costo_ref > 0 ? "$".number_format($costo_ref, 2) : '$0.00').'</td>
+                                            <td><input class="input input-precio" type="number" step="0.01" name="detalle_precio['.$id_prod.']" value="'.$costo_ref.'" oninput="recalcularTotales()"></td>
+                                            <td><input class="input input-cantidad has-text-centered" type="number" name="detalle_cantidad['.$id_prod.']" value="'.$cant_actual.'" min="1" oninput="recalcularTotales()"></td>
+                                            <td class="has-text-centered has-text-weight-bold subtotal-txt">$'.number_format($subtotal_est, 2).'</td>
+                                            <td class="has-text-centered">
+                                                <button type="button" class="button is-danger is-small" onclick="eliminarDelCarrito('.$id_prod.')"><i class="fas fa-trash-alt"></i></button>
                                             </td>
                                         </tr>';
                                     }
                                     echo '<tr class="has-background-light">
-                                            <td colspan="4" class="has-text-right has-text-weight-bold is-size-5">TOTAL DE LA ORDEN:</td>
-                                            <td class="has-text-centered has-text-weight-bold is-size-4 has-text-link" id="total-orden-txt">$'.number_format($total_estimado_orden, 2).'</td>
-                                            <td></td>
-                                          </tr>
-                                          <tr class="has-background-success-light">
-                                            <td colspan="4" class="has-text-right has-text-weight-bold">EQUIVALENTE A PAGAR:</td>
-                                            <td class="has-text-centered has-text-weight-bold has-text-success-dark" id="total-orden-bs">Bs 0.00</td>
-                                            <td></td>
-                                          </tr>';
-                                }else{
-                                    echo '<tr class="has-text-centered"><td colspan="6">Aún no has agregado productos a la orden</td></tr>';
+                                            <td colspan="4" class="has-text-right has-text-weight-bold">TOTAL:</td>
+                                            <td class="has-text-centered has-text-weight-bold has-text-link" id="total-orden-txt">$'.number_format($total_estimado_orden, 2).'</td>
+                                            <td></td></tr>';
+                                } else {
+                                    echo '<tr class="has-text-centered"><td colspan="6">Aún no hay productos</td></tr>';
                                 }
                             ?>
                         </tbody>
                     </table>
 
                     <?php if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){ ?>
-                    <hr>
-                    <div class="columns is-centered">
+                    <div class="columns is-centered mt-4">
                         <div class="column is-4">
-                            <div class="field">
-                                <label class="label"><i class="fas fa-money-bill-wave"></i> Anticipo a Proveedor ($)</label>
-                                <div class="control">
-                                    <input class="input" type="number" step="0.01" name="compra_pago_inicial" id="compra_pago_inicial" placeholder="0.00" min="0" max="<?php echo $total_estimado_orden; ?>">
-                                </div>
-                                <p class="help is-info">Adelanto opcional al aprobar cotización.</p>
-                            </div>
+                            <label class="label">Anticipo ($)</label>
+                            <input class="input" type="number" step="0.01" name="compra_pago_inicial" id="compra_pago_inicial" placeholder="0.00">
                         </div>
                         <div class="column is-6">
-                            <div class="field">
-                                <label class="label"><i class="fas fa-sticky-note"></i> Condiciones pactadas (Nota)</label>
-                                <div class="control">
-                                    <input class="input" type="text" name="compra_nota" placeholder="Ej: Precios respetados según cotización #0045">
-                                </div>
-                            </div>
+                            <label class="label">Condiciones (Nota)</label>
+                            <input class="input" type="text" name="compra_nota" placeholder="Ej: Pago a 30 días">
                         </div>
                     </div>
                     <p class="has-text-centered mt-5">
-                        <button type="submit" class="button is-success is-large is-rounded shadow-sm">
-                            <i class="fas fa-file-signature"></i> &nbsp; GENERAR ORDEN DE COMPRA
-                        </button>
+                        <button type="submit" class="button is-success is-large is-rounded">GENERAR ORDEN</button>
                     </p>
                     <?php } ?>
-
-                    <input type="hidden" name="compra_tasa_bcv" id="compra_tasa_bcv" value="0">
                 </div>
             </form>
-            
-            <?php if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){ ?>
-            <div class="has-text-centered mt-2">
-                <button type="button" class="button is-danger is-outlined is-small" onclick="vaciarCarritoCompleto()">
-                    Vaciar Orden
-                </button>
-            </div>
-            <?php } ?>
         </div>
     </div>
+</div>
 
     <script>
         // 1. FUNCIONALIDAD DE CATEGORÍAS (ACORDEÓN)
@@ -259,9 +230,80 @@
         }
 
         // 3. BUSCADORES
-        function cargar_por_categoria_compra(id){
-            let datos = new FormData(); datos.append('categoria_id', id); datos.append('modulo_compra', 'buscar_por_categoria');
-            fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php',{ method: 'POST', body: datos }).then(res => res.text()).then(res => { resultadoBusqueda.innerHTML = res; reactivarFormularios(); });
+        let categoriaActual = "";
+
+        function cargar_por_categoria_compra(id, nombre = "") {
+            // 0. Validación de Proveedor: Obtenemos el ID del proveedor seleccionado
+            let id_prov = document.getElementById('compra_proveedor').value;
+
+            if (id_prov === "") {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Proveedor requerido',
+                    text: 'Por favor, seleccione un proveedor antes de buscar productos por categoría.',
+                    confirmButtonColor: '#3085d6'
+                });
+                return; 
+            }
+
+            categoriaActual = id;
+
+            // 1. Resaltado Visual
+            document.querySelectorAll('.acordeon-contenido button, .card-content > button').forEach(btn => {
+                btn.classList.remove('is-active-category');
+            });
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('is-active-category');
+            }
+
+            // 2. Reiniciar filtro de stock
+            let filtroStock = document.getElementById('filtro_stock');
+            if (filtroStock) filtroStock.value = "";
+
+            // 3. Actualizar título
+            let tituloVisible = document.getElementById('nombre_categoria_visible');
+            if (tituloVisible && nombre !== "") {
+                tituloVisible.innerText = nombre.toUpperCase();
+            }
+
+            // 4. Fetch AJAX incluyendo el proveedor_id
+            let datos = new FormData();
+            datos.append('categoria_id', id);
+            datos.append('proveedor_id', id_prov); 
+            datos.append('modulo_compra', 'buscar_por_categoria');
+
+            fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', {
+                method: 'POST',
+                body: datos
+            })
+            .then(res => res.text())
+            .then(res => {
+                if (resultadoBusqueda) {
+                    resultadoBusqueda.innerHTML = res;
+                    reactivarFormularios();
+                }
+            });
+        }
+
+        function aplicarFiltroStock() {
+            let filtro = document.getElementById('filtro_stock');
+            let criterio = filtro ? filtro.value : "";
+            
+            let datos = new FormData();
+            // Usamos un módulo que acepte ambos parámetros en el controlador
+            datos.append('modulo_compra', 'filtrar_stock_categoria'); 
+            datos.append('categoria_id', categoriaActual); 
+            datos.append('criterio_stock', criterio);
+
+            fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', { method: 'POST', body: datos })
+            .then(res => res.text())
+            .then(res => {
+                if(resultadoBusqueda){
+                    resultadoBusqueda.innerHTML = res;
+                    reactivarFormularios();
+                }
+            });
         }
 
         document.getElementById('form-buscar-compra').addEventListener('submit', function(e){
@@ -276,6 +318,45 @@
                     e.preventDefault(); let data = new FormData(this);
                     fetch(this.getAttribute("action"), { method: this.getAttribute("method"), body: data }).then(res => res.json()).then(res => alertas_ajax(res));
                 });
+            });
+        }
+
+        // ==========================================
+        // 3.1 FILTRADO DINÁMICO POR PROVEEDOR
+        // ==========================================
+        const selectProveedor = document.getElementById('compra_proveedor');
+
+        if(selectProveedor){
+            selectProveedor.addEventListener('change', function() {
+                let id_prov = this.value;
+
+                // Si selecciona un proveedor
+                if(id_prov !== "") {
+                    let datos = new FormData();
+                    datos.append("modulo_compra", "buscar_por_proveedor"); 
+                    datos.append("proveedor_id", id_prov);
+
+                    fetch("<?php echo APP_URL; ?>app/ajax/compraAjax.php", {
+                        method: 'POST',
+                        body: datos
+                    })
+                    .then(res => res.text())
+                    .then(response => {
+                        if(resultadoBusqueda){
+                            // Inyectamos la tabla de productos en el contenedor principal
+                            resultadoBusqueda.innerHTML = response;
+                            
+                            // IMPORTANTE: Reactivamos los eventos de los botones "Añadir"
+                            // que acabamos de traer vía AJAX
+                            reactivarFormularios(); 
+                        }
+                    });
+                } else {
+                    // Si vuelve a la opción por defecto, limpiamos o mostramos mensaje
+                    if(resultadoBusqueda) {
+                        resultadoBusqueda.innerHTML = '<div class="notification is-info is-light">Seleccione un proveedor para listar sus productos.</div>';
+                    }
+                }
             });
         }
 
@@ -304,12 +385,18 @@
                 let precio = parseFloat(inputPrecio.value) || 0;
                 let cantidad = parseInt(inputCantidad.value) || 0;
 
-                // Validación visual: Si es menor al costo anterior, se pone ROJO.
-                if (precio < minCosto) {
+                // Si es 0 o menor, ERROR CRÍTICO
+                if (precio <= 0) {
                     inputPrecio.classList.add('is-danger');
-                    inputPrecio.title = "El precio no puede ser menor al costo anterior ($" + minCosto + ")";
-                } else {
-                    inputPrecio.classList.remove('is-danger');
+                    inputPrecio.title = "El precio debe ser mayor a 0";
+                } 
+                // Si es menor al costo anterior
+                else if (precio < minCosto) {
+                    inputPrecio.classList.add('is-warning'); 
+                    inputPrecio.title = "Aviso: Menor al costo anterior";
+                } 
+                else {
+                    inputPrecio.classList.remove('is-danger', 'is-warning');
                     inputPrecio.title = "";
                 }
 
@@ -334,28 +421,82 @@
             formPurchase.addEventListener('submit', function(e){
                 e.preventDefault();
                 
-                // Validación final en caliente antes de enviar al servidor
-                let hayErrores = false;
+                // 1. Reiniciamos los estados en cada intento
+                let hayPrecioBajo = false;
+                let hayMenorAlAnterior = false;
+
+                // 2. Limpiamos clases de error previas para que no se queden marcadas si ya corregiste
                 document.querySelectorAll('.input-precio').forEach(input => {
-                    if (input.classList.contains('is-danger')) { hayErrores = true; }
+                    input.classList.remove('is-danger');
                 });
 
-                if (hayErrores) {
-                    Swal.fire({ title: "Precios Inválidos", text: "Hay productos con precios menores a la compra anterior. Por favor corríjalos (casillas en rojo).", icon: "error" });
+                // 3. Validación final de los precios actuales en el carrito
+                document.querySelectorAll('.input-precio').forEach(input => {
+                    let valor = parseFloat(input.value) || 0;
+                    let minCostoAnterior = parseFloat(input.getAttribute('data-min')) || 0;
+                    
+                    // Regla de los $1.00
+                    if (valor < 1) { 
+                        hayPrecioBajo = true;
+                        input.classList.add('is-danger');
+                    }
+
+                    // Regla de Auditoría (Costo anterior)
+                    if (valor < minCostoAnterior) {
+                        hayMenorAlAnterior = true;
+                        // Opcional: podrías usar 'is-warning' aquí si no quieres bloquear, 
+                        // pero si quieres bloquear, usa 'is-danger'
+                        input.classList.add('is-danger');
+                    }
+                });
+
+                // 4. Mostramos alertas si hay errores
+                if (hayPrecioBajo) {
+                    Swal.fire({ 
+                        title: "Precio no permitido", 
+                        text: "El costo de los productos debe ser igual o mayor a $1.00 para procesar la compra.", 
+                        icon: "error" 
+                    });
+                    return; // Detenemos el envío
+                }
+
+                // 2. Bloqueo por validación de costo anterior
+                if (hayMenorAlAnterior) {
+                    Swal.fire({ 
+                        title: "Precios Inválidos", 
+                        text: "Hay productos con precios menores a la compra anterior. Por favor corríjalos (casillas en rojo).", 
+                        icon: "error" 
+                    });
                     return;
                 }
 
+                // Si pasa las validaciones, procedemos con el envío
                 let datos = new FormData(this);
-                fetch(this.getAttribute("action"), { method: this.getAttribute("method"), body: datos })
+                fetch(this.getAttribute("action"), { 
+                    method: this.getAttribute("method"), 
+                    body: datos 
+                })
                 .then(respuesta => respuesta.json())
                 .then(respuesta => {
                     if(respuesta.tipo == "confirmar"){
                         Swal.fire({
-                            title: respuesta.titulo, text: respuesta.texto, icon: respuesta.icono, showCancelButton: true, confirmButtonText: respuesta.confirmButtonText, cancelButtonText: respuesta.cancelButtonText
+                            title: respuesta.titulo, 
+                            text: respuesta.texto, 
+                            icon: respuesta.icono, 
+                            showCancelButton: true, 
+                            confirmButtonText: respuesta.confirmButtonText, 
+                            cancelButtonText: respuesta.cancelButtonText
                         }).then((result) => {
-                            if (result.isConfirmed) { window.open(respuesta.url, '_blank'); location.reload(); } else { location.reload(); }
+                            if (result.isConfirmed) { 
+                                window.open(respuesta.url, '_blank'); 
+                                location.reload(); 
+                            } else { 
+                                location.reload(); 
+                            }
                         });
-                    } else { return alertas_ajax(respuesta); }
+                    } else { 
+                        return alertas_ajax(respuesta); 
+                    }
                 });
             });
         }

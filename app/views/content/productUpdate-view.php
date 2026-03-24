@@ -146,6 +146,42 @@
             </div>
         </div>
 
+        <div class="columns">
+            <div class="column is-full">
+                <div class="field">
+                    <label class="label">Proveedores que distribuyen este producto <?php echo CAMPO_OBLIGATORIO; ?></label>
+                    <div class="control">
+                        <div class="select is-multiple is-fullwidth">
+                            <select name="producto_proveedores[]" id="producto_proveedores" multiple size="5" required>
+                                <?php
+                                    // 1. Obtenemos todos los proveedores registrados
+                                    $query_prov = $insLogin->seleccionarDatos("Normal", "proveedor", "*", "ORDER BY proveedor_nombre ASC");
+                                    $provs = $query_prov->fetchAll();
+
+                                    // 2. Obtenemos los IDs de los proveedores que YA tiene este producto (actualmente)
+                                    $query_asignados = $insLogin->seleccionarDatos("Normal", "producto_proveedor", "proveedor_id", "WHERE producto_id='".$campos['producto_id']."'");
+                                    $asignados = $query_asignados->fetchAll(PDO::FETCH_COLUMN, 0); // Esto nos da un array simple de IDs
+
+                                    if(count($provs) > 0){
+                                        foreach($provs as $prov){
+                                            // Si el ID del proveedor está en el array de asignados, le ponemos 'selected'
+                                            $es_seleccionado = (in_array($prov['proveedor_id'], $asignados)) ? 'selected' : '';
+                                            
+                                            echo '<option value="'.$prov['proveedor_id'].'" '.$es_seleccionado.'>📦 '.$prov['proveedor_nombre'].' ('.$prov['proveedor_rif'].')</option>';
+                                        }
+                                    } else {
+                                        echo '<option value="" disabled>⚠️ No hay proveedores registrados</option>';
+                                    }
+                                ?>
+                            </select>
+                        </div>
+                        <p class="help is-danger" id="msg-error-proveedor" style="display: none;">Debe seleccionar al menos un proveedor.</p>
+                        <p class="help"><i class="fas fa-info-circle"></i> Use <strong>Ctrl + Clic</strong> para seleccionar o desmarcar varios proveedores simultáneamente.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <p class="has-text-centered mt-5">
             <button type="submit" class="button is-success is-rounded"><i class="fas fa-sync-alt"></i> &nbsp; Actualizar Datos</button>
         </p>

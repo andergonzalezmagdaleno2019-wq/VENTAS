@@ -1,6 +1,6 @@
 -- --------------------------------------------------------
 -- Respaldo del Sistema de Ventas
--- Fecha de generación: 2026-03-19 22:58:00
+-- Fecha de generación: 2026-03-24 00:08:53
 -- --------------------------------------------------------
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -23,7 +23,7 @@ CREATE TABLE `bitacora` (
   PRIMARY KEY (`bitacora_id`),
   KEY `usuario_id` (`usuario_id`),
   CONSTRAINT `bitacora_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=140 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=150 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `bitacora`
 INSERT INTO `bitacora` VALUES
@@ -161,7 +161,17 @@ INSERT INTO `bitacora` VALUES
 ("136", "1", "2026-03-19", "09:56:15 pm", "Categorías", "Registro", "Se registró la categoría: Periféricos"),
 ("137", "1", "2026-03-19", "09:57:16 pm", "Categorías", "Registro", "Se registró la categoría: Gamepads"),
 ("138", "1", "2026-03-19", "09:58:02 pm", "Productos", "Registro", "Se registró el producto: Control Gamer Redragon Ceres G812 Inalámbrico para Android y PC (Inicia con stock 0)"),
-("139", "1", "2026-03-19", "09:58:42 pm", "Productos", "Registro", "Se registró el producto: Control Marvo GT-903 Onaga 30 Inalámbrico para PS4, PC y Android (Inicia con stock 0)");
+("139", "1", "2026-03-19", "09:58:42 pm", "Productos", "Registro", "Se registró el producto: Control Marvo GT-903 Onaga 30 Inalámbrico para PS4, PC y Android (Inicia con stock 0)"),
+("140", "1", "2026-03-23", "06:28:34 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("141", "1", "2026-03-23", "06:28:34 pm", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("142", "1", "2026-03-23", "06:30:07 pm", "Productos", "Registro", "Se registró el producto: Ajksghkajf (Inicia con stock 0)"),
+("143", "1", "2026-03-23", "06:30:44 pm", "Productos", "Eliminación", "Se eliminó el producto: Ajksghkajf"),
+("144", "1", "2026-03-23", "06:33:41 pm", "Productos", "Registro", "Se registró el producto: Algo xs (Inicia con stock 0)"),
+("145", "1", "2026-03-23", "06:34:05 pm", "Productos", "Eliminación", "Se eliminó el producto: Algo xs"),
+("146", "1", "2026-03-23", "10:21:16 pm", "Productos", "Actualización", "Datos actualizados del producto: Disipador de Torre Jemip Basic JP-CP1"),
+("147", "1", "2026-03-23", "10:29:24 pm", "Productos", "Actualización", "Datos actualizados del producto: Disipador de Torre Jemip Basic JP-CP1"),
+("148", "1", "2026-03-24", "12:08:44 am", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema."),
+("149", "1", "2026-03-24", "12:08:44 am", "Seguridad", "Inicio de Sesión", "El usuario Administrador entró al sistema.");
 
 
 -- --------------------------------------------------------
@@ -259,11 +269,12 @@ CREATE TABLE `compra` (
   `compra_estado_pago` enum('Pendiente','Parcial','Pagado') DEFAULT 'Pendiente',
   `compra_fecha_vencimiento` date DEFAULT NULL,
   PRIMARY KEY (`compra_id`),
+  UNIQUE KEY `compra_codigo` (`compra_codigo`),
   KEY `usuario_id` (`usuario_id`),
   KEY `proveedor_id` (`proveedor_id`),
   CONSTRAINT `compra_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`),
   CONSTRAINT `compra_ibfk_2` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedor` (`proveedor_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `compra`
 INSERT INTO `compra` VALUES
@@ -272,7 +283,41 @@ INSERT INTO `compra` VALUES
 ("3", "COM-000003", "2026-03-19", "4887.00", "451.51", "1", "1", "Facturada", "", "4887.00", "Pendiente", "2026-03-19"),
 ("4", "COM-000004", "2026-03-19", "1316.00", "451.51", "1", "1", "Facturada", "", "1316.00", "Pendiente", "2026-03-31"),
 ("5", "COM-000005", "2026-03-19", "1224.00", "451.51", "1", "1", "Facturada", "", "1224.00", "Pendiente", "2026-03-19"),
-("6", "COM-000006", "2026-03-19", "13495.00", "451.51", "1", "1", "Pendiente Factura", "", "0.00", "Pagado", "2026-03-19");
+("6", "COM-000006", "2026-03-19", "13495.00", "451.51", "1", "1", "Pendiente Factura", "", "0.00", "Pagado", "2026-03-19"),
+("7", "COM-000007", "2026-03-23", "50.00", "457.08", "1", "1", "Pendiente", "", "0.00", "Pagado", "2026-03-23"),
+("8", "COM-000008", "2026-03-23", "0.00", "457.08", "1", "1", "Anulada", " | [ANULADA]: pq si\r\nyyaaaaaaaaaaaaaaaaaaaa", "0.00", "Pendiente", "2026-03-23"),
+("9", "COM-000009", "2026-03-23", "870.00", "457.08", "1", "1", "Facturada", "", "870.00", "Pendiente", "2026-03-23"),
+("10", "COM-000010", "2026-03-23", "14.00", "457.08", "1", "1", "Facturada", "", "0.00", "Pagado", "2026-03-23");
+
+
+-- --------------------------------------------------------
+-- Estructura de tabla para la tabla `compra_cuotas`
+-- --------------------------------------------------------
+
+DROP TABLE IF EXISTS `compra_cuotas`;
+CREATE TABLE `compra_cuotas` (
+  `cuota_id` int(11) NOT NULL AUTO_INCREMENT,
+  `compra_codigo` varchar(100) NOT NULL,
+  `cuota_numero` int(11) NOT NULL,
+  `cuota_monto` decimal(30,2) NOT NULL,
+  `cuota_fecha_vencimiento` date NOT NULL,
+  `cuota_estado` enum('Pendiente','Pagado','Vencido') DEFAULT 'Pendiente',
+  `cuota_justificacion` text DEFAULT NULL,
+  `cuota_fecha_pago` datetime DEFAULT NULL,
+  PRIMARY KEY (`cuota_id`),
+  KEY `compra_codigo` (`compra_codigo`),
+  CONSTRAINT `fk_cuotas_compra` FOREIGN KEY (`compra_codigo`) REFERENCES `compra` (`compra_codigo`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+-- Volcado de datos para la tabla `compra_cuotas`
+INSERT INTO `compra_cuotas` VALUES
+("1", "COM-000010", "1", "4.67", "2026-04-07", "Pagado", "Prueba de recepcion", NULL),
+("2", "COM-000010", "2", "4.67", "2026-04-22", "Pagado", "Prueba de recepcion", NULL),
+("3", "COM-000010", "3", "4.67", "2026-05-07", "Pagado", "Prueba de recepcion", NULL),
+("4", "COM-000009", "1", "435.00", "2026-03-30", "Pendiente", "Pq si", NULL),
+("5", "COM-000009", "2", "435.00", "2026-04-06", "Pendiente", "Pq si", NULL),
+("6", "COM-000009", "1", "435.00", "2026-03-30", "Pendiente", "Edwerwer", NULL),
+("7", "COM-000009", "2", "435.00", "2026-04-06", "Pendiente", "Edwerwer", NULL);
 
 
 -- --------------------------------------------------------
@@ -291,7 +336,7 @@ CREATE TABLE `compra_detalle` (
   KEY `fk_detalle_compra` (`compra_id`),
   CONSTRAINT `compra_detalle_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`),
   CONSTRAINT `fk_detalle_compra` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `compra_detalle`
 INSERT INTO `compra_detalle` VALUES
@@ -314,7 +359,11 @@ INSERT INTO `compra_detalle` VALUES
 ("17", "6", "8", "12", "100.00"),
 ("18", "6", "9", "11", "175.00"),
 ("19", "6", "15", "10", "199.00"),
-("20", "6", "14", "9", "210.00");
+("20", "6", "14", "9", "210.00"),
+("21", "7", "12", "5", "10.00"),
+("22", "8", "10", "1", "0.00"),
+("23", "9", "10", "1", "870.00"),
+("24", "10", "17", "1", "14.00");
 
 
 -- --------------------------------------------------------
@@ -355,7 +404,7 @@ CREATE TABLE `compra_pagos` (
   KEY `usuario_id` (`usuario_id`),
   CONSTRAINT `compra_pagos_ibfk_1` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`),
   CONSTRAINT `compra_pagos_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Volcado de datos para la tabla `compra_pagos`
 INSERT INTO `compra_pagos` VALUES
@@ -363,7 +412,9 @@ INSERT INTO `compra_pagos` VALUES
 ("2", "1", "1", "2026-03-18", "1200.00", "", "Cierre automático por Factura", NULL),
 ("3", "2", "1", "2026-03-19", "22740.00", "", "Cierre automático por Factura", NULL),
 ("4", "6", "1", "2026-03-19", "13000.00", "", "Anticipo Cotización", NULL),
-("5", "6", "1", "2026-03-19", "495.00", "", "Cierre automático por Nota de Entrega", NULL);
+("5", "6", "1", "2026-03-19", "495.00", "", "Cierre automático por Nota de Entrega", NULL),
+("6", "7", "1", "2026-03-23", "50.00", "", "Anticipo Cotización", NULL),
+("7", "10", "1", "2026-03-23", "14.00", "", "675756", NULL);
 
 
 -- --------------------------------------------------------
@@ -414,7 +465,7 @@ CREATE TABLE `producto` (
   PRIMARY KEY (`producto_id`),
   KEY `categoria_id` (`categoria_id`),
   CONSTRAINT `producto_ibfk_2` FOREIGN KEY (`categoria_id`) REFERENCES `categoria` (`categoria_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `producto`
 INSERT INTO `producto` VALUES
@@ -427,14 +478,14 @@ INSERT INTO `producto` VALUES
 ("7", "3335427985723", "All In One HP EliteOne 800 G2 24\" | Intel Core i5 6ta Gen", "0", "", "0.00", "0.00", "HP", "Intel Core i5 6ta Gen", "Activo", "", "3", "400.00", "5", "100", "480.00", "7", "Unidad", "1"),
 ("8", "4892136498236", "Monitor Lenovo L25e-40 de 24.5\" FHD Panel VA 75Hz", "0", "", "0.00", "0.00", "LENOVO", "24.5\"", "Activo", "", "4", "100.00", "5", "100", "120.00", "12", "Unidad", "1"),
 ("9", "9184721984721", "Monitor MSI PRO MP273AW 27\" Full HD Panel IPS 100Hz", "0", "", "0.00", "0.00", "MSI", "27\"", "Activo", "", "4", "175.00", "5", "100", "210.00", "11", "Unidad", "1"),
-("10", "1232141234211", "PC Gamer Cooler Master | AMD Ryzen 7 5700 + AMD RX 7600 XT 16GB", "0", "", "0.00", "0.00", "AMD", "AMD Ryzen 7 5700", "Activo", "", "5", "0.00", "5", "100", "0.00", "0", "Unidad", "1"),
+("10", "1232141234211", "PC Gamer Cooler Master | AMD Ryzen 7 5700 + AMD RX 7600 XT 16GB", "0", "", "0.00", "0.00", "AMD", "AMD Ryzen 7 5700", "Activo", "", "5", "870.00", "5", "100", "1044.00", "1", "Unidad", "1"),
 ("11", "0952385098237", "PC Gamer XPG Starker Air | Intel Core i7 12va Gen RTX 4060 8GB", "0", "", "0.00", "0.00", "XPG STARKER AIR", "Intel Core i7 12va Gen", "Activo", "", "5", "0.00", "5", "100", "0.00", "0", "Unidad", "1"),
 ("12", "8907230542705", "Pasta Térmica Gamemax TG3 de Alto Rendimiento", "0", "", "0.00", "0.00", "GAMEMAX", "TG3", "Activo", "", "7", "10.00", "5", "100", "12.00", "5", "Unidad", "1"),
 ("13", "2134089723968", "Tinta Original HP GT52/GT53 Colores (Cyan, Magenta, Amarillo, Negro) para Ink Tank y Smart Tank", "0", "", "0.00", "0.00", "HP", "GT52/GT53", "Activo", "", "7", "13.00", "5", "100", "15.60", "9", "Unidad", "1"),
 ("14", "4023957893958", "Impresora Multifuncional Epson EcoTank L4260 con Dúplex Automático y Wi-Fi", "0", "", "0.00", "0.00", "EPSON", "EcoTank L4260", "Activo", "", "8", "210.00", "5", "100", "252.00", "9", "Unidad", "1"),
 ("15", "0219480215709", "Impresora Multifuncional Canon PIXMA G3180 MegaTank con Wi-Fi", "0", "", "0.00", "0.00", "CANON", "PIXMA G3180", "Activo", "", "8", "199.00", "5", "100", "238.80", "10", "Unidad", "1"),
 ("16", "1928471928479", "Kit Fan Gamemax RQ300 ARGB 120mm 3-en-1 con Control Remoto", "0", "", "0.00", "0.00", "GAMEMAX", "RQ300", "Activo", "", "10", "35.00", "5", "100", "42.00", "12", "Unidad", "1"),
-("17", "2109348014979", "Fan Gamemax FN-12Rainbow-Q-Infinity ARGB 120mm", "0", "", "0.00", "0.00", "GAMEMAX", "Infinity ARGB", "Activo", "", "10", "14.00", "5", "100", "16.80", "34", "Unidad", "1"),
+("17", "2109348014979", "Fan Gamemax FN-12Rainbow-Q-Infinity ARGB 120mm", "0", "", "0.00", "0.00", "GAMEMAX", "Infinity ARGB", "Activo", "", "10", "14.00", "5", "100", "16.80", "35", "Unidad", "1"),
 ("18", "1228540973552", "Fan Kit Cooler Master MasterFan MF120 Halo 3 en 1 RGB", "0", "", "0.00", "0.00", "COOLER MASTER", "MF120 HALO", "Activo", "", "10", "20.00", "5", "100", "24.00", "21", "Unidad", "1"),
 ("19", "0198401927480", "Disipador Original Intel Laminar RM1 Socket LGA 1700 | Cooler de Stock", "0", "", "0.00", "0.00", "INTEL", "Laminar RM1", "Activo", "", "11", "0.00", "5", "100", "0.00", "0", "Unidad", "1"),
 ("20", "2394802357809", "Disipador de Torre Jemip Basic JP-CP1", "0", "", "0.00", "0.00", "JEMIP", "Basic jP-cP1", "Activo", "", "11", "0.00", "5", "100", "0.00", "0", "Unidad", "1"),
@@ -444,6 +495,55 @@ INSERT INTO `producto` VALUES
 ("24", "1082103947895", "Router Inalámbrico Mercusys MW330HP 300 Mbps Alta Potencia Rompemuros", "0", "", "0.00", "0.00", "MERCUSYS", "MW330HP", "Activo", "", "14", "0.00", "5", "100", "0.00", "0", "Unidad", "1"),
 ("25", "0793865985619", "Control Gamer Redragon Ceres G812 Inalámbrico para Android y PC", "0", "", "0.00", "0.00", "REDRAGON", "Ceres G812", "Activo", "", "16", "35.00", "5", "100", "42.00", "9", "Unidad", "1"),
 ("26", "0921730918648", "Control Marvo GT-903 Onaga 30 Inalámbrico para PS4, PC y Android", "0", "", "0.00", "0.00", "MARVO", "Gt-903", "Activo", "", "16", "55.00", "5", "100", "66.00", "11", "Unidad", "1");
+
+
+-- --------------------------------------------------------
+-- Estructura de tabla para la tabla `producto_proveedor`
+-- --------------------------------------------------------
+
+DROP TABLE IF EXISTS `producto_proveedor`;
+CREATE TABLE `producto_proveedor` (
+  `relacion_id` int(11) NOT NULL AUTO_INCREMENT,
+  `producto_id` int(11) NOT NULL,
+  `proveedor_id` int(11) NOT NULL,
+  `precio_compra_referencial` decimal(30,2) DEFAULT 0.00,
+  `ultima_compra` datetime DEFAULT NULL,
+  PRIMARY KEY (`relacion_id`),
+  KEY `producto_id` (`producto_id`),
+  KEY `proveedor_id` (`proveedor_id`),
+  CONSTRAINT `producto_proveedor_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`) ON DELETE CASCADE,
+  CONSTRAINT `producto_proveedor_ibfk_2` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedor` (`proveedor_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Volcado de datos para la tabla `producto_proveedor`
+INSERT INTO `producto_proveedor` VALUES
+("1", "1", "1", "0.00", NULL),
+("2", "2", "1", "0.00", NULL),
+("3", "3", "1", "0.00", NULL),
+("4", "4", "1", "0.00", NULL),
+("5", "5", "1", "0.00", NULL),
+("6", "6", "1", "0.00", NULL),
+("7", "7", "1", "0.00", NULL),
+("8", "8", "1", "0.00", NULL),
+("9", "9", "1", "0.00", NULL),
+("10", "10", "1", "0.00", NULL),
+("11", "11", "1", "0.00", NULL),
+("12", "12", "1", "0.00", NULL),
+("13", "13", "1", "0.00", NULL),
+("14", "14", "1", "0.00", NULL),
+("15", "15", "1", "0.00", NULL),
+("16", "16", "1", "0.00", NULL),
+("17", "17", "1", "0.00", NULL),
+("18", "18", "1", "0.00", NULL),
+("19", "19", "1", "0.00", NULL),
+("21", "21", "1", "0.00", NULL),
+("22", "22", "1", "0.00", NULL),
+("23", "23", "1", "0.00", NULL),
+("24", "24", "1", "0.00", NULL),
+("25", "25", "1", "0.00", NULL),
+("26", "26", "1", "0.00", NULL),
+("32", "20", "1", "0.00", NULL),
+("33", "20", "2", "0.00", NULL);
 
 
 -- --------------------------------------------------------
@@ -458,11 +558,12 @@ CREATE TABLE `proveedor` (
   `proveedor_telefono` varchar(20) DEFAULT NULL,
   `proveedor_direccion` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`proveedor_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- Volcado de datos para la tabla `proveedor`
 INSERT INTO `proveedor` VALUES
-("1", "Conputodo", "V-3434212134", "04223386378", "Maracay");
+("1", "Conputodo", "V-3434212134", "04223386378", "Maracay"),
+("2", "Andys Corporation", "J-2489234213", "04221323124", "Maracay");
 
 
 -- --------------------------------------------------------
@@ -481,7 +582,7 @@ CREATE TABLE `recepcion` (
   KEY `usuario_id` (`usuario_id`),
   CONSTRAINT `recepcion_ibfk_1` FOREIGN KEY (`compra_id`) REFERENCES `compra` (`compra_id`),
   CONSTRAINT `recepcion_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Volcado de datos para la tabla `recepcion`
 INSERT INTO `recepcion` VALUES
@@ -490,7 +591,10 @@ INSERT INTO `recepcion` VALUES
 ("3", "3", "1", "2026-03-19", "[Factura Nro: Fac-003 | Emisión: 2026-03-19 | Pago: Credito] - "),
 ("4", "4", "1", "2026-03-19", "[Factura Nro: Fac-004 | Emisión: 2026-03-19 | Pago: Credito] - "),
 ("5", "5", "1", "2026-03-19", "[Factura Nro: Fac-005 | Emisión: 2026-03-19 | Pago: Consignacion] - "),
-("6", "6", "1", "2026-03-19", "[Nota de Entrega Nro: NE-001 | Emisión: 2026-03-19 | Pago: Contado] - ");
+("6", "6", "1", "2026-03-19", "[Nota de Entrega Nro: NE-001 | Emisión: 2026-03-19 | Pago: Contado] - "),
+("7", "10", "1", "2026-03-23", "[Factura Nro: Fac32 | Emisión: 2026-03-23 | Pago: Credito] - "),
+("8", "9", "1", "2026-03-23", "[Factura Nro: 23qwd | Emisión: 2026-03-23 | Pago: Credito] - "),
+("9", "9", "1", "2026-03-23", "[Factura Nro: Ert54 | Emisión: 2026-03-23 | Pago: Credito] - ");
 
 
 -- --------------------------------------------------------
@@ -508,7 +612,7 @@ CREATE TABLE `recepcion_detalle` (
   KEY `producto_id` (`producto_id`),
   CONSTRAINT `recepcion_detalle_ibfk_1` FOREIGN KEY (`recepcion_id`) REFERENCES `recepcion` (`recepcion_id`),
   CONSTRAINT `recepcion_detalle_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `producto` (`producto_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Volcado de datos para la tabla `recepcion_detalle`
 INSERT INTO `recepcion_detalle` VALUES
@@ -531,7 +635,9 @@ INSERT INTO `recepcion_detalle` VALUES
 ("17", "6", "8", "12"),
 ("18", "6", "9", "11"),
 ("19", "6", "15", "10"),
-("20", "6", "14", "9");
+("20", "6", "14", "9"),
+("21", "7", "17", "1"),
+("22", "8", "10", "1");
 
 
 -- --------------------------------------------------------
@@ -585,8 +691,7 @@ CREATE TABLE `usuario` (
 
 -- Volcado de datos para la tabla `usuario`
 INSERT INTO `usuario` VALUES
-("1", "V", "0", "Administrador", "Principal", "Administrador@gmail.com", "Administrador", "$2y$10$Jgm6xFb5Onz/BMdIkNK2Tur8yg/NYEMb/tdnhoV7kB1BwIG4R05D2", "Administrador_23.jpg", "1", "1", NULL, NULL, NULL, NULL, NULL, NULL, "Activo"),
-("6", "V", "32600641", "Ander alexander", "Pena gonzalez", "ander@gmail.com", "Andflizzz", "$2y$10$UDzmn8IXuhnZg5mTvT9TjeSboN5XcKMhdETqV8gTSHqM603WIatR2", "", "1", "2", "Nombre de tu primera mascota", "Notengo", "Nombre de tu escuela primaria", "Notengo", "Marca de tu primer carro", "Notengo", "Activo");
+("1", "V", "0", "Administrador", "Principal", "Administrador@gmail.com", "Administrador", "$2y$10$Jgm6xFb5Onz/BMdIkNK2Tur8yg/NYEMb/tdnhoV7kB1BwIG4R05D2", "Administrador_23.jpg", "1", "1", NULL, NULL, NULL, NULL, NULL, NULL, "Activo");
 
 
 -- --------------------------------------------------------

@@ -1117,3 +1117,15 @@ body.dark-mode figure.image.is-inline-block {
     padding: 0 !important;
     background: transparent !important;
 }
+
+.is-active-category {
+    border: 2px solid #485fc7 !important; 
+    transform: scale(1.05);
+    transition: all 0.2s ease-in-out;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.acordeon-contenido button {
+    transition: all 0.2s ease;
+}

@@ -25,22 +25,154 @@
 			}else{ return '<div class="notification is-warning is-light">No encontrado.</div>'; }
 		}
 
-        /*----------  Buscar por categoría (SIN COSTO) ----------*/
-		public function buscarPorCategoriaCompraControlador(){
-			$categoria_id = $this->limpiarCadena($_POST['categoria_id']);
-			if($categoria_id=="" || !is_numeric($categoria_id)){ return '<div class="notification is-warning is-light">Categoría inválida</div>'; exit(); }
-			$datos=$this->ejecutarConsulta("SELECT * FROM producto WHERE categoria_id='$categoria_id' ORDER BY producto_nombre ASC");
+        /*---------- Buscar productos por PROVEEDOR (Diseño Unificado) ----------*/
+        public function buscarProductoProveedorControlador(){
+            $id_prov = $this->limpiarCadena($_POST['proveedor_id']);
 
-			if($datos->rowCount()>=1){
-				$datos=$datos->fetchAll();
-				$tabla='<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr><th class="has-text-centered">Producto</th><th class="has-text-centered">Stock</th><th class="has-text-centered">Pedir</th></tr></thead><tbody>';
-				foreach($datos as $rows){
-					$tabla.='<tr class="has-text-centered"><td>'.$rows['producto_nombre'].' ('.$rows['producto_codigo'].')</td><td>'.$rows['producto_stock'].'</td><td><form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" autocomplete="off"><input type="hidden" name="modulo_compra" value="agregar"><input type="hidden" name="producto_id" value="'.$rows['producto_id'].'"><input type="hidden" name="compra_costo" value="0"><div class="field has-addons is-justify-content-center"><div class="control"><input class="input is-small" type="number" name="compra_cantidad" placeholder="Cant." required min="1" style="width: 100px;"></div><div class="control"><button type="submit" class="button is-success is-small">Añadir</button></div></div></form></td></tr>';
-				}
-				$tabla.='</tbody></table></div>';
-				return $tabla;
-			}else{ return '<div class="notification is-warning is-light">No hay productos en esta categoría.</div>'; }
-		}
+            if($id_prov == ""){ 
+                return '<div class="notification is-danger is-light">Seleccione un proveedor válido</div>'; 
+            }
+
+            // Consulta con JOIN para traer productos vinculados a este proveedor
+            $consulta = "SELECT p.* FROM producto p 
+                        INNER JOIN producto_proveedor pp ON p.producto_id = pp.producto_id 
+                        WHERE pp.proveedor_id = '$id_prov' AND p.producto_estado='Activo' 
+                        ORDER BY p.producto_nombre ASC";
+
+            $datos = $this->ejecutarConsulta($consulta);
+
+            if($datos->rowCount() >= 1){
+                $datos = $datos->fetchAll();
+                
+                $tabla = '<div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th class="has-text-grey">Producto</th>
+                                <th class="has-text-centered has-text-grey">Stock</th>
+                                <th class="has-text-centered has-text-grey">Pedir</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+                
+                foreach($datos as $rows){
+                    // Mantener la lógica de stock crítico que ya usas
+                    $colorStock = ($rows['producto_stock'] < 5) ? 'has-text-danger has-text-weight-bold' : '';
+
+                    $tabla .= '
+                        <tr>
+                            <td class="has-text-left">
+                                <p class="has-text-weight-bold mb-0" style="font-size: 14px;">'.$rows['producto_nombre'].'</p>
+                                <small class="has-text-grey">'.$rows['producto_codigo'].'</small>
+                            </td>
+                            <td class="has-text-centered '.$colorStock.'" style="vertical-align: middle;">
+                                <span>'.$rows['producto_stock'].'</span>
+                            </td>
+                            <td style="vertical-align: middle; width: 150px;">
+                                <form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" autocomplete="off">
+                                    <input type="hidden" name="modulo_compra" value="agregar">
+                                    <input type="hidden" name="producto_id" value="'.$rows['producto_id'].'">
+                                    <input type="hidden" name="compra_costo" value="0">
+                                    
+                                    <div class="field has-addons is-justify-content-center">
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="compra_cantidad" value="1" min="1" style="width: 55px; text-align: center;">
+                                        </div>
+                                        <div class="control">
+                                            <button type="submit" class="button is-small is-link is-outlined">
+                                                <i class="fas fa-plus"></i>&nbsp; Añadir
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>';
+                }
+                $tabla .= '</tbody></table></div>';
+                return $tabla;
+            } else { 
+                return '
+                <div class="notification is-info is-light has-text-centered" style="border: 1px solid currentColor; background-color: transparent;">
+                    <i class="fas fa-handshake-slash"></i>&nbsp; Este proveedor no tiene productos vinculados.
+                </div>'; 
+            }
+        }
+
+        public function buscarPorCategoriaCompraControlador(){
+            $categoria_id = $this->limpiarCadena($_POST['categoria_id']);
+            // Recibimos el ID del proveedor enviado desde el JS
+            $proveedor_id = $this->limpiarCadena($_POST['proveedor_id']);
+            
+            // Si no hay proveedor, podrías retornar un aviso (opcional si ya validas en JS)
+            if($proveedor_id == ""){
+                return '<div class="notification is-warning is-light">Seleccione un proveedor primero.</div>';
+            }
+
+            // Consulta con INNER JOIN para filtrar por categoría Y proveedor simultáneamente
+            $consulta = "SELECT p.* FROM producto p 
+                        INNER JOIN producto_proveedor pp ON p.producto_id = pp.producto_id 
+                        WHERE p.categoria_id='$categoria_id' 
+                        AND pp.proveedor_id='$proveedor_id' 
+                        AND p.producto_estado='Activo' 
+                        ORDER BY p.producto_nombre ASC";
+
+            $datos = $this->ejecutarConsulta($consulta);
+
+            if($datos->rowCount() >= 1){
+                $datos = $datos->fetchAll();
+                
+                $tabla = '<div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th class="has-text-grey">Producto</th>
+                                <th class="has-text-centered has-text-grey">Stock</th>
+                                <th class="has-text-centered has-text-grey">Pedir</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+                
+                foreach($datos as $rows){
+                    $colorStock = ($rows['producto_stock'] < 5) ? 'has-text-danger has-text-weight-bold' : '';
+
+                    $tabla .= '
+                        <tr>
+                            <td class="has-text-left">
+                                <p class="has-text-weight-bold mb-0" style="font-size: 14px;">'.$rows['producto_nombre'].'</p>
+                                <small class="has-text-grey">'.$rows['producto_codigo'].'</small>
+                            </td>
+                            <td class="has-text-centered '.$colorStock.'" style="vertical-align: middle;">
+                                <span>'.$rows['producto_stock'].'</span>
+                            </td>
+                            <td style="vertical-align: middle; width: 150px;">
+                                <form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" autocomplete="off">
+                                    <input type="hidden" name="modulo_compra" value="agregar">
+                                    <input type="hidden" name="producto_id" value="'.$rows['producto_id'].'">
+                                    <input type="hidden" name="compra_costo" value="0">
+                                    
+                                    <div class="field has-addons is-justify-content-center">
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="compra_cantidad" value="1" min="1" style="width: 55px; text-align: center;">
+                                        </div>
+                                        <div class="control">
+                                            <button type="submit" class="button is-small is-link is-outlined">
+                                                <i class="fas fa-plus"></i>&nbsp; Añadir
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>';
+                }
+                $tabla .= '</tbody></table></div>';
+                return $tabla;
+            } else { 
+                return '
+                <div class="notification is-info is-light has-text-centered" style="border: 1px solid currentColor; background-color: transparent;">
+                    <i class="fas fa-folder-open"></i>&nbsp; No hay productos vinculados a este proveedor en esta categoría.
+                </div>'; 
+            }
+        }
 
 		/*----------  Controlador agregar producto al carrito  ----------*/
 		public function agregarProductoCompraControlador(){
@@ -114,12 +246,24 @@
             $total_exacto = 0;
             foreach($_SESSION['datos_compra'] as $detalle){
                 $id = $detalle['producto_id'];
-                $cant_real = isset($cantidades[$id]) ? (int)$cantidades[$id] : 0;
-                $precio_pactado = isset($precios[$id]) ? (float)$precios[$id] : 0;
+                $precio_pactado = (isset($precios[$id])) ? (float)$precios[$id] : 0;
+                $cant_real = (isset($cantidades[$id])) ? (int)$cantidades[$id] : 0;
                 $costo_ref = (float)$detalle['costo_referencia'];
 
-                if($cant_real <= 0){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"La cantidad no puede ser 0.","icono"=>"error"]); exit(); }
-                if($precio_pactado < $costo_ref){ return json_encode(["tipo"=>"simple","titulo"=>"Error de Auditoría","texto"=>"El precio de ".$detalle['producto_nombre']." no puede ser menor a $".$costo_ref,"icono"=>"error"]); exit(); }
+                if($cant_real <= 0){ 
+                    return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"La cantidad de ".$detalle['producto_nombre']." no puede ser 0.","icono"=>"error"]); 
+                    exit(); 
+                }
+
+                if($precio_pactado < 1){ 
+                    return json_encode([
+                        "tipo"=>"simple",
+                        "titulo"=>"Precio no permitido",
+                        "texto"=>"El producto ".$detalle['producto_nombre']." tiene un costo detectado de $".$precio_pactado.". Verifique que el campo no esté vacío y sea mayor a $1.00.",
+                            "icono"=>"error"
+                      ]); 
+                    exit(); 
+                }
 
                 $total_exacto += ($cant_real * $precio_pactado);
             }
@@ -198,12 +342,7 @@
 
             $this->ejecutarConsulta("UPDATE compra SET compra_saldo_pendiente='$nuevo_saldo', compra_estado_pago='$estado' WHERE compra_id='$compra_id'");
         }
-
-		/*=============================================
-		=    RECEPCIÓN DE CAMIÓN Y PRECIOS REALES     =
-		=============================================*/
-
-        /*---------- Recibir Mercancía (Lógica ERP con Auto-Pago y Precios Inteligentes) ----------*/
+        /*---------- Recibir Mercancía (Lógica ERP con Auto-Pago y Cuotas de Crédito) ----------*/
         public function registrarRecepcionControlador() {
             $compra_id = $this->limpiarCadena($_POST['compra_id']);
             
@@ -213,7 +352,6 @@
             }
             
             $productos = $_POST['productos_recibidos']; 
-            
             $tipo_doc = isset($_POST['recepcion_tipo_doc']) ? $this->limpiarCadena($_POST['recepcion_tipo_doc']) : "Nota de Entrega";
             $numero_doc = isset($_POST['recepcion_numero_doc']) ? $this->limpiarCadena($_POST['recepcion_numero_doc']) : "S/N";
             $fecha_emision = isset($_POST['recepcion_fecha_emision']) ? $this->limpiarCadena($_POST['recepcion_fecha_emision']) : date("Y-m-d");
@@ -221,14 +359,14 @@
             $condicion_pago = isset($_POST['compra_condicion']) ? $this->limpiarCadena($_POST['compra_condicion']) : "Contado";
             $nota_usuario = isset($_POST['recepcion_nota']) ? $this->limpiarCadena($_POST['recepcion_nota']) : "";
 
-            // --- ESCUDO ANTI-DUPLICADOS ---
+            // --- ESCUDO ANTI-DUPLICADOS (RESERVADO) ---
             if($numero_doc != "S/N" && $numero_doc != ""){
                 $check_doc = $this->ejecutarConsulta("SELECT recepcion_id FROM recepcion WHERE recepcion_nota LIKE '%[$tipo_doc Nro: $numero_doc %'");
-                if($check_doc->rowCount() > 0){ return json_encode(["tipo" => "simple", "titulo" => "Documento Duplicado", "texto" => "El número de $tipo_doc ($numero_doc) ya está registrado en otra orden.", "icono" => "error"]); exit(); }
+                if($check_doc->rowCount() > 0){ return json_encode(["tipo" => "simple", "titulo" => "Documento Duplicado", "texto" => "Este $tipo_doc ya fue registrado.", "icono" => "error"]); exit(); }
                 
                 if($tipo_doc == "Factura"){
                     $check_fac = $this->ejecutarConsulta("SELECT compra_id FROM compra WHERE compra_nota_interna LIKE '%[Factura Oficial Nro: $numero_doc %'");
-                    if($check_fac->rowCount() > 0){ return json_encode(["tipo" => "simple", "titulo" => "Factura Duplicada", "texto" => "La Factura Nro $numero_doc ya fue asociada a otra compra.", "icono" => "error"]); exit(); }
+                    if($check_fac->rowCount() > 0){ return json_encode(["tipo" => "simple", "titulo" => "Factura Duplicada", "texto" => "La Factura ya fue asociada.", "icono" => "error"]); exit(); }
                 }
             }
             
@@ -249,51 +387,64 @@
             $guardar = $this->guardarDatos("recepcion", $datos_recepcion);
 
             if($guardar->rowCount() == 1){
+                // Obtener ID y Código para las cuotas
                 $recepcion_id = $this->ejecutarConsulta("SELECT recepcion_id FROM recepcion WHERE compra_id='$compra_id' ORDER BY recepcion_id DESC LIMIT 1")->fetchColumn();
+                $codigo_compra = $this->ejecutarConsulta("SELECT compra_codigo FROM compra WHERE compra_id='$compra_id'")->fetchColumn();
 
                 foreach($productos as $id_prod => $cant_llego) {
                     $cantidad_real = (int)$this->limpiarCadena($cant_llego);
                     if($cantidad_real > 0) {
-                        // 1. Guarda el registro de llegada
                         $this->ejecutarConsulta("INSERT INTO recepcion_detalle (recepcion_id, producto_id, cantidad_recibida) VALUES ('$recepcion_id', '$id_prod', '$cantidad_real')");
-                        
-                        // 2. Suma al inventario
                         $this->ejecutarConsulta("UPDATE producto SET producto_stock = producto_stock + $cantidad_real WHERE producto_id = '$id_prod'");
-                        
-                        // 3. MAGIA: ACTUALIZA EL PRECIO DE VENTA EN EL CATÁLOGO
+                        // PRECIO INTELIGENTE 
                         $this->actualizarPrecioInteligente($id_prod, $compra_id);
                     }
                 }
 
+                // RECALCULO DE DEUDA 
                 $query_recalculo = $this->ejecutarConsulta("SELECT IFNULL(SUM(rd.cantidad_recibida * cd.compra_detalle_precio),0) as deuda_real FROM recepcion_detalle rd INNER JOIN recepcion r ON rd.recepcion_id = r.recepcion_id INNER JOIN compra_detalle cd ON cd.compra_id = r.compra_id AND cd.producto_id = rd.producto_id WHERE r.compra_id='$compra_id'")->fetch();
                 $nuevo_total_real = (float) $query_recalculo['deuda_real'];
-                
                 $pagado_hasta_ahora = (float) $this->ejecutarConsulta("SELECT IFNULL(SUM(pago_monto),0) FROM compra_pagos WHERE compra_id='$compra_id'")->fetchColumn();
                 $nuevo_saldo_pendiente = $nuevo_total_real - $pagado_hasta_ahora;
-                
-                // AUTO-PAGO DE CONTADO
+
+                // --- NUEVA LÓGICA DE CUOTAS ---
+                if($condicion_pago == "Credito" && $nuevo_saldo_pendiente > 0){
+                    $num_cuotas = (isset($_POST['compra_cuotas_num'])) ? (int)$_POST['compra_cuotas_num'] : 1;
+                    $frecuencia = (isset($_POST['compra_frecuencia_dias'])) ? (int)$_POST['compra_frecuencia_dias'] : 7;
+                    $justificacion = $this->limpiarCadena($_POST['compra_justificacion']);
+                    $monto_cuota = $nuevo_saldo_pendiente / $num_cuotas;
+
+                    for ($i = 1; $i <= $num_cuotas; $i++) {
+                        $fec_vence = date("Y-m-d", strtotime(date("Y-m-d")." + ".($i * $frecuencia)." days"));
+                        $this->guardarDatos("compra_cuotas", [
+                            ["campo_nombre"=>"compra_codigo","campo_marcador"=>":C","campo_valor"=>$codigo_compra],
+                            ["campo_nombre"=>"cuota_numero","campo_marcador"=>":N","campo_valor"=>$i],
+                            ["campo_nombre"=>"cuota_monto","campo_marcador"=>":M","campo_valor"=>$monto_cuota],
+                            ["campo_nombre"=>"cuota_fecha_vencimiento","campo_marcador"=>":F","campo_valor"=>$fec_vence],
+                            ["campo_nombre"=>"cuota_justificacion","campo_marcador"=>":J","campo_valor"=>$justificacion]
+                        ]);
+                    }
+                }
+
+                // AUTO-PAGO
                 if($condicion_pago == "Contado" && $nuevo_saldo_pendiente > 0){
-                    $datos_pago_auto = [
-                        ["campo_nombre"=>"compra_id","campo_marcador"=>":Compra","campo_valor"=>$compra_id],
-                        ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
-                        ["campo_nombre"=>"pago_fecha","campo_marcador"=>":Fecha","campo_valor"=>date("Y-m-d")],
-                        ["campo_nombre"=>"pago_monto","campo_marcador"=>":Monto","campo_valor"=>$nuevo_saldo_pendiente],
-                        ["campo_nombre"=>"pago_metodo","campo_marcador"=>":Metodo","campo_valor"=>"Pago Automático (Contado)"],
-                        ["campo_nombre"=>"pago_referencia","campo_marcador"=>":Ref","campo_valor"=>"Cierre automático por ".$tipo_doc]
-                    ];
-                    $this->guardarDatos("compra_pagos", $datos_pago_auto);
+                    $this->guardarDatos("compra_pagos", [
+                        ["campo_nombre"=>"compra_id","campo_marcador"=>":C","campo_valor"=>$compra_id],
+                        ["campo_nombre"=>"usuario_id","campo_marcador"=>":U","campo_valor"=>$_SESSION['id']],
+                        ["campo_nombre"=>"pago_fecha","campo_marcador"=>":F","campo_valor"=>date("Y-m-d")],
+                        ["campo_nombre"=>"pago_monto","campo_marcador"=>":M","campo_valor"=>$nuevo_saldo_pendiente],
+                        ["campo_nombre"=>"pago_metodo","campo_marcador"=>":MT","campo_valor"=>"Pago Automático"],
+                        ["campo_nombre"=>"pago_referencia","campo_marcador"=>":R","campo_valor"=>"Cierre por ".$tipo_doc]
+                    ]);
                     $nuevo_saldo_pendiente = 0; 
                 }
 
                 $estado_pago = ($nuevo_saldo_pendiente <= 0 && $nuevo_total_real > 0) ? "Pagado" : "Pendiente";
-                if ($nuevo_total_real == 0) { $estado_pago = "Pendiente"; }
-
                 $this->ejecutarConsulta("UPDATE compra SET compra_total = '$nuevo_total_real', compra_fecha_vencimiento = '$fecha_vencimiento', compra_estado = '$nuevo_estado_documento', compra_saldo_pendiente = '$nuevo_saldo_pendiente', compra_estado_pago = '$estado_pago' WHERE compra_id = '$compra_id'");
 
-                return json_encode(["tipo" => "confirmar", "titulo" => "¡Almacén Actualizado!", "texto" => "Mercancía ingresada y precios de venta actualizados con éxito. ¿Desea imprimir la NOTA DE RECEPCIÓN?", "icono" => "success", "confirmButtonText" => "Sí, Imprimir Nota", "cancelButtonText" => "No, salir al listado", "url" => APP_URL."app/pdf/purchaseReceipt.php?id=".$compra_id]);
+                return json_encode(["tipo" => "confirmar", "titulo" => "¡Éxito!", "texto" => "Recepción procesada correctamente.", "icono" => "success", "url" => APP_URL."app/pdf/purchaseReceipt.php?id=".$compra_id]);
             } else { return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar.", "icono" => "error"]); }
         }
-        
         /*---------- Registrar Factura a una Nota de Entrega (Con Validación Duplicados) ----------*/
         public function registrarFacturaPendienteControlador() {
             $id = $this->limpiarCadena($_POST['factura_compra_id']);
@@ -366,22 +517,48 @@
         }
 
 		/*=============================================
-		=   ABONOS, PAGOS Y ANULACIONES (COMPAÑERO)   =
-		=============================================*/
+        =    ABONOS, PAGOS Y ANULACIONES (UNIFICADO)  =
+        =============================================*/
 
         public function registrarAbonoControlador(){
             $id = $this->limpiarCadena($_POST['pago_compra_id']);
-            $monto = $this->limpiarCadena($_POST['pago_monto']);
+            $monto = (float)$this->limpiarCadena($_POST['pago_monto']);
             $metodo = $this->limpiarCadena($_POST['pago_metodo']);
             $referencia = $this->limpiarCadena($_POST['pago_referencia']);
             
-            if($monto <= 0){ return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto debe ser mayor a cero", "icono"=>"error"]); }
-            if($referencia == "" && ($metodo == "Efectivo" || $metodo == "Divisas")){ $referencia = "EFECTIVO/DIVISA"; } 
-            elseif ($referencia == "") { return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"La referencia es obligatoria", "icono"=>"error"]); }
+            // 1. Validaciones de Seguridad (Mantenidas)
+            if($monto <= 0){ 
+                return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto debe ser mayor a cero", "icono"=>"error"]); 
+            }
 
-            $saldo_actual = (float) $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetchColumn();
-            if($monto > $saldo_actual){ return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto supera el saldo ($$saldo_actual)", "icono"=>"error"]); }
+            if(strlen($referencia) != 6){ 
+                return json_encode([
+                    "tipo"   => "simple", 
+                    "titulo" => "Referencia Inválida", 
+                    "texto"  => "La referencia debe tener exactamente 6 dígitos numéricos.", 
+                    "icono"  => "error"
+                ]); 
+            }
 
+            if(!ctype_digit($referencia)){
+                return json_encode([
+                    "tipo"   => "simple", 
+                    "titulo" => "Error de Formato", 
+                    "texto"  => "La referencia solo debe contener números.", 
+                    "icono"  => "error"
+                ]);
+            }
+
+            // 2. Verificar saldo disponible
+            $consulta_compra = $this->ejecutarConsulta("SELECT compra_codigo, compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetch();
+            $saldo_actual = (float) $consulta_compra['compra_saldo_pendiente'];
+            $codigo_compra = $consulta_compra['compra_codigo'];
+
+            if($monto > $saldo_actual){ 
+                return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto supera el saldo ($$saldo_actual)", "icono"=>"error"]); 
+            }
+
+            // 3. Registro del Pago (Tu tabla de auditoría)
             $datos_pago = [
                 ["campo_nombre"=>"compra_id","campo_marcador"=>":Id","campo_valor"=>$id],
                 ["campo_nombre"=>"pago_monto","campo_marcador"=>":Monto","campo_valor"=>$monto],
@@ -392,12 +569,45 @@
             ];
 
             if($this->guardarDatos("compra_pagos", $datos_pago)->rowCount() >= 1){
-                $this->actualizarSaldosCompra($id);
-                return json_encode(["tipo"=>"recargar", "titulo"=>"¡Abono registrado!", "texto"=>"Se procesó el pago correctamente", "icono"=>"success"]);
-            }
-            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Error al registrar", "icono"=>"error"]);
-        }
 
+                // --- INICIO LÓGICA DE CUOTAS (NUEVO) ---
+                // Buscamos las cuotas que falten por pagar de esta compra
+                $cuotas = $this->ejecutarConsulta("SELECT * FROM compra_cuotas WHERE compra_codigo='$codigo_compra' AND cuota_estado='Pendiente' ORDER BY cuota_numero ASC")->fetchAll();
+
+                $monto_para_cuotas = $monto;
+
+                foreach($cuotas as $c){
+                    if($monto_para_cuotas <= 0) break;
+
+                    $monto_cuota = (float)$c['cuota_monto'];
+                    $id_cuota = $c['cuota_id'];
+
+                    // Si el abono cubre o sobra para esta cuota, la marcamos como Pagada
+                    if($monto_para_cuotas >= $monto_cuota){
+                        $this->ejecutarConsulta("UPDATE compra_cuotas SET cuota_estado='Pagado' WHERE cuota_id='$id_cuota'");
+                        $monto_para_cuotas -= $monto_cuota;
+                    } else {
+                        // Si el abono no alcanza para completar la siguiente cuota, 
+                        // el saldo general bajará pero la cuota seguirá pendiente hasta el próximo abono.
+                        break; 
+                    }
+                }
+                // --- FIN LÓGICA DE CUOTAS ---
+
+                // 4. Actualizar saldos y estados generales (Tu función existente)
+                $this->actualizarSaldosCompra($id);
+
+                // Verificación final: Si el saldo quedó en 0, nos aseguramos que todas las cuotas digan Pagado
+                $check_saldo_final = (float) $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetchColumn();
+                if($check_saldo_final <= 0.01){
+                    $this->ejecutarConsulta("UPDATE compra_cuotas SET cuota_estado='Pagado' WHERE compra_codigo='$codigo_compra'");
+                }
+
+                return json_encode(["tipo"=>"recargar", "titulo"=>"¡Abono registrado!", "texto"=>"Se procesó el pago y se actualizaron las cuotas.", "icono"=>"success"]);
+            }
+
+            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Error al registrar en la base de datos", "icono"=>"error"]);
+        }
         public function listarAbonosCompra($id){
             $id = $this->limpiarCadena($id);
             return $this->ejecutarConsulta("SELECT cp.*, u.usuario_nombre, u.usuario_apellido FROM compra_pagos cp INNER JOIN usuario u ON cp.usuario_id = u.usuario_id WHERE cp.compra_id='$id' ORDER BY cp.pago_fecha DESC");
@@ -509,12 +719,15 @@
             return $tabla . '</tbody></table></div>';
         }
 
-        /*---------- Listado Principal de Compras (Con Columna de Documentos y Buscador Avanzado) ----------*/
+        //*---------- Listado Principal de Compras (Con Soporte para Cuotas) ----------*/
         public function listarCompraControlador($pagina, $registros, $url, $busqueda) {
-            $pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $busqueda = $this->limpiarCadena($busqueda);
+            $pagina = $this->limpiarCadena($pagina); 
+            $registros = $this->limpiarCadena($registros); 
+            $busqueda = $this->limpiarCadena($busqueda);
             $url_split = explode("/", $url); 
             $estado_view = (isset($url_split[1]) && $url_split[1] != "") ? $url_split[1] : "EnProceso";
-            $url = APP_URL . $url . "/"; $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
+            $url = APP_URL . $url . "/"; 
+            $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
             if(isset($busqueda) && $busqueda != ""){ 
                 $filtro_sql = "WHERE (c.compra_codigo LIKE '%$busqueda%' OR p.proveedor_nombre LIKE '%$busqueda%' OR c.compra_nota_interna LIKE '%$busqueda%' OR c.compra_id IN (SELECT compra_id FROM recepcion WHERE recepcion_nota LIKE '%$busqueda%'))"; 
@@ -528,7 +741,7 @@
 
             $datos = $this->ejecutarConsulta("SELECT c.*, p.proveedor_nombre, (SELECT recepcion_nota FROM recepcion WHERE compra_id = c.compra_id ORDER BY recepcion_id ASC LIMIT 1) as recepcion_base FROM compra c INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id $filtro_sql ORDER BY c.compra_id DESC LIMIT $inicio, $registros")->fetchAll();
 
-            $tabla = '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-dark"><th class="has-text-centered has-text-white">Código</th><th class="has-text-centered has-text-white">Proveedor</th><th class="has-text-centered has-text-white">Nro. Documento</th><th class="has-text-centered has-text-white">Total $</th><th class="has-text-centered has-text-white">Deuda $</th><th class="has-text-centered has-text-white">Pago</th><th class="has-text-centered has-text-white">Mercancía</th><th class="has-text-centered has-text-white">Opciones</th></tr></thead><tbody>';
+            $tabla = '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-dark"><th class="has-text-centered has-text-white">Código</th><th class="has-text-centered has-text-white">Proveedor</th><th class="has-text-centered has-text-white">Documento</th><th class="has-text-centered has-text-white">Total $</th><th class="has-text-centered has-text-white">Deuda $</th><th class="has-text-centered has-text-white">Pago</th><th class="has-text-centered has-text-white">Estado</th><th class="has-text-centered has-text-white">Opciones</th></tr></thead><tbody>';
 
             if (count($datos) >= 1) {
                 foreach ($datos as $rows) {
@@ -545,11 +758,21 @@
                         if(isset($match_fac[1])) { $doc_info = str_replace("Oficial ", "", $match_fac[1]); $doc_color = "is-primary is-light"; }
                     }
 
+                    // Lógica de colores de pago
                     if($rows['compra_estado'] == "Anulada"){ $color_pago = "is-dark"; $texto_pago = "Anulada"; } 
                     else {
                         if($rows['compra_estado_pago'] == "Pagado"){ $color_pago = "is-success"; $texto_pago = "Pagado"; } 
                         elseif($rows['compra_estado_pago'] == "Parcial"){ $color_pago = "is-warning"; $texto_pago = "Parcial"; } 
                         else { $color_pago = "is-danger"; $texto_pago = "Pendiente"; }
+                    }
+
+                    // --- MAGIA: INDICADOR DE CUOTAS VENCIDAS ---
+                    $alerta_cuotas = "";
+                    if($rows['compra_estado'] == "Facturada" || $rows['compra_estado'] == "Completado"){
+                        $check_vencidas = $this->ejecutarConsulta("SELECT COUNT(cuota_id) FROM compra_cuotas WHERE compra_codigo='".$rows['compra_codigo']."' AND cuota_estado='Pendiente' AND cuota_fecha_vencimiento < '".date("Y-m-d")."'")->fetchColumn();
+                        if($check_vencidas > 0){
+                            $alerta_cuotas = '<br><span class="tag is-danger is-small animada-flash">'.$check_vencidas.' Cuota(s) Vencida(s)</span>';
+                        }
                     }
 
                     $color_fisico = ($rows['compra_estado'] == "Completado" || $rows['compra_estado'] == "Facturada") ? "has-text-success" : "has-text-info";
@@ -562,14 +785,14 @@
                         <td style="vertical-align: middle;">$' . number_format($rows['compra_total'], 2) . '</td>
                         <td class="has-text-weight-bold has-text-danger-dark" style="vertical-align: middle;">$' . number_format($rows['compra_saldo_pendiente'], 2) . '</td>
                         <td style="vertical-align: middle;"><span class="tag ' . $color_pago . ' is-rounded">' . $texto_pago . '</span></td>
-                        <td class="'.$color_fisico.' has-text-weight-bold" style="vertical-align: middle;">' . $rows['compra_estado'] . '</td>
+                        <td class="'.$color_fisico.' has-text-weight-bold" style="vertical-align: middle;">' . $rows['compra_estado'] . $alerta_cuotas . '</td>
                         <td style="vertical-align: middle;">
                             <div class="buttons is-centered is-flex-wrap-nowrap">';
 
+                    // Botones de acción
                     $tabla .= '<a href="' . APP_URL . 'purchaseDetail/' . $rows['compra_id'] . '/" class="button is-info is-rounded is-small" title="Ver Detalles"><i class="fas fa-eye"></i></a>';
 
                     if($rows['compra_estado'] != "Anulada"){
-                        
                         if($rows['compra_estado'] == "Pendiente" || $rows['compra_estado'] == "Parcial"){
                             $tabla .= '<a href="' . APP_URL . 'purchaseReceptionDetail/' . $rows['compra_id'] . '/" class="button is-success is-rounded is-small" title="Recibir Mercancía"><i class="fas fa-truck-loading"></i></a>';
                         }
@@ -594,4 +817,97 @@
             return $tabla . '</tbody></table></div>';
         }
 
-	}
+        public function filtrarStockCategoriaControlador(){
+            $criterio = $this->limpiarCadena($_POST['criterio_stock']);
+            $categoria_id = $this->limpiarCadena($_POST['categoria_id']);
+            
+            $consulta = "SELECT * FROM producto WHERE producto_estado='Activo'";
+
+            if($categoria_id != ""){
+                $consulta .= " AND categoria_id='$categoria_id'";
+            }
+
+            if($criterio == "bajo"){
+                $consulta .= " AND producto_stock < 5 ORDER BY producto_stock ASC";
+            } elseif($criterio == "alto"){
+                $consulta .= " AND producto_stock >= 5 ORDER BY producto_stock DESC";
+            } else {
+                $consulta .= " ORDER BY producto_nombre ASC";
+            }
+
+            $conexion = $this->conectar();
+            $datos = $conexion->query($consulta);
+            $datos = $datos->fetchAll();
+
+            if(count($datos) > 0){
+                // Quitamos background-color: transparent para que use el del tema
+                $tabla = '<div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th class="has-text-grey">Producto</th>
+                                <th class="has-text-centered has-text-grey">Stock</th>
+                                <th class="has-text-centered has-text-grey">Pedir</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+
+                foreach($datos as $rows){
+                    // Usamos colores semánticos: si es bajo (<5) usamos un color de alerta, si no, color normal del tema
+                    $colorStock = ($rows['producto_stock'] < 5) ? 'has-text-danger has-text-weight-bold' : '';
+
+                    $tabla .= '
+                        <tr>
+                            <td class="has-text-left">
+                                <p class="has-text-weight-bold mb-0" style="font-size: 14px;">'.$rows['producto_nombre'].'</p>
+                                <small class="has-text-grey">'.$rows['producto_codigo'].'</small>
+                            </td>
+                            <td class="has-text-centered '.$colorStock.'" style="vertical-align: middle;">
+                                <span>'.$rows['producto_stock'].'</span>
+                            </td>
+                            <td style="vertical-align: middle; width: 150px;">
+                                <form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" autocomplete="off">
+                                    <input type="hidden" name="modulo_compra" value="agregar">
+                                    <input type="hidden" name="producto_id" value="'.$rows['producto_id'].'">
+                                    <input type="hidden" name="compra_costo" value="0">
+                                    
+                                    <div class="field has-addons is-justify-content-center">
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="compra_cantidad" value="1" min="1" style="width: 55px; text-align: center;">
+                                        </div>
+                                        <div class="control">
+                                            <button type="submit" class="button is-small is-link is-outlined">
+                                                <i class="fas fa-plus"></i>&nbsp; Añadir
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>';
+                }
+                $tabla .= '</tbody></table></div>';
+                return $tabla;
+            } else {
+                // Notificación que se adapta sola
+                return '
+                <div class="notification is-info is-light has-text-centered" style="border: 1px solid currentColor;">
+                    <i class="fas fa-info-circle"></i>&nbsp; No hay productos con stock menor a 5 en esta selección.
+                </div>';
+            }
+        }
+
+        /*---------- Controlador para listar productos por proveedor (AJAX) ----------*/
+        public function listarProductosProveedorControlador($id_proveedor){
+            $id_proveedor = $this->limpiarCadena($id_proveedor);
+            
+            // Consulta con JOIN para traer los datos del producto filtrados por la tabla intermedia
+            $consulta = "SELECT p.* FROM producto p 
+                        INNER JOIN producto_proveedor pp ON p.producto_id = pp.producto_id 
+                        WHERE pp.proveedor_id = '$id_proveedor' AND p.producto_id NOT IN (
+                            SELECT producto_id FROM producto WHERE producto_estado = 'Inactivo'
+                        ) ORDER BY p.producto_nombre ASC";
+            
+            $datos = $this->ejecutarConsulta($consulta);
+            return $datos;
+        }
+}

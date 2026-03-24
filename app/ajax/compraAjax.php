@@ -5,50 +5,74 @@
 
     use app\controllers\purchaseController;
 
-    $ins_compra = new purchaseController();
+    $ins_Compra = new purchaseController();
 
     if(isset($_POST['modulo_compra'])){
-        $insCompra = new purchaseController();
 
         if($_POST['modulo_compra']=="buscar_producto"){
-            echo $insCompra->buscarProductoCompraControlador();
+            echo $ins_Compra->buscarProductoCompraControlador();
         }
         if($_POST['modulo_compra']=="agregar"){
-            echo $insCompra->agregarProductoCompraControlador();
+            echo $ins_Compra->agregarProductoCompraControlador();
         }
         if($_POST['modulo_compra']=="vaciar"){
-            echo $insCompra->vaciarCompraControlador();
+            echo $ins_Compra->vaciarCompraControlador();
         }
         if($_POST['modulo_compra']=="registrar"){
-            echo $insCompra->registrarCompraControlador();
+            echo $ins_Compra->registrarCompraControlador();
         }
         if($_POST['modulo_compra']=="eliminar"){
-            echo $insCompra->eliminarCompraControlador();
+            echo $ins_Compra->eliminarCompraControlador();
         }
         if($_POST['modulo_compra']=="buscar_por_categoria"){
-            echo $insCompra->buscarPorCategoriaCompraControlador();
+            echo $ins_Compra->buscarPorCategoriaCompraControlador();
         }
         if($_POST['modulo_compra']=="registrar_recepcion"){
-            echo $insCompra->registrarRecepcionControlador();
+            echo $ins_Compra->registrarRecepcionControlador();
         }
         if($_POST['modulo_compra']=="registrar_abono"){
-            echo $insCompra->registrarAbonoControlador();
+            echo $ins_Compra->registrarAbonoControlador();
         }
         if($_POST['modulo_compra']=="ver_historial_abonos"){
-            echo $insCompra->listarAbonosCompraControlador($_POST['compra_id']);
+            echo $ins_Compra->listarAbonosCompraControlador($_POST['compra_id']);
         }
         if($_POST['modulo_compra']=="eliminar_abono"){
-        echo $insCompra->eliminarAbonoControlador();
+            echo $ins_Compra->eliminarAbonoControlador();
         }
         if($_POST['modulo_compra']=="eliminar_producto_carrito"){
-            echo $insCompra->eliminarProductoCarritoControlador();
+            echo $ins_Compra->eliminarProductoCarritoControlador();
         }
         if($_POST['modulo_compra'] == "eliminar_compra"){
-            echo $ins_compra->eliminarCompraControlador();
+            echo $ins_Compra->eliminarCompraControlador();
         }
-       
         if($_POST['modulo_compra']=="registrar_factura"){
-            echo $insCompra->registrarFacturaPendienteControlador();
+            echo $ins_Compra->registrarFacturaPendienteControlador();
+        }
+
+        if($_POST['modulo_compra'] == "filtrar_stock_categoria"){
+            echo $ins_Compra->filtrarStockCategoriaControlador();
+        }
+
+        if($_POST['modulo_compra'] == "buscar_por_proveedor"){
+            echo $ins_Compra->buscarProductoProveedorControlador();
+        }
+
+        // --- FILTRADO POR PROVEEDOR ---
+        if($_POST['modulo_compra'] == "buscar_por_proveedor"){
+            // Obtenemos el ID que viene del JS
+            $id_proveedor = (isset($_POST['proveedor_id'])) ? $_POST['proveedor_id'] : 0;
+            
+            // Llamamos al método del controlador
+            $productos = $ins_Compra->listarProductosProveedorControlador($id_proveedor);
+            
+            if($productos->rowCount() > 0){
+                echo '<option value="" selected="">Seleccione un producto</option>';
+                while($rows = $productos->fetch()){
+                    echo '<option value="'.$rows['producto_id'].'">📦 '.$rows['producto_nombre'].' ('.$rows['producto_codigo'].')</option>';
+                }
+            } else {
+                echo '<option value="" disabled selected>⚠️ Este proveedor no tiene productos vinculados</option>';
+            }
         }
 
     }else{
