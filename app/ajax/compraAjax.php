@@ -27,7 +27,7 @@
         if($_POST['modulo_compra']=="registrar"){
             echo $ins_Compra->registrarCompraControlador();
         }
-        if($_POST['modulo_compra']=="eliminar_compra"){
+        if($_POST['modulo_compra']=="eliminar" || $_POST['modulo_compra']=="eliminar_compra"){
             echo $ins_Compra->eliminarCompraControlador();
         }
 

@@ -150,7 +150,7 @@
 
     <div class="columns mt-4">
         <div class="column">
-            <form action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" class="FormularioAjax" method="POST" autocomplete="off" id="form-generar-orden">
+            <form action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" class="FormularioEnvioManual" method="POST" autocomplete="off" id="form-generar-orden">
                 <input type="hidden" name="modulo_compra" value="registrar">
                 <input type="hidden" name="compra_proveedor" id="hidden_compra_proveedor" value="">
                 <input type="hidden" name="compra_tasa_bcv" id="compra_tasa_bcv" value="">
@@ -552,33 +552,78 @@
                 }
 
                 // Si pasa las validaciones, procedemos con el envío
-                let datos = new FormData(this);
-                fetch(this.getAttribute("action"), { 
-                    method: this.getAttribute("method"), 
-                    body: datos 
-                })
-                .then(respuesta => respuesta.json())
-                .then(respuesta => {
-                    if(respuesta.tipo == "confirmar"){
-                        Swal.fire({
-                            title: respuesta.titulo, 
-                            text: respuesta.texto, 
-                            icon: respuesta.icono, 
-                            showCancelButton: true, 
-                            confirmButtonText: respuesta.confirmButtonText, 
-                            cancelButtonText: respuesta.cancelButtonText
-                        }).then((result) => {
-                            if (result.isConfirmed) { 
-                                window.open(respuesta.url, '_blank'); 
-                                location.reload(); 
-                            } else { 
-                                location.reload(); 
+
+                // --- 1. PRIMERA ALERTA: ¿ESTÁS SEGURO? ---
+                Swal.fire({
+                    title: "¿Estás seguro?",
+                    text: "¿Quieres realizar la acción solicitada?",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: "Sí, realizar",
+                    cancelButtonText: "No, cancelar"
+                }).then((result) => {
+                    
+                    // SI EL USUARIO CONFIRMA, SE EJECUTA TODO LO DEMÁS
+                    if (result.isConfirmed) {
+
+                        // --- 2. PREPARACIÓN Y ENVÍO ---
+                        let datos = new FormData(this);
+
+                        fetch(this.getAttribute("action"), { 
+                            method: this.getAttribute("method"), 
+                            body: datos 
+                        })
+                        .then(res => res.json())
+                        .then(res => {
+                            
+                            // Si el servidor responde con éxito
+                            if (res.status == "orden_ok") {
+                                
+                                // --- 3. SEGUNDA ALERTA: ÉXITO (Confirmación de Registro) ---
+                                Swal.fire({
+                                    title: res.mensaje_confirmacion,
+                                    text: "La orden se registró con éxito en el sistema.",
+                                    icon: "success",
+                                    confirmButtonText: 'Aceptar'
+                                }).then((confirmExit) => {
+                                    
+                                    // --- 4. TERCERA ALERTA: ¿DESEA IMPRIMIR? ---
+                                    // Solo aparece después de que el usuario acepta la de éxito
+                                    if (confirmExit.isConfirmed || confirmExit.isDismissed) {
+                                        Swal.fire({
+                                            title: "¿Desea imprimir la Orden de Compra?",
+                                            text: "Se abrirá el reporte en una nueva pestaña",
+                                            icon: "question",
+                                            showCancelButton: true,
+                                            confirmButtonColor: '#3085d6',
+                                            cancelButtonColor: '#d33',
+                                            confirmButtonText: "Sí, imprimir",
+                                            cancelButtonText: "No, después"
+                                        }).then((printResult) => {
+                                            if (printResult.isConfirmed) {
+                                                // Abre el PDF en pestaña nueva
+                                                window.open(res.url_pdf, '_blank');
+                                            }
+                                            // Recarga la página para limpiar el carrito/formulario
+                                            location.reload();
+                                        });
+                                    }
+                                }); 
+
+                            } else {
+                                // Si hay un error 
+                                if (typeof alertas_ajax === 'function') {
+                                    alertas_ajax(res);
+                                }
                             }
+                        })
+                        .catch(error => {
+                            console.error("Error en la petición:", error);
                         });
-                    } else { 
-                        return alertas_ajax(respuesta); 
                     }
-                });
+                }); // Cierre final de la alerta "¿Estás seguro?"
             });
         }
 

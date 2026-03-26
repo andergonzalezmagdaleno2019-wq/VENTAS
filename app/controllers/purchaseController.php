@@ -378,7 +378,11 @@ public function agregarProductoCompraControlador(){
                 }
                 
                 unset($_SESSION['datos_compra']);
-                return json_encode(["tipo"=>"confirmar", "titulo"=>"Orden ".$codigo_compra." Generada", "texto"=>"¿Desea imprimir la Orden de Compra?", "icono"=>"success", "confirmButtonText" => "Sí, imprimir", "cancelButtonText" => "No, después", "url"=>APP_URL."app/pdf/purchase_order.php?code=".$codigo_compra]);
+                return json_encode([
+                    "status" => "orden_ok", 
+                    "mensaje_confirmacion" => "Orden ".$codigo_compra." Generada", 
+                    "url_pdf" => APP_URL."app/pdf/purchase_order.php?code=".$codigo_compra 
+                ]);
             }else{ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar","icono"=>"error"]); }
         }
 
