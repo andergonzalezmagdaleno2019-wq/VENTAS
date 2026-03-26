@@ -52,7 +52,7 @@
             </div>
             
             <div class="columns is-multiline"> <div class="column is-6">
-                    <label class="label">Condición de Pago</label>
+                <label class="label">Condición de Pago</label>
                     <div class="select is-fullwidth">
                         <select name="compra_condicion" id="compra_condicion" onchange="toggleBloqueos()">
                             <option value="Contado" selected>Al Contado</option>
@@ -60,7 +60,7 @@
                             <option value="Credito">Crédito / Plazo</option>
                         </select>
                     </div>
-                </div>
+            </div>
 
                 <div class="column is-6" id="col-vencimiento-simple">
                     <label class="label">Vencimiento (Solo Facturas)</label>
@@ -69,18 +69,18 @@
 
                 <div class="column is-12" id="seccion-cuotas" style="display: none;">
                     <div class="notification is-light" style="border: 1px solid #dbdbdb; padding: 1.25rem;">
-                        <div class="columns is-multiline is-mobile">
+                       <div class="columns is-multiline is-mobile">
                             <div class="column is-2-desktop is-6-mobile">
                                 <label class="label is-small">Cuotas</label>
-                                <input class="input" type="number" name="compra_cuotas_num" id="compra_cuotas_num" min="2" value="2">
+                                <input class="input" type="number" name="compra_cuotas_total" id="compra_cuotas_num" min="2" value="2">
                             </div>
                             <div class="column is-2-desktop is-6-mobile">
                                 <label class="label is-small">Días (Frec.)</label>
-                                <input class="input" type="number" name="compra_frecuencia_dias" id="compra_frecuencia_dias" min="1" value="7">
+                                <input class="input" type="number" name="compra_frecuencia" id="compra_frecuencia_dias" min="1" value="7">
                             </div>
                             <div class="column is-8-desktop is-12-mobile">
                                 <label class="label is-small">Justificación del Crédito</label>
-                                <input class="input" type="text" name="compra_justificacion" id="compra_justificacion" placeholder="Ej: Acuerdo por volumen">
+                                <input class="input" type="text" name="cuota_justificacion" id="compra_justificacion" placeholder="Ej: Acuerdo por volumen">
                             </div>
                         </div>
                     </div>

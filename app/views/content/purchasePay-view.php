@@ -13,13 +13,20 @@
         $auto_pago_id = (isset($url[1]) && is_numeric($url[1])) ? $insCompra->limpiarCadena($url[1]) : 0;
 
         /* --- CÁLCULO DE INDICADORES FINANCIEROS --- */
-        $q_deuda = $insCompra->ejecutarConsulta("SELECT SUM(compra_saldo_pendiente) as total_usd, SUM(compra_saldo_pendiente * IF(compra_tasa_bcv > 0, compra_tasa_bcv, 1)) as total_bs FROM compra WHERE compra_saldo_pendiente > 0")->fetch();
-        $total_deuda = $q_deuda['total_usd'] ?? 0;
-        $total_deuda_bs = $q_deuda['total_bs'] ?? 0;
+        $q_stats = $insCompra->ejecutarConsulta("
+            SELECT 
+                SUM(compra_saldo_pendiente) as total_usd,
+                SUM(compra_saldo_pendiente * IF(compra_tasa_bcv > 0, compra_tasa_bcv, 1)) as total_bs,
+                SUM(IF(compra_fecha_vencimiento < CURRENT_DATE, compra_saldo_pendiente, 0)) as vencido_usd,
+                SUM(IF(compra_fecha_vencimiento < CURRENT_DATE, compra_saldo_pendiente * IF(compra_tasa_bcv > 0, compra_tasa_bcv, 1), 0)) as vencido_bs
+            FROM compra 
+            WHERE compra_saldo_pendiente > 0
+        ")->fetch();
 
-        $q_vencido = $insCompra->ejecutarConsulta("SELECT SUM(compra_saldo_pendiente) as total_usd, SUM(compra_saldo_pendiente * IF(compra_tasa_bcv > 0, compra_tasa_bcv, 1)) as total_bs FROM compra WHERE compra_fecha_vencimiento < CURRENT_DATE AND compra_saldo_pendiente > 0")->fetch();
-        $vencido = $q_vencido['total_usd'] ?? 0;
-        $vencido_bs = $q_vencido['total_bs'] ?? 0;
+        $total_deuda = $q_stats['total_usd'] ?? 0;
+        $total_deuda_bs = $q_stats['total_bs'] ?? 0;
+        $vencido = $q_stats['vencido_usd'] ?? 0;
+        $vencido_bs = $q_stats['vencido_bs'] ?? 0;
 
         $facturas_pendientes = $insCompra->ejecutarConsulta("SELECT COUNT(compra_id) as total FROM compra WHERE compra_saldo_pendiente > 0")->fetch()['total'] ?? 0;
     ?>
@@ -87,7 +94,15 @@
     <div class="box">
         <h3 class="title is-5 has-text-link mb-4"><i class="fas fa-list"></i> Lista de Deudas Activas</h3>
         <?php
-            $consulta = "SELECT c.*, p.proveedor_nombre, DATEDIFF(c.compra_fecha_vencimiento, CURRENT_DATE) as dias_restantes FROM compra c INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id WHERE c.compra_saldo_pendiente > 0 ORDER BY c.compra_fecha_vencimiento ASC";
+    
+            $consulta = "SELECT c.*, p.proveedor_nombre, r.recepcion_nota,
+                    DATEDIFF(c.compra_fecha_vencimiento, CURRENT_DATE) as dias_restantes
+                    FROM compra c 
+                    INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
+                    LEFT JOIN recepcion r ON c.compra_id = r.compra_id 
+                    WHERE c.compra_saldo_pendiente > 0 
+                    ORDER BY c.compra_fecha_vencimiento ASC";
+
             $datos = $insCompra->ejecutarConsulta($consulta);
             if($datos->rowCount() > 0){
                 $datos = $datos->fetchAll();
@@ -99,6 +114,7 @@
                         <th class="has-text-centered has-text-white">Orden Interna</th>
                         <th class="has-text-centered has-text-white">Proveedor</th>
                         <th class="has-text-centered has-text-white">Nro. Factura</th>
+                        <th class="has-text-centered has-text-white">Condición</th>
                         <th class="has-text-centered has-text-white">Vencimiento</th>
                         <th class="has-text-centered has-text-white">Saldo Pendiente</th>
                         <th class="has-text-centered has-text-white">Acciones</th>
@@ -107,29 +123,79 @@
                 <tbody>
                     <?php
                         foreach($datos as $c){
+                            // 1. Lógica de días de vencimiento
                             $dias = $c['dias_restantes'];
                             if($dias < 0){ 
-                                $clase_color = "has-text-danger has-text-weight-bold"; $mensaje = "Vencida hace " . abs($dias) . " días"; $icono = "fa-exclamation-triangle"; 
+                                $clase_color = "has-text-danger has-text-weight-bold"; 
+                                $mensaje = "Vencida hace " . abs($dias) . " días"; 
+                                $icono = "fa-exclamation-triangle"; 
                             } elseif($dias <= 3){ 
-                                $clase_color = "has-text-warning-dark has-text-weight-bold"; $mensaje = "Vence en $dias días"; $icono = "fa-clock"; 
+                                $clase_color = "has-text-warning-dark has-text-weight-bold"; 
+                                $mensaje = "Vence en $dias días"; 
+                                $icono = "fa-clock"; 
                             } else { 
-                                $clase_color = "has-text-info"; $mensaje = "Al día ($dias días)"; $icono = "fa-check-circle"; 
+                                $clase_color = "has-text-info"; 
+                                $mensaje = "Al día ($dias días)"; 
+                                $icono = "fa-check-circle"; 
                             }
                             
-                            $num_fac = "S/N";
-                            if($c['compra_nota_interna'] != ""){
-                                preg_match('/\[Factura Oficial Nro: ([^ ]+)/', $c['compra_nota_interna'], $match_fac);
-                                if(isset($match_fac[1])) { rtrim($match_fac[1], ']'); $num_fac = str_replace("]", "", $match_fac[1]); }
+                            // 2. Lógica de Factura/Documento
+                                $num_fac = (!empty($c['compra_codigo'])) ? $c['compra_codigo'] : "S/N";
+                                $doc_color = "is-light";
+
+                                // Si existe una nota interna (Factura oficial), intentamos extraer el número
+                                if(!empty($c['compra_nota_interna'])){
+                                    if(preg_match('/Nro:\s*([^ \]]+)/', $c['compra_nota_interna'], $match_fac)) {
+                                        $num_fac = trim($match_fac[1]);
+                                        $doc_color = "is-primary is-light"; 
+                                    }
+                                }
+
+                            // Prioridad: Nota Interna (Factura Oficial) usando $c
+                            if(!empty($c['compra_nota_interna'])){
+                                if(preg_match('/Nro:\s*([^ \]]+)/', $c['compra_nota_interna'], $match_fac)) {
+                                    $num_fac = trim($match_fac[1]);
+                                    $doc_color = "is-primary is-light"; 
+                                }
                             }
 
+                            $condicion = $c['compra_condicion'];
+                            $cond_color = match($condicion) {
+                                'Contado' => 'is-success',
+                                'Credito' => 'is-link',
+                                'Consignacion' => 'is-dark',
+                                default => 'is-light'
+                            };
+                            $label_cond = ($condicion == "Credito") ? "Crédito" : (($condicion == "Consignacion") ? "Consignación" : $condicion);
+
+                            // 3. Cálculos monetarios
                             $tasa_compra = ($c['compra_tasa_bcv'] > 0) ? $c['compra_tasa_bcv'] : 1;
                             $saldo_bs_historico = $c['compra_saldo_pendiente'] * $tasa_compra;
                     ?>
                         <tr class="has-text-centered fila-deuda">
-                            <td style="vertical-align: middle;"><?php echo $c['compra_codigo']; ?></td>
+                            <td class="has-text-centered">
+                                <strong><?php echo $c['compra_codigo']; ?></strong>
+                            </td>
                             <td class="has-text-weight-bold" style="vertical-align: middle;"><?php echo $c['proveedor_nombre']; ?></td>
-                            <td style="vertical-align: middle;"><span class="tag is-primary is-light has-text-weight-bold"><?php echo $num_fac; ?></span></td>
-                            
+                           <td>
+                                <?php 
+                                    if(!empty($c['recepcion_nota'])){
+                                        // Buscamos lo que esté entre "Factura Nro: " y el símbolo "|"
+                                        $inicio = strpos($c['recepcion_nota'], "Factura Nro: ") + 13;
+                                        $fin = strpos($c['recepcion_nota'], " |");
+                                        $nro_factura = substr($c['recepcion_nota'], $inicio, $fin - $inicio);
+                                        echo $nro_factura;
+                                    } else {
+                                        echo '<span class="tag is-light">Sin Registro</span>';
+                                    }
+                                ?>
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <span class="tag <?php echo $cond_color; ?> is-light has-text-weight-bold">
+                                    <?php echo $label_cond; ?>
+                                </span>
+                            </td>
+                                                        
                             <td class="<?php echo $clase_color; ?>" style="vertical-align: middle; line-height: 1.4;">
                                 <i class="fas <?php echo $icono; ?> is-size-5 mb-1"></i><br>
                                 <?php echo date("d/m/Y", strtotime($c['compra_fecha_vencimiento'])); ?><br>
@@ -147,8 +213,26 @@
                             
                             <td style="vertical-align: middle;">
                                 <div class="buttons is-centered">
-                                    <button class="button is-success is-small is-rounded" onclick="abrirModalAbono('<?php echo $c['compra_id']; ?>', '<?php echo $c['compra_codigo']; ?>', '<?php echo $c['compra_saldo_pendiente']; ?>', '<?php echo $tasa_compra; ?>')"><i class="fas fa-hand-holding-usd"></i>&nbsp; Abonar</button>
-                                    <button class="button is-info is-small is-rounded" onclick="verHistorialAbonos('<?php echo $c['compra_id']; ?>', '<?php echo $c['compra_codigo']; ?>')" title="Ver Historial"><i class="fas fa-history"></i></button>
+                                    <button class="button is-success is-small is-rounded" 
+                                            onclick="abrirModalAbono(
+                                                '<?php echo $c['compra_id']; ?>',
+                                                '<?php echo $c['compra_codigo']; ?>',
+                                                '<?php echo $c['compra_saldo_pendiente']; ?>',
+                                                '<?php echo $tasa_compra; ?>',
+                                                '<?php echo $c['compra_condicion']; ?>',
+                                                '<?php echo $c['compra_total']; ?>',
+                                                '<?php echo $c['compra_cuotas_total'] ?? 1; ?>', 
+                                                '<?php echo $c['compra_cuotas_pagadas'] ?? 0; ?>',
+                                                '<?php echo $c['compra_frecuencia'] ?? 0; ?>'
+                                            )"
+                                        <i class="fas fa-hand-holding-usd"></i>&nbsp; Abonar
+                                    </button>
+                                    
+                                    <button class="button is-info is-small is-rounded" 
+                                        onclick="verHistorialAbonos('<?php echo $c['compra_id']; ?>', '<?php echo $c['compra_codigo']; ?>')" 
+                                        title="Ver Historial">
+                                        <i class="fas fa-history"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -233,6 +317,80 @@
     </div>
 </div>
 
+<div class="modal" id="modal-abono-credito">
+    <div class="modal-background" onclick="cerrarModalAbonoCredito()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head has-background-link">
+            <p class="modal-card-title has-text-white"><i class="fas fa-calendar-check"></i> Pago de Cuota - <span id="txt_codigo_credito"></span></p>
+            <button class="delete" aria-label="close" onclick="cerrarModalAbonoCredito()"></button>
+        </header>
+        <section class="modal-card-body">
+            <form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" method="POST" autocomplete="off">
+                <input type="hidden" name="modulo_compra" value="registrar_abono">
+                <input type="hidden" name="pago_compra_id" id="pago_compra_id_credito">
+                <input type="hidden" name="pago_cuotas_total" id="pago_cuotas_total_hidden">
+                <input type="hidden" name="pago_cuotas_pagadas" id="pago_cuotas_pagadas_hidden">
+                
+                <div class="notification is-link is-light has-text-centered mb-4">
+                    <div class="columns is-mobile">
+                        <div class="column">
+                            <p class="heading">Cuota Actual</p>
+                            <p class="title is-5" id="info_nro_cuota">--</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Frecuencia</p>
+                            <p class="title is-5" id="info_frecuencia">-- días</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <label class="has-text-weight-bold">Deuda Pendiente ($)</label>
+                        <input class="input is-danger is-light has-text-weight-bold" type="text" id="pago_saldo_actual_credito" readonly>
+                    </div>
+                    <div class="column">
+                        <label class="has-text-weight-bold">Monto de la Cuota ($)</label>
+                        <div class="control">
+                            <input class="input is-link has-text-weight-bold" type="number" name="pago_monto" id="pago_monto_credito" step="0.01" required oninput="calcularConversionBsCredito()">
+                        </div>
+                        <p class="help is-link has-text-weight-bold" id="monto_conversion_bs_credito">Equivale a: Bs 0.00</p>
+                    </div>
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="control"><label>Método de Pago</label>
+                            <div class="select is-fullwidth">
+                                <select name="pago_metodo">
+                                    <option value="Zelle">Zelle</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Binance">Binance</option>
+                                    <option value="Efectivo">Efectivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="control">
+                            <label>Referencia Operación</label>
+                            <input class="input" type="text" name="pago_referencia" 
+                            id="pago_referencia_credito" 
+                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); validarReferenciaDinamica(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <p class="has-text-centered mt-4">
+                    <button type="submit" class="button is-link is-rounded is-medium">
+                        <i class="fas fa-save"></i> &nbsp; Procesar Cuota
+                    </button>
+                </p>
+            </form>
+        </section>
+    </div>
+</div>
+
 <div class="modal" id="modal-historial">
     <div class="modal-background" onclick="cerrarModalHistorial()"></div>
     <div class="modal-card">
@@ -247,22 +405,28 @@
 </div>
 
 <script>
+    function validarReferenciaDinamica(input) {
+        input.value = input.value.replace(/[^0-9]/g, '');
+        
+        // Buscamos ambos botones posibles (Abono normal y Cuota crédito)
+        const btnAbono = document.getElementById('btn-procesar-abono');
+        const btnCredito = document.querySelector('#modal-abono-credito button[type="submit"]');
+        
+        const esValido = input.value.length === 6;
 
-        function validarReferenciaDinamica(input) {
-            input.value = input.value.replace(/[^0-9]/g, '');
-            const btn = document.getElementById('btn-procesar-abono');
-            
-            // Solo se habilita si tiene exactamente 6
-            if (input.value.length === 6) {
-                input.classList.remove('is-danger');
-                input.classList.add('is-success');
-                if(btn) btn.disabled = false;
-            } else {
-                input.classList.add('is-danger');
-                input.classList.remove('is-success');
-                if(btn) btn.disabled = true;
-            }
+        if (esValido) {
+            input.classList.remove('is-danger');
+            input.classList.add('is-success');
+        } else {
+            input.classList.add('is-danger');
+            input.classList.remove('is-success');
         }
+
+        // Habilitar o deshabilitar según cuál modal esté activo
+        if(btnAbono) btnAbono.disabled = !esValido;
+        if(btnCredito) btnCredito.disabled = !esValido;
+    }
+
     /* BÚSQUEDA EN TIEMPO REAL */
     document.addEventListener('DOMContentLoaded', () => {
         const buscador = document.getElementById('buscador_cxp');
@@ -287,13 +451,11 @@
     const inputReferencia = document.querySelector('#pago_referencia');
 
     if(selectMetodo && inputReferencia){
-
         inputReferencia.readOnly = false;
         inputReferencia.classList.remove('is-static');
         inputReferencia.placeholder = "Nro de operación (Solo números)";
 
         selectMetodo.addEventListener('change', function() {
-
             inputReferencia.value = "";
             inputReferencia.readOnly = false;
             inputReferencia.classList.remove('is-static');
@@ -304,58 +466,118 @@
 
     let tasaBcvModal = 1;
 
-    function abrirModalAbono(id, codigo, saldo, tasa_historica) {
-        let tasaGlobal = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
-        tasaBcvModal = (tasaGlobal > 0) ? tasaGlobal : (parseFloat(tasa_historica) || 1);
+    function abrirModalAbono(id, codigo, saldo, tasa, condicion, total, total_cuotas, pagadas, frecuencia) {
+    // 1. Configuración de Tasa
+    let tasaGlobal = parseFloat(localStorage.getItem('tasa_bcv')) || 0;
+    tasaBcvModal = (tasaGlobal > 0) ? tasaGlobal : (parseFloat(tasa) || 1);
 
-        document.getElementById('pago_compra_id').value = id;
-        document.getElementById('txt_codigo_compra').innerText = codigo;
-        
-        let saldoFloat = parseFloat(saldo);
-        let saldoBs = (saldoFloat * tasaBcvModal).toFixed(2);
-        
-        document.getElementById('pago_saldo_actual').value = saldoFloat.toFixed(2);
-        
-        document.getElementById('deuda_conversion_bs').innerText = `Equivale a: Bs ${saldoBs} (Tasa: Bs ${tasaBcvModal.toFixed(2)})`;
-        document.getElementById('monto_conversion_bs').innerText = `Equivale a: Bs 0.00 (Tasa: Bs ${tasaBcvModal.toFixed(2)})`;
-        
-        document.getElementById('pago_monto').max = saldo;
-        document.getElementById('pago_monto').value = "";
-        
-        selectMetodo.value = "Transferencia"; 
-        
-        inputReferencia.value = "";
-        inputReferencia.readOnly = false;
-        inputReferencia.classList.remove('is-static');
-        inputReferencia.placeholder = "Ingrese nro. de referencia";
+    // 2. Normalización de datos
+    let n_cuotas = parseInt(total_cuotas) || 1;
+    let cuotasYaPagadas = parseInt(pagadas) || 0;
+    let totalFloat = parseFloat(total) || 0;
+    let saldoFloat = parseFloat(saldo) || 0;
+    let diasFrecuencia = frecuencia || 0; // Captura el 9no parámetro
 
-        document.getElementById('modal-abono').classList.add('is-active');
+    let condicionTrim = condicion.trim();
+
+    if (condicionTrim === "Crédito" || condicionTrim === "Credito") {
+        const modalCredito = document.getElementById('modal-abono-credito');
+        
+        if(modalCredito) {
+            // Asignación de IDs de cabecera
+            document.getElementById('pago_compra_id_credito').value = id;
+            document.getElementById('txt_codigo_credito').innerText = codigo;
+            document.getElementById('pago_saldo_actual_credito').value = saldoFloat.toFixed(2);
+            
+            // ASIGNACIÓN DE FRECUENCIA (Aquí estaba el fallo)
+            const txtFrecuencia = document.getElementById('info_frecuencia');
+            if(txtFrecuencia) {
+                txtFrecuencia.innerText = diasFrecuencia + " días";
+            }
+
+            // ASIGNACIÓN DE CUOTAS
+            const txtCuota = document.getElementById('info_nro_cuota');
+            if(txtCuota) {
+                let proxima = cuotasYaPagadas + 1;
+                if (proxima > n_cuotas) proxima = n_cuotas;
+                txtCuota.innerText = proxima + " de " + n_cuotas;
+                
+                // Inputs ocultos para el formulario
+                if(document.getElementById('pago_cuotas_pagadas_hidden')) {
+                    document.getElementById('pago_cuotas_pagadas_hidden').value = proxima;
+                }
+            }
+            
+            if(document.getElementById('pago_cuotas_total_hidden')) {
+                document.getElementById('pago_cuotas_total_hidden').value = n_cuotas;
+            }
+
+            // Cálculo de monto sugerido
+            let montoCuota = (totalFloat / n_cuotas).toFixed(2);
+            if(parseFloat(montoCuota) > saldoFloat) montoCuota = saldoFloat.toFixed(2);
+
+            document.getElementById('pago_monto_credito').value = montoCuota;
+            document.getElementById('pago_monto_credito').max = saldoFloat; 
+
+            // Actualizar conversión a Bs
+            if (typeof calcularConversionBsCredito === "function") {
+                calcularConversionBsCredito();
+            }
+            
+            modalCredito.classList.add('is-active');
+        }
+    } else {
+        // Lógica para Contado
+        const modalNormal = document.getElementById('modal-abono');
+        if(modalNormal){
+            document.getElementById('pago_compra_id').value = id;
+            document.getElementById('txt_codigo_compra').innerText = codigo;
+            document.getElementById('pago_saldo_actual').value = saldoFloat.toFixed(2);
+            modalNormal.classList.add('is-active');
+            calcularConversionBs();
+        }
     }
-
-    // FUNCIÓN PARA EL BOTÓN "TOTAL"
+}
     function aplicarPagoTotal() {
         let maxMonto = document.getElementById('pago_monto').max;
         document.getElementById('pago_monto').value = maxMonto;
         calcularConversionBs();
     }
 
-    // CÁLCULO EN TIEMPO REAL CON TOPE DE SEGURIDAD
     function calcularConversionBs() {
         let inputMonto = document.getElementById('pago_monto');
+        if(!inputMonto) return;
         let monto = parseFloat(inputMonto.value) || 0;
         let maxMonto = parseFloat(inputMonto.max) || 0;
 
-        // Tope de Seguridad: Si el usuario escribe más de la deuda, se baja al máximo
         if(monto > maxMonto){
             inputMonto.value = maxMonto;
             monto = maxMonto;
         }
 
         let equivalenciaBs = (monto * tasaBcvModal).toFixed(2);
-        document.getElementById('monto_conversion_bs').innerText = `Equivale a: Bs ${equivalenciaBs} (Tasa: Bs ${tasaBcvModal.toFixed(2)})`;
+        let helpText = document.getElementById('monto_conversion_bs');
+        if(helpText) helpText.innerText = `Equivale a: Bs ${equivalenciaBs}`;
+    }
+
+    function calcularConversionBsCredito() {
+        let inputMonto = document.getElementById('pago_monto_credito');
+        if(!inputMonto) return;
+        let monto = parseFloat(inputMonto.value) || 0;
+        let maxMonto = parseFloat(inputMonto.max) || 0;
+
+        if(monto > maxMonto){
+            inputMonto.value = maxMonto;
+            monto = maxMonto;
+        }
+
+        let equivalenciaBs = (monto * tasaBcvModal).toFixed(2);
+        let helpText = document.getElementById('monto_conversion_bs_credito');
+        if(helpText) helpText.innerText = `Equivale a: Bs ${equivalenciaBs}`;
     }
 
     function cerrarModalAbono() { document.getElementById('modal-abono').classList.remove('is-active'); }
+    function cerrarModalAbonoCredito() {document.getElementById('modal-abono-credito').classList.remove('is-active'); }
 
     function verHistorialAbonos(id, codigo) {
         document.getElementById('historial_codigo').innerText = codigo;
@@ -378,33 +600,47 @@
 
     function cerrarModalHistorial() { document.getElementById('modal-historial').classList.remove('is-active'); }
 </script>
-
 <?php 
     /* --- AUTO-APERTURA DE MODAL DESDE OTRA PANTALLA --- */
-    if($auto_pago_id > 0){
-        $check_deuda = $insCompra->ejecutarConsulta("SELECT compra_id, compra_codigo, compra_saldo_pendiente, compra_tasa_bcv FROM compra WHERE compra_id='$auto_pago_id' AND compra_saldo_pendiente > 0");
-        if($check_deuda->rowCount() > 0){
-            $datos_auto = $check_deuda->fetch();
-            $t_bcv = ($datos_auto['compra_tasa_bcv'] > 0) ? $datos_auto['compra_tasa_bcv'] : 1;
-            
-            echo "<script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    setTimeout(() => {
-                        abrirModalAbono('".$datos_auto['compra_id']."', '".$datos_auto['compra_codigo']."', '".$datos_auto['compra_saldo_pendiente']."', '".$t_bcv."');
-                    }, 400); 
-                });
-            </script>";
-        } else {
-            echo "<script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Orden sin deuda',
-                        text: 'La compra seleccionada ya está pagada en su totalidad o fue anulada.',
-                        confirmButtonText: 'Entendido'
+        if($auto_pago_id > 0){
+
+            $check_deuda = $insCompra->ejecutarConsulta("SELECT compra_id, compra_codigo, 
+                compra_saldo_pendiente, compra_tasa_bcv, compra_condicion, 
+                compra_total, compra_cuotas_total, compra_frecuencia 
+                FROM compra WHERE compra_id='$auto_pago_id' AND compra_saldo_pendiente > 0");
+
+            if($check_deuda->rowCount() > 0){
+                $datos_auto = $check_deuda->fetch();
+                $t_bcv = ($datos_auto['compra_tasa_bcv'] > 0) ? $datos_auto['compra_tasa_bcv'] : 1;
+                
+                echo "<script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        setTimeout(() => {
+                            // 2. Pasamos los 8 parámetros necesarios
+                            abrirModalAbono(
+                                '".$datos_auto['compra_id']."', 
+                                '".$datos_auto['compra_codigo']."', 
+                                '".$datos_auto['compra_saldo_pendiente']."', 
+                                '".$t_bcv."',
+                                '".$datos_auto['compra_condicion']."',
+                                '".$datos_auto['compra_total']."',
+                                '".$datos_auto['compra_cuotas_total']."',
+                                '".$datos_auto['compra_frecuencia']."'
+                            );
+                        }, 400); 
                     });
-                });
-            </script>";
+                </script>";
+            } else {
+                echo "<script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Orden sin deuda',
+                            text: 'La compra seleccionada ya está pagada en su totalidad o fue anulada.',
+                            confirmButtonText: 'Entendido'
+                        });
+                    });
+                </script>";
+            }
         }
-    }
 ?>

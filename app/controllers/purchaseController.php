@@ -174,50 +174,102 @@
             }
         }
 
-		/*----------  Controlador agregar producto al carrito  ----------*/
-		public function agregarProductoCompraControlador(){
-			$id=$this->limpiarCadena($_POST['producto_id']);
-			$cantidad=$this->limpiarCadena($_POST['compra_cantidad']);
-			$costo=$this->limpiarCadena($_POST['compra_costo']);
-			
-			if($cantidad<=0){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"La cantidad debe ser mayor a 0","icono"=>"error"]); exit(); }
-            
-            $check_producto=$this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='$id'");
-            if($check_producto->rowCount()<=0){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"El producto no existe","icono"=>"error"]); exit(); }
-            $campos=$check_producto->fetch();
+/*----------  Controlador agregar producto al carrito  ----------*/
+public function agregarProductoCompraControlador(){
+    $id=$this->limpiarCadena($_POST['producto_id']);
+    $cantidad=$this->limpiarCadena($_POST['compra_cantidad']);
+    $costo=$this->limpiarCadena($_POST['compra_costo']);
+    
+    // 1. CAPTURAMOS EL PROVEEDOR QUE VIENE DEL FORMULARIO
+    $proveedor_form = isset($_POST['compra_proveedor']) ? $this->limpiarCadena($_POST['compra_proveedor']) : "";
 
-            if(!isset($_SESSION['datos_compra'])){ $_SESSION['datos_compra']=[]; }
-            
-            $costo_ref = $campos['producto_costo'];
+    if($cantidad<=0){ 
+        return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"La cantidad debe ser mayor a 0","icono"=>"error"]); 
+        exit(); 
+    }
+    
+    // 2. VALIDACIÓN: SI NO VIENE PROVEEDOR, REBOTAR
+    if($proveedor_form == ""){
+        return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Seleccione un proveedor antes de agregar productos","icono"=>"error"]);
+        exit();
+    }
 
-            $detalle=[ 
-                "producto_id"=>$campos['producto_id'], 
-                "producto_codigo"=>$campos['producto_codigo'], 
-                "producto_nombre"=>$campos['producto_nombre'], 
-                "compra_cantidad"=>$cantidad, 
-                "compra_costo"=>$costo, 
-                "subtotal"=>$cantidad*$costo,
-                "costo_referencia"=>$costo_ref 
-            ];
-            
-            $_SESSION['datos_compra'][$id]=$detalle;
+    // 3. BLOQUEO ESTRICTO: 
+    // Si ya existe un proveedor en la sesión Y hay productos en el carrito...
+    if(isset($_SESSION['compra_proveedor_id']) && !empty($_SESSION['datos_compra'])){
+        // Si el proveedor que intenta enviar es distinto al que ya inició la orden
+        if($_SESSION['compra_proveedor_id'] != $proveedor_form){
+            return json_encode([
+                "tipo"=>"simple",
+                "titulo"=>"Proveedor no coincide",
+                "texto"=>"Esta orden ya pertenece a otro proveedor. Vacíe el carrito si desea cambiar de proveedor.",
+                "icono"=>"warning"
+            ]);
+            exit();
+        }
+    } else {
+        // Si es el primer producto o el carrito estaba vacío, fijamos el proveedor actual
+        $_SESSION['compra_proveedor_id'] = $proveedor_form;
+    }
 
-			return json_encode(["tipo"=>"recargar","titulo"=>"Agregado","texto"=>"Se agregó a la orden","icono"=>"success"]);
-		}
+    $check_producto=$this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='$id'");
+    if($check_producto->rowCount()<=0){ 
+        return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"El producto no existe","icono"=>"error"]); 
+        exit(); 
+    }
+    $campos=$check_producto->fetch();
+
+    if(!isset($_SESSION['datos_compra'])){ $_SESSION['datos_compra']=[]; }
+    
+    $costo_ref = $campos['producto_costo'];
+
+    /*--- TU LÓGICA ORIGINAL ---*/
+    $detalle=[ 
+        "producto_id"=>$campos['producto_id'], 
+        "producto_codigo"=>$campos['producto_codigo'], 
+        "producto_nombre"=>$campos['producto_nombre'], 
+        "compra_cantidad"=>$cantidad, 
+        "compra_costo"=>$costo, 
+        "subtotal"=>$cantidad*$costo,
+        "costo_referencia"=>$costo_ref 
+    ];
+    
+    $_SESSION['datos_compra'][$id]=$detalle;
+
+    return json_encode(["tipo"=>"recargar","titulo"=>"Agregado","texto"=>"Se agregó a la orden","icono"=>"success"]);
+}
 
         /*----------  Quitar un producto del carrito ----------*/
         public function eliminarProductoCarritoControlador(){
-            if(!isset($_POST['producto_id'])){ return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "Sin ID", "icono" => "error"]); }
+            if(!isset($_POST['producto_id'])){ 
+                return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "Sin ID", "icono" => "error"]); 
+            }
+            
             $id = $this->limpiarCadena($_POST['producto_id']);
+            
             if(isset($_SESSION['datos_compra'][$id])){
                 unset($_SESSION['datos_compra'][$id]);
+
+                // --- LÓGICA DE LIBERACIÓN ---
+                // Si después de quitar el producto ya no hay nada en el carrito
+                if(empty($_SESSION['datos_compra'])){
+                    unset($_SESSION['compra_proveedor_id']);
+                }
+
                 return json_encode(["tipo"=>"recargar", "titulo"=>"Producto quitado", "texto"=>"Se eliminó de la lista", "icono"=>"success"]);
             }
+            
             return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"No encontrado", "icono"=>"error"]);
         }
 
+        /*----------  Vaciar carrito completo  ----------*/
         public function vaciarCompraControlador(){
+            // Limpiamos los productos
             unset($_SESSION['datos_compra']);
+            
+            // LIBERAMOS AL PROVEEDOR PARA PODER SELECCIONAR OTRO
+            unset($_SESSION['compra_proveedor_id']);
+            
             return json_encode(["tipo"=>"recargar","titulo"=>"Vaciado","texto"=>"Orden limpiada","icono"=>"success"]);
         }
 
@@ -229,6 +281,11 @@
         public function registrarCompraControlador(){
             if(!isset($_SESSION['datos_compra']) || count($_SESSION['datos_compra'])<=0){ 
                 return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"No tienes productos","icono"=>"error"]); exit(); 
+            }
+
+            if(!isset($_POST['compra_proveedor']) || $_POST['compra_proveedor'] == ""){ 
+                return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Selecciona un proveedor","icono"=>"error"]); 
+                exit(); 
             }
 
             $proveedor=$this->limpiarCadena($_POST['compra_proveedor']);
@@ -356,10 +413,12 @@
             $numero_doc = isset($_POST['recepcion_numero_doc']) ? $this->limpiarCadena($_POST['recepcion_numero_doc']) : "S/N";
             $fecha_emision = isset($_POST['recepcion_fecha_emision']) ? $this->limpiarCadena($_POST['recepcion_fecha_emision']) : date("Y-m-d");
             $fecha_vencimiento = isset($_POST['compra_fecha_vencimiento']) ? $this->limpiarCadena($_POST['compra_fecha_vencimiento']) : date("Y-m-d");
+            
+            // CAPTURAMOS LA CONDICIÓN DESDE EL SELECT QUE AGREGAMOS
             $condicion_pago = isset($_POST['compra_condicion']) ? $this->limpiarCadena($_POST['compra_condicion']) : "Contado";
             $nota_usuario = isset($_POST['recepcion_nota']) ? $this->limpiarCadena($_POST['recepcion_nota']) : "";
 
-            // --- ESCUDO ANTI-DUPLICADOS (RESERVADO) ---
+            // --- ESCUDO ANTI-DUPLICADOS ---
             if($numero_doc != "S/N" && $numero_doc != ""){
                 $check_doc = $this->ejecutarConsulta("SELECT recepcion_id FROM recepcion WHERE recepcion_nota LIKE '%[$tipo_doc Nro: $numero_doc %'");
                 if($check_doc->rowCount() > 0){ return json_encode(["tipo" => "simple", "titulo" => "Documento Duplicado", "texto" => "Este $tipo_doc ya fue registrado.", "icono" => "error"]); exit(); }
@@ -370,6 +429,7 @@
                 }
             }
             
+            // Si es Nota de Entrega, forzamos a Contado por seguridad 
             if($tipo_doc == "Nota de Entrega") { $condicion_pago = "Contado"; }
 
             $nuevo_estado_documento = ($tipo_doc == "Factura") ? "Facturada" : "Pendiente Factura";
@@ -387,7 +447,6 @@
             $guardar = $this->guardarDatos("recepcion", $datos_recepcion);
 
             if($guardar->rowCount() == 1){
-                // Obtener ID y Código para las cuotas
                 $recepcion_id = $this->ejecutarConsulta("SELECT recepcion_id FROM recepcion WHERE compra_id='$compra_id' ORDER BY recepcion_id DESC LIMIT 1")->fetchColumn();
                 $codigo_compra = $this->ejecutarConsulta("SELECT compra_codigo FROM compra WHERE compra_id='$compra_id'")->fetchColumn();
 
@@ -396,7 +455,6 @@
                     if($cantidad_real > 0) {
                         $this->ejecutarConsulta("INSERT INTO recepcion_detalle (recepcion_id, producto_id, cantidad_recibida) VALUES ('$recepcion_id', '$id_prod', '$cantidad_real')");
                         $this->ejecutarConsulta("UPDATE producto SET producto_stock = producto_stock + $cantidad_real WHERE producto_id = '$id_prod'");
-                        // PRECIO INTELIGENTE 
                         $this->actualizarPrecioInteligente($id_prod, $compra_id);
                     }
                 }
@@ -407,11 +465,11 @@
                 $pagado_hasta_ahora = (float) $this->ejecutarConsulta("SELECT IFNULL(SUM(pago_monto),0) FROM compra_pagos WHERE compra_id='$compra_id'")->fetchColumn();
                 $nuevo_saldo_pendiente = $nuevo_total_real - $pagado_hasta_ahora;
 
-                // --- NUEVA LÓGICA DE CUOTAS ---
+                // --- LÓGICA DE CUOTAS (Solo si es Credito) ---
                 if($condicion_pago == "Credito" && $nuevo_saldo_pendiente > 0){
-                    $num_cuotas = (isset($_POST['compra_cuotas_num'])) ? (int)$_POST['compra_cuotas_num'] : 1;
-                    $frecuencia = (isset($_POST['compra_frecuencia_dias'])) ? (int)$_POST['compra_frecuencia_dias'] : 7;
-                    $justificacion = $this->limpiarCadena($_POST['compra_justificacion']);
+                    $num_cuotas = (isset($_POST['compra_cuotas_total'])) ? (int)$_POST['compra_cuotas_total'] : 1;
+                    $frecuencia = (isset($_POST['compra_frecuencia'])) ? (int)$_POST['compra_frecuencia'] : 7;
+                    $justificacion = $this->limpiarCadena($_POST['cuota_justificacion']);
                     $monto_cuota = $nuevo_saldo_pendiente / $num_cuotas;
 
                     for ($i = 1; $i <= $num_cuotas; $i++) {
@@ -426,7 +484,7 @@
                     }
                 }
 
-                // AUTO-PAGO
+                // AUTO-PAGO (Solo si es Contado)
                 if($condicion_pago == "Contado" && $nuevo_saldo_pendiente > 0){
                     $this->guardarDatos("compra_pagos", [
                         ["campo_nombre"=>"compra_id","campo_marcador"=>":C","campo_valor"=>$compra_id],
@@ -440,7 +498,18 @@
                 }
 
                 $estado_pago = ($nuevo_saldo_pendiente <= 0 && $nuevo_total_real > 0) ? "Pagado" : "Pendiente";
-                $this->ejecutarConsulta("UPDATE compra SET compra_total = '$nuevo_total_real', compra_fecha_vencimiento = '$fecha_vencimiento', compra_estado = '$nuevo_estado_documento', compra_saldo_pendiente = '$nuevo_saldo_pendiente', compra_estado_pago = '$estado_pago' WHERE compra_id = '$compra_id'");
+       
+                // ACTUALIZACIÓN FINAL DE LA TABLA COMPRA
+                $this->ejecutarConsulta("UPDATE compra SET 
+                    compra_total = '$nuevo_total_real', 
+                    compra_fecha_vencimiento = '$fecha_vencimiento', 
+                    compra_estado = '$nuevo_estado_documento', 
+                    compra_saldo_pendiente = '$nuevo_saldo_pendiente', 
+                    compra_estado_pago = '$estado_pago',
+                    compra_condicion = '$condicion_pago',
+                    compra_cuotas_total = '$num_cuotas', 
+                    compra_frecuencia = '$frecuencia'   
+                    WHERE compra_id = '$compra_id'");
 
                 return json_encode(["tipo" => "confirmar", "titulo" => "¡Éxito!", "texto" => "Recepción procesada correctamente.", "icono" => "success", "url" => APP_URL."app/pdf/purchaseReceipt.php?id=".$compra_id]);
             } else { return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar.", "icono" => "error"]); }
@@ -526,7 +595,7 @@
             $metodo = $this->limpiarCadena($_POST['pago_metodo']);
             $referencia = $this->limpiarCadena($_POST['pago_referencia']);
             
-            // 1. Validaciones de Seguridad (Mantenidas)
+            // 1. Validaciones de Seguridad 
             if($monto <= 0){ 
                 return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto debe ser mayor a cero", "icono"=>"error"]); 
             }
@@ -558,7 +627,7 @@
                 return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"El monto supera el saldo ($$saldo_actual)", "icono"=>"error"]); 
             }
 
-            // 3. Registro del Pago (Tu tabla de auditoría)
+            // 3. Registro del Pago 
             $datos_pago = [
                 ["campo_nombre"=>"compra_id","campo_marcador"=>":Id","campo_valor"=>$id],
                 ["campo_nombre"=>"pago_monto","campo_marcador"=>":Monto","campo_valor"=>$monto],
@@ -570,7 +639,7 @@
 
             if($this->guardarDatos("compra_pagos", $datos_pago)->rowCount() >= 1){
 
-                // --- INICIO LÓGICA DE CUOTAS (NUEVO) ---
+                // --- INICIO LÓGICA DE CUOTAS ---
                 // Buscamos las cuotas que falten por pagar de esta compra
                 $cuotas = $this->ejecutarConsulta("SELECT * FROM compra_cuotas WHERE compra_codigo='$codigo_compra' AND cuota_estado='Pendiente' ORDER BY cuota_numero ASC")->fetchAll();
 
@@ -594,10 +663,10 @@
                 }
                 // --- FIN LÓGICA DE CUOTAS ---
 
-                // 4. Actualizar saldos y estados generales (Tu función existente)
+                // 4. Actualizar saldos y estados generales
                 $this->actualizarSaldosCompra($id);
 
-                // Verificación final: Si el saldo quedó en 0, nos aseguramos que todas las cuotas digan Pagado
+                // Si el saldo quedó en 0, que todas las cuotas digan Pagado
                 $check_saldo_final = (float) $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetchColumn();
                 if($check_saldo_final <= 0.01){
                     $this->ejecutarConsulta("UPDATE compra_cuotas SET cuota_estado='Pagado' WHERE compra_codigo='$codigo_compra'");
@@ -697,28 +766,78 @@
 
         /*---------- Listar Órdenes para Recepción ----------*/
         public function listarRecepcionesControlador($pagina, $registros, $url) {
-            $pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $url = APP_URL . $url . "/";
+            $pagina = $this->limpiarCadena($pagina); 
+            $registros = $this->limpiarCadena($registros); 
+            $url = APP_URL . $url . "/";
             $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
-            $datos = $this->ejecutarConsulta("SELECT c.*, p.proveedor_nombre FROM compra c INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id WHERE c.compra_estado IN ('Pendiente', 'Parcial') ORDER BY c.compra_id DESC LIMIT $inicio, $registros")->fetchAll();
+            // 1. Consulta con la subconsulta para obtener la nota de recepción
+            $datos = $this->ejecutarConsulta("SELECT c.*, p.proveedor_nombre, 
+                (SELECT r.recepcion_nota FROM recepcion r WHERE r.compra_id = c.compra_id ORDER BY r.recepcion_id DESC LIMIT 1) as nota_recepcion 
+                FROM compra c 
+                INNER JOIN proveedor p ON c.proveedor_id = p.proveedor_id 
+                WHERE c.compra_estado IN ('Pendiente', 'Parcial') 
+                ORDER BY c.compra_id DESC LIMIT $inicio, $registros")->fetchAll();
 
-            $tabla = '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-dark"><th class="has-text-centered has-text-white">Código</th><th class="has-text-centered has-text-white">Proveedor</th><th class="has-text-centered has-text-white">Estado Físico</th><th class="has-text-centered has-text-white">Progreso</th><th class="has-text-centered has-text-white">Acciones</th></tr></thead><tbody>';
+            $tabla = '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-dark"><th class="has-text-centered has-text-white">Código</th><th class="has-text-centered has-text-white">Proveedor</th><th class="has-text-centered has-text-white">Documento Físico</th><th class="has-text-centered has-text-white">Progreso</th><th class="has-text-centered has-text-white">Acciones</th></tr></thead><tbody>';
 
             if (count($datos) >= 1) {
                 foreach ($datos as $rows) {
                     $compra_id = $rows['compra_id'];
+                    
+                    // --- LÓGICA DE EXTRACCIÓN DE FACTURA/NOTA ---
+                    $num_doc = "S/N";
+                    $color_tag = "is-light";
+
+                    // extraer de la nota de recepción (nota_recepcion)
+                    if(!empty($rows['nota_recepcion'])){
+                        if(preg_match('/Nro:\s*([^ |\]]+)/', $rows['nota_recepcion'], $match)){
+                            $num_doc = trim($match[1]);
+                            // Azul para factura, Naranja para notas de entrega
+                            $color_tag = (stripos($rows['nota_recepcion'], 'Factura') !== false) ? "is-info is-light" : "is-warning is-light";
+                        }
+                    }
+
+                    //  Si existe Nota Interna (Factura Oficial), sobreescribimos
+                    if(!empty($rows['compra_nota_interna'])){
+                        if(preg_match('/Nro:\s*([^ \]]+)/', $rows['compra_nota_interna'], $match_int)){
+                            $num_doc = trim($match_int[1]);
+                            $color_tag = "is-primary is-light";
+                        }
+                    }
+
+
                     $pedido = (float) $this->ejecutarConsulta("SELECT SUM(compra_detalle_cantidad) FROM compra_detalle WHERE compra_id='$compra_id'")->fetchColumn();
                     $recibido = (float) $this->ejecutarConsulta("SELECT SUM(rd.cantidad_recibida) FROM recepcion_detalle rd INNER JOIN recepcion r ON rd.recepcion_id=r.recepcion_id WHERE r.compra_id='$compra_id'")->fetchColumn();
                     
                     $porcentaje = ($pedido > 0) ? ($recibido * 100) / $pedido : 0;
-                    $color_tag = ($rows['compra_estado'] == 'Pendiente') ? 'is-info' : 'is-warning';
 
-                    $tabla .= '<tr class="has-text-centered"><td>' . $rows['compra_codigo'] . '</td><td>' . $rows['proveedor_nombre'] . '</td><td><span class="tag ' . $color_tag . ' is-light">' . $rows['compra_estado'] . '</span></td><td style="vertical-align: middle;"><progress class="progress is-link is-small" value="' . $porcentaje . '" max="100">' . $porcentaje . '%</progress><small>' . $recibido . ' de ' . $pedido . ' cajas</small></td><td><a href="' . APP_URL . 'purchaseReceptionDetail/' . $compra_id . '/" class="button is-link is-rounded is-small"><i class="fas fa-boxes"></i> &nbsp; Recibir</a></td></tr>';
+                    $tabla .= '
+                        <tr class="has-text-centered">
+                            <td>' . $rows['compra_codigo'] . '</td>
+                            <td>' . $rows['proveedor_nombre'] . '</td>
+                            <td style="vertical-align: middle;">
+                                <span class="tag ' . $color_tag . ' has-text-weight-bold is-medium">
+                                    ' . $num_doc . '
+                                </span>
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <progress class="progress is-link is-small" value="' . $porcentaje . '" max="100">' . $porcentaje . '%</progress>
+                                <small>' . $recibido . ' de ' . $pedido . ' unidades</small>
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <a href="' . APP_URL . 'purchaseReceptionDetail/' . $compra_id . '/" class="button is-link is-rounded is-small">
+                                    <i class="fas fa-boxes"></i> &nbsp; Recibir
+                                </a>
+                            </td>
+                        </tr>';
                 }
-            } else { $tabla .= '<tr class="has-text-centered"><td colspan="5">No hay mercancía pendiente de recibir</td></tr>'; }
+            } else { 
+                $tabla .= '<tr class="has-text-centered"><td colspan="5">No hay mercancía pendiente de recibir</td></tr>'; 
+            }
+
             return $tabla . '</tbody></table></div>';
         }
-
         //*---------- Listado Principal de Compras (Con Soporte para Cuotas) ----------*/
         public function listarCompraControlador($pagina, $registros, $url, $busqueda) {
             $pagina = $this->limpiarCadena($pagina); 
@@ -746,16 +865,26 @@
             if (count($datos) >= 1) {
                 foreach ($datos as $rows) {
                     
-                    $doc_info = "Sin recibir";
+                    // --- LÓGICA CORREGIDA PARA DOCUMENTOS ---
+                    $doc_info = "S/N";
                     $doc_color = "is-light";
-                    
-                    if($rows['recepcion_base'] != ""){
-                        preg_match('/\[(.*?) \|/', $rows['recepcion_base'], $match_rec);
-                        if(isset($match_rec[1])) { $doc_info = $match_rec[1]; $doc_color = "is-info is-light"; }
+
+                    // 1. Intentar extraer de la nota de recepción (recepcion_base)
+                    if(!empty($rows['recepcion_base'])){
+                        // Busca "Nro:" y captura todo hasta el siguiente espacio o "|"
+                        if(preg_match('/Nro:\s*([^ |\]]+)/', $rows['recepcion_base'], $match_rec)) {
+                            $doc_info = trim($match_rec[1]);
+                            $doc_color = "is-info is-light";
+                        }
                     }
-                    if($rows['compra_nota_interna'] != ""){
-                        preg_match('/\[(Factura Oficial Nro: [^ ]+)/', $rows['compra_nota_interna'], $match_fac);
-                        if(isset($match_fac[1])) { $doc_info = str_replace("Oficial ", "", $match_fac[1]); $doc_color = "is-primary is-light"; }
+
+                    // 2. Prioridad: Si hay una nota interna de factura, sobreescribir con ese número
+                    if(!empty($rows['compra_nota_interna'])){
+                        // Esta expresión es más flexible y omite palabras como "Oficial"
+                        if(preg_match('/Nro:\s*([^ \]]+)/', $rows['compra_nota_interna'], $match_fac)) {
+                            $doc_info = trim($match_fac[1]);
+                            $doc_color = "is-primary is-light"; 
+                        }
                     }
 
                     // Lógica de colores de pago
@@ -840,7 +969,6 @@
             $datos = $datos->fetchAll();
 
             if(count($datos) > 0){
-                // Quitamos background-color: transparent para que use el del tema
                 $tabla = '<div class="table-container">
                     <table class="table is-fullwidth is-hoverable">
                         <thead>
@@ -853,7 +981,7 @@
                         <tbody>';
 
                 foreach($datos as $rows){
-                    // Usamos colores semánticos: si es bajo (<5) usamos un color de alerta, si no, color normal del tema
+                    // si es bajo (<5) usamos un color de alerta, si no, color normal del tema
                     $colorStock = ($rows['producto_stock'] < 5) ? 'has-text-danger has-text-weight-bold' : '';
 
                     $tabla .= '

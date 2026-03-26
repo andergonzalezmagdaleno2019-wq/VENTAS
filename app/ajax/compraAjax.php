@@ -9,6 +9,7 @@
 
     if(isset($_POST['modulo_compra'])){
 
+        // --- Gestión de Carrito y Búsqueda ---
         if($_POST['modulo_compra']=="buscar_producto"){
             echo $ins_Compra->buscarProductoCompraControlador();
         }
@@ -18,18 +19,27 @@
         if($_POST['modulo_compra']=="vaciar"){
             echo $ins_Compra->vaciarCompraControlador();
         }
+        if($_POST['modulo_compra']=="eliminar_producto_carrito"){
+            echo $ins_Compra->eliminarProductoCarritoControlador();
+        }
+
+        // --- Gestión de Compras ---
         if($_POST['modulo_compra']=="registrar"){
             echo $ins_Compra->registrarCompraControlador();
         }
-        if($_POST['modulo_compra']=="eliminar"){
+        if($_POST['modulo_compra']=="eliminar_compra"){
             echo $ins_Compra->eliminarCompraControlador();
         }
-        if($_POST['modulo_compra']=="buscar_por_categoria"){
-            echo $ins_Compra->buscarPorCategoriaCompraControlador();
-        }
+
+        // --- Recepción y Facturación ---
         if($_POST['modulo_compra']=="registrar_recepcion"){
             echo $ins_Compra->registrarRecepcionControlador();
         }
+        if($_POST['modulo_compra']=="registrar_factura"){
+            echo $ins_Compra->registrarFacturaPendienteControlador();
+        }
+
+        // --- Gestión de Abonos (Cuentas por Pagar) ---
         if($_POST['modulo_compra']=="registrar_abono"){
             echo $ins_Compra->registrarAbonoControlador();
         }
@@ -39,41 +49,22 @@
         if($_POST['modulo_compra']=="eliminar_abono"){
             echo $ins_Compra->eliminarAbonoControlador();
         }
-        if($_POST['modulo_compra']=="eliminar_producto_carrito"){
-            echo $ins_Compra->eliminarProductoCarritoControlador();
-        }
-        if($_POST['modulo_compra'] == "eliminar_compra"){
-            echo $ins_Compra->eliminarCompraControlador();
-        }
-        if($_POST['modulo_compra']=="registrar_factura"){
-            echo $ins_Compra->registrarFacturaPendienteControlador();
-        }
 
+        // --- Filtros Dinámicos ---
+        if($_POST['modulo_compra']=="buscar_por_categoria"){
+            echo $ins_Compra->buscarPorCategoriaCompraControlador();
+        }
         if($_POST['modulo_compra'] == "filtrar_stock_categoria"){
             echo $ins_Compra->filtrarStockCategoriaControlador();
         }
 
-        if($_POST['modulo_compra'] == "buscar_por_proveedor"){
-            echo $ins_Compra->buscarProductoProveedorControlador();
-        }
-
-        // --- FILTRADO POR PROVEEDOR ---
-        if($_POST['modulo_compra'] == "buscar_por_proveedor"){
-            // Obtenemos el ID que viene del JS
-            $id_proveedor = (isset($_POST['proveedor_id'])) ? $_POST['proveedor_id'] : 0;
-            
-            // Llamamos al método del controlador
-            $productos = $ins_Compra->listarProductosProveedorControlador($id_proveedor);
-            
-            if($productos->rowCount() > 0){
-                echo '<option value="" selected="">Seleccione un producto</option>';
-                while($rows = $productos->fetch()){
-                    echo '<option value="'.$rows['producto_id'].'">📦 '.$rows['producto_nombre'].' ('.$rows['producto_codigo'].')</option>';
-                }
-            } else {
-                echo '<option value="" disabled selected>⚠️ Este proveedor no tiene productos vinculados</option>';
-            }
-        }
+        // --- FILTRADO POR PROVEEDOR  ---
+    if($_POST['modulo_compra'] == "buscar_por_proveedor"){
+        $id_proveedor = (isset($_POST['proveedor_id'])) ? (int)$_POST['proveedor_id'] : 0;
+        
+        // Llamar al método que ya tienes en el controller
+        echo $ins_Compra->buscarProductoProveedorControlador($id_proveedor);
+    }
 
     }else{
         session_destroy();

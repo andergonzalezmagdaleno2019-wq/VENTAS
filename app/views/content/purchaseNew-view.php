@@ -12,15 +12,44 @@
                 <div class="field">
                     <div class="control has-icons-left">
                         <div class="select is-fullwidth">
-                            <select name="compra_proveedor" id="compra_proveedor" required onchange="actualizarEstadoProveedor()">
-                                <option value="" selected="">Seleccione una opción</option>
+                            <?php
+                                // 1. Verificamos si realmente hay productos en el carrito actualmente
+                                $carrito_vacio = (!isset($_SESSION['datos_compra']) || empty($_SESSION['datos_compra']));
+                                
+                                // 2. Si el carrito NO está vacío, bloqueamos el select
+                                $estado_select = (!$carrito_vacio) ? "disabled" : "";
+                            ?>
+                            
+                            <select name="compra_proveedor" id="compra_proveedor" required onchange="actualizarEstadoProveedor()" <?php echo $estado_select; ?>>
+                                <option value="">Seleccione una opción</option>
                                 <?php
-                                    $datos_proveedores=$insLogin->seleccionarDatos("Normal","proveedor","*",0);
-                                    while($campos_proveedor=$datos_proveedores->fetch()){
-                                        echo '<option value="'.$campos_proveedor['proveedor_id'].'">'.$campos_proveedor['proveedor_nombre'].' (RIF: '.$campos_proveedor['proveedor_rif'].')</option>';
+                                    $datos_proveedores = $insLogin->seleccionarDatos("Normal", "proveedor", "*", 0);
+                                    
+                                    // 1. Verificamos si realmente hay productos en el carrito
+                                    $carrito_con_productos = (isset($_SESSION['datos_compra']) && !empty($_SESSION['datos_compra']));
+
+                                    while ($campos_proveedor = $datos_proveedores->fetch()) {
+                                        
+                                        // 2. Solo marcamos "selected" si el carrito tiene productos Y coincide el ID
+                                        $selected = "";
+                                        if ($carrito_con_productos && isset($_SESSION['compra_proveedor_id'])) {
+                                            if ($_SESSION['compra_proveedor_id'] == $campos_proveedor['proveedor_id']) {
+                                                $selected = "selected";
+                                            }
+                                        }
+
+                                        echo '<option value="' . $campos_proveedor['proveedor_id'] . '" ' . $selected . '>' 
+                                            . $campos_proveedor['proveedor_nombre'] . ' (RIF: ' . $campos_proveedor['proveedor_rif'] . ')</option>';
                                     }
                                 ?>
                             </select>
+
+                            <?php 
+                                // 3. El Hidden solo es necesario si el select está bloqueado
+                                if(!$carrito_vacio && isset($_SESSION['compra_proveedor_id'])): 
+                            ?>
+                                <input type="hidden" name="compra_proveedor" value="<?php echo $_SESSION['compra_proveedor_id']; ?>">
+                            <?php endif; ?>
                         </div>
                         <div class="icon is-small is-left"><i class="fas fa-handshake"></i></div>
                     </div>
@@ -123,7 +152,8 @@
         <div class="column">
             <form action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" class="FormularioAjax" method="POST" autocomplete="off" id="form-generar-orden">
                 <input type="hidden" name="modulo_compra" value="registrar">
-                
+                <input type="hidden" name="compra_proveedor" id="hidden_compra_proveedor" value="">
+                <input type="hidden" name="compra_tasa_bcv" id="compra_tasa_bcv" value="">
                 <div class="box">
                     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth mt-4">
                         <thead>
@@ -190,7 +220,7 @@
     </div>
 </div>
 
-    <script>
+  <script>
         // 1. FUNCIONALIDAD DE CATEGORÍAS (ACORDEÓN)
         function toggleAcordeon(boton) {
             let contenido = boton.nextElementSibling;
@@ -290,13 +320,28 @@
             let filtro = document.getElementById('filtro_stock');
             let criterio = filtro ? filtro.value : "";
             
+            // CAPTURAMOS EL PROVEEDOR (independiente de si está bloqueado o no)
+            let id_prov = document.getElementById('compra_proveedor').value;
+
+            if (id_prov === "") {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Proveedor requerido',
+                    text: 'Seleccione un proveedor antes de filtrar por stock.'
+                });
+                return;
+            }
+
             let datos = new FormData();
-            // Usamos un módulo que acepte ambos parámetros en el controlador
             datos.append('modulo_compra', 'filtrar_stock_categoria'); 
             datos.append('categoria_id', categoriaActual); 
             datos.append('criterio_stock', criterio);
+            datos.append('proveedor_id', id_prov); // AGREGAMOS EL PROVEEDOR AL ENVÍO
 
-            fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', { method: 'POST', body: datos })
+            fetch('<?php echo APP_URL; ?>app/ajax/compraAjax.php', { 
+                method: 'POST', 
+                body: datos 
+            })
             .then(res => res.text())
             .then(res => {
                 if(resultadoBusqueda){
@@ -315,8 +360,22 @@
         function reactivarFormularios(){
             resultadoBusqueda.querySelectorAll(".FormularioAjax").forEach(form => {
                 form.addEventListener("submit", function(e){
-                    e.preventDefault(); let data = new FormData(this);
-                    fetch(this.getAttribute("action"), { method: this.getAttribute("method"), body: data }).then(res => res.json()).then(res => alertas_ajax(res));
+                    e.preventDefault(); 
+                    
+                    // 1. Creamos los datos del formulario (producto_id, cantidad, costo)
+                    let data = new FormData(this);
+                    
+                    // 2. CAPTURAMOS EL PROVEEDOR 
+                    let id_prov = document.getElementById('compra_proveedor').value;
+                    data.append("compra_proveedor", id_prov);
+
+                    // 3. Enviamos todo al controlador
+                    fetch(this.getAttribute("action"), { 
+                        method: this.getAttribute("method"), 
+                        body: data 
+                    })
+                    .then(res => res.json())
+                    .then(res => alertas_ajax(res));
                 });
             });
         }
@@ -373,7 +432,26 @@
                 document.getElementById('compra_tasa_bcv').value = tasaBcvGlobal;
             }
             recalcularTotales();
+            actualizarProveedorHidden();
         });
+
+        // === NUEVA FUNCIÓN: Sincronizar el proveedor con el campo hidden del formulario ===
+        function actualizarProveedorHidden() {
+            let selectProveedor = document.getElementById('compra_proveedor');
+            let hiddenProveedor = document.getElementById('hidden_compra_proveedor');
+            
+            if(selectProveedor && hiddenProveedor) {
+                if(selectProveedor.disabled) {
+                    // Si está disabled, buscar el hidden que ya existe fuera del formulario
+                    let hiddenExterno = document.querySelector('input[name="compra_proveedor"]');
+                    if(hiddenExterno && hiddenExterno.value) {
+                        hiddenProveedor.value = hiddenExterno.value;
+                    }
+                } else {
+                    hiddenProveedor.value = selectProveedor.value;
+                }
+            }
+        }
 
         function recalcularTotales() {
             let total = 0;
@@ -420,6 +498,9 @@
         if(formPurchase){
             formPurchase.addEventListener('submit', function(e){
                 e.preventDefault();
+                
+                // === NUEVO: Actualizar el hidden antes de enviar ===
+                actualizarProveedorHidden();
                 
                 // 1. Reiniciamos los estados en cada intento
                 let hayPrecioBajo = false;
@@ -500,4 +581,34 @@
                 });
             });
         }
+
+        function cargarTodosLosProductos() {
+    // Rescatamos el ID del proveedor (funciona aunque esté disabled)
+    let id_prov = document.getElementById('compra_proveedor').value;
+
+    if(id_prov === "") {
+        Swal.fire({ icon: 'warning', title: 'Proveedor requerido', text: 'Seleccione un proveedor primero.' });
+        return;
+    }
+
+    // Limpiamos visualmente las categorías seleccionadas
+    document.querySelectorAll('.is-active-category').forEach(btn => btn.classList.remove('is-active-category'));
+    categoriaActual = ""; 
+
+    let datos = new FormData();
+    datos.append("modulo_compra", "buscar_por_proveedor"); 
+    datos.append("proveedor_id", id_prov);
+
+    fetch("<?php echo APP_URL; ?>app/ajax/compraAjax.php", {
+        method: 'POST',
+        body: datos
+    })
+    .then(res => res.text())
+    .then(response => {
+        if(resultadoBusqueda){
+            resultadoBusqueda.innerHTML = response;
+            reactivarFormularios(); 
+        }
+    });
+}
     </script>

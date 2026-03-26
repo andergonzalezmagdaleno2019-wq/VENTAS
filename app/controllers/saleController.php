@@ -276,19 +276,34 @@
                     $referencia = (isset($rows['venta_referencia']) && $rows['venta_referencia']!="") ? "<br><small class='has-text-grey'>Ref: ".$rows['venta_referencia']."</small>" : "";
 
 					$tabla.='<tr class="has-text-centered" >
-                                <td>'.$rows['venta_id'].'</td><td>'.$rows['venta_codigo'].'</td><td>'.date("d-m-Y", strtotime($rows['venta_fecha'])).' '.$rows['venta_hora'].'</td>
-                                <td>'.$this->limitarCadena($rows['cliente_nombre'].' '.$rows['cliente_apellido'],30,"...").'</td>
-                                <td>'.$this->limitarCadena($rows['usuario_nombre'].' '.$rows['usuario_apellido'],30,"...").'</td>
-                                <td><strong>'.$metodo.'</strong>'.$referencia.'</td>
-                                <td><strong>'.MONEDA_SIMBOLO.number_format($rows['venta_total'],MONEDA_DECIMALES,MONEDA_SEPARADOR_DECIMAL,MONEDA_SEPARADOR_MILLAR).' '.MONEDA_NOMBRE.'</strong><br><span class="has-text-link is-size-7">'.$str_bs.'</span></td>
-                                <td>
-                                    <button type="button" class="button is-link is-outlined is-rounded is-small btn-sale-options" onclick="print_invoice(\''.APP_URL.'app/pdf/invoice.php?code='.$rows['venta_codigo'].'\')" title="Factura Fiscal (Bs + IVA)" ><i class="fas fa-file-invoice-dollar fa-fw"></i></button> 
-                                    <button type="button" class="button is-info is-outlined is-rounded is-small btn-sale-options" onclick="print_invoice(\''.APP_URL.'app/pdf/delivery_note.php?code='.$rows['venta_codigo'].'\')" title="Nota de Entrega ($ sin IVA)" ><i class="fas fa-file-alt fa-fw"></i></button> 
-                                    <a href="'.APP_URL.'saleDetail/'.$rows['venta_codigo'].'/" class="button is-link is-rounded is-small" title="Información de venta" ><i class="fas fa-shopping-bag fa-fw"></i></a> 
-                                    <form class="FormularioAjax is-inline-block" action="'.APP_URL.'app/ajax/ventaAjax.php" method="POST" autocomplete="off" ><input type="hidden" name="modulo_venta" value="eliminar_venta"><input type="hidden" name="venta_id" value="'.$rows['venta_id'].'"><button type="submit" class="button is-danger is-rounded is-small" title="Anular venta" ><i class="far fa-trash-alt fa-fw"></i></button></form>
-                                </td>
-                            </tr>';
-					$contador++;
+                        <td>'.$rows['venta_id'].'</td>
+                        <td>'.$rows['venta_codigo'].'</td>
+                        <td>'.date("d-m-Y", strtotime($rows['venta_fecha'])).' '.$rows['venta_hora'].'</td>
+                        <td>'.$this->limitarCadena($rows['cliente_nombre'].' '.$rows['cliente_apellido'],30,"...").'</td>
+                        <td>'.$this->limitarCadena($rows['usuario_nombre'].' '.$rows['usuario_apellido'],30,"...").'</td>
+                        <td><strong>'.$metodo.'</strong>'.$referencia.'</td>
+                        <td><strong>'.MONEDA_SIMBOLO.number_format($rows['venta_total'],MONEDA_DECIMALES,MONEDA_SEPARADOR_DECIMAL,MONEDA_SEPARADOR_MILLAR).' '.MONEDA_NOMBRE.'</strong><br><span class="has-text-link is-size-7">'.$str_bs.'</span></td>
+                        <td>
+                            <button type="button" class="button is-link is-outlined is-rounded is-small btn-sale-options" onclick="print_invoice(\''.APP_URL.'app/pdf/invoice.php?code='.$rows['venta_codigo'].'\')" title="Factura Fiscal (Bs + IVA)" ><i class="fas fa-file-invoice-dollar fa-fw"></i></button> 
+                            
+                            <button type="button" class="button is-info is-outlined is-rounded is-small btn-sale-options" onclick="print_invoice(\''.APP_URL.'app/pdf/delivery_note.php?code='.$rows['venta_codigo'].'\')" title="Nota de Entrega ($ sin IVA)" ><i class="fas fa-file-alt fa-fw"></i></button> 
+                            
+                            <a href="'.APP_URL.'saleDetail/'.$rows['venta_codigo'].'/" class="button is-link is-rounded is-small" title="Información de venta" ><i class="fas fa-shopping-bag fa-fw"></i></a>';
+
+                            // Solo si el rol es 1 (Administrador) se muestra el botón de anular
+                            if($_SESSION['rol'] == 1){
+                                $tabla.='<form class="FormularioAjax is-inline-block" action="'.APP_URL.'app/ajax/ventaAjax.php" method="POST" autocomplete="off" >
+                                    <input type="hidden" name="modulo_venta" value="eliminar_venta">
+                                    <input type="hidden" name="venta_id" value="'.$rows['venta_id'].'">
+                                    <button type="submit" class="button is-danger is-rounded is-small" title="Anular venta" >
+                                        <i class="far fa-trash-alt fa-fw"></i>
+                                    </button>
+                                </form>';
+                            }
+
+            $tabla.='   </td>
+                    </tr>';
+            $contador++;
 				} $pag_final=$contador-1;
 			}else{ $tabla.='<tr class="has-text-centered" ><td colspan="8">No hay registros</td></tr>'; }
 			$tabla.='</tbody></table></div>';
