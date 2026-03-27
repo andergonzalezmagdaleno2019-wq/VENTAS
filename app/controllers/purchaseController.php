@@ -407,6 +407,9 @@ public function agregarProductoCompraControlador(){
         public function registrarRecepcionControlador() {
             $compra_id = $this->limpiarCadena($_POST['compra_id']);
             
+            $num_cuotas = 0;
+            $frecuencia = 0;
+            $justificacion = "";
             if(!isset($_POST['productos_recibidos'])){
                 return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "No se enviaron productos.", "icono" => "error"]);
                 exit();
@@ -504,7 +507,7 @@ public function agregarProductoCompraControlador(){
                 $estado_pago = ($nuevo_saldo_pendiente <= 0 && $nuevo_total_real > 0) ? "Pagado" : "Pendiente";
        
                 // ACTUALIZACIÓN FINAL DE LA TABLA COMPRA
-                $this->ejecutarConsulta("UPDATE compra SET 
+            $this->ejecutarConsulta("UPDATE compra SET 
                     compra_total = '$nuevo_total_real', 
                     compra_fecha_vencimiento = '$fecha_vencimiento', 
                     compra_estado = '$nuevo_estado_documento', 

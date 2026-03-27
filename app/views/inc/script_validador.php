@@ -22,10 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
             this.setCustomValidity(''); 
         });
     });
+    /* 2. DINAMISMO DEL DOCUMENTO DE IDENTIDAD (Cédulas, RIF) */
 
-    /* 2. DINAMISMO DEL DOCUMENTO DE IDENTIDAD (Cédulas vs. RIF) */
-    const docTipo = document.getElementById('doc_tipo');
-    const docNumero = document.getElementById('doc_numero');
+    const docTipo = document.getElementById('proveedor_rif_tipo') || document.getElementById('doc_tipo');
+    const docNumero = document.getElementById('proveedor_rif_numero') || document.getElementById('doc_numero');
 
     if(docTipo && docNumero) {
         function ajustarDocumento() {
@@ -40,12 +40,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 docNumero.placeholder = 'Ej: 12345678 (Solo números)';
                 docNumero.dataset.filtro = 'numeros';
             } else if (tipo === 'J' || tipo === 'G') {
-                docNumero.setAttribute('maxlength', '10');
+                docNumero.setAttribute('maxlength', '11'); 
                 docNumero.setAttribute('minlength', '8');
-                docNumero.setAttribute('pattern', '[0-9]{8,10}');
-                docNumero.title = 'El RIF debe tener entre 8 y 10 números.';
-                docNumero.placeholder = 'Ej: 123456789 (Solo números)';
-                docNumero.dataset.filtro = 'numeros';
+                docNumero.setAttribute('pattern', '[0-9\-]{8,11}');
+                docNumero.title = 'El RIF debe tener entre 8 y 10 números. Se permite un guion.';
+                docNumero.placeholder = 'Ej: 24892342-1';
+                docNumero.dataset.filtro = 'rif';
             } else {
                 docNumero.setAttribute('maxlength', '20');
                 docNumero.setAttribute('minlength', '5');

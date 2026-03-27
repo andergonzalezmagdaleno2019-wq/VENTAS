@@ -4,14 +4,19 @@
 
 	class providerController extends mainModel{
 
-	/*----------  Controlador registrar proveedor  ----------*/
+		/*---------- Controlador registrar proveedor ----------*/
 		public function registrarProveedorControlador(){
 			$nombre=$this->limpiarCadena($_POST['proveedor_nombre']);
 			$direccion=$this->limpiarCadena($_POST['proveedor_direccion']);
 			
-			// RIF Unificado
-			$rif_tipo = $this->limpiarCadena($_POST['proveedor_rif_tipo']);
+			// --- RIF Unificado con guion obligatorio ---
+			$rif_tipo = $this->limpiarCadena($_POST['proveedor_rif_tipo']); 
 			$rif_numero = $this->limpiarCadena($_POST['proveedor_rif_numero']);
+			
+			// Limpiamos el número de cualquier guion accidental para garantizar solo uno
+			$rif_numero = str_replace("-", "", $rif_numero);
+			
+			// Formato legal SENIAT: Letra-Número
 			$rif = $rif_tipo . "-" . $rif_numero;
 
 			// Teléfono
@@ -34,10 +39,10 @@
 				$telefono_final = $telefono_prefijo . $telefono_numero;
 			}
 
-			// Verificar RIF duplicado
+			// Verificar RIF duplicado 
 			$check_rif=$this->ejecutarConsulta("SELECT proveedor_rif FROM proveedor WHERE proveedor_rif='$rif'");
 			if($check_rif->rowCount()>0){
-				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El RIF ya está registrado","icono"=>"error"]; 
+				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El RIF ($rif) ya está registrado","icono"=>"error"]; 
 				return json_encode($alerta); exit();
 			}
 
@@ -51,9 +56,9 @@
 			$registrar_proveedor=$this->guardarDatos("proveedor",$datos_proveedor_reg);
 
 			if($registrar_proveedor->rowCount()==1){
-				$alerta=["tipo"=>"limpiar","titulo"=>"¡Éxito!","texto"=>"Proveedor registrado correctamente","icono"=>"success"];
+				$alerta=["tipo"=>"limpiar","titulo"=>"¡Éxito!","texto"=>"Proveedor registrado correctamente bajo el RIF: $rif","icono"=>"success"];
 			}else{
-				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar","icono"=>"error"];
+				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar el proveedor","icono"=>"error"];
 			}
 			return json_encode($alerta);
 		}
@@ -81,7 +86,7 @@
                     // Formatear teléfono para vista
                     $tel_tabla = ($rows['proveedor_telefono'] != "") ? substr($rows['proveedor_telefono'], 0, 4)."-".substr($rows['proveedor_telefono'], 4) : "N/A";
 					
-                    // AUTOMATIZACIÓN DE LA J- EN EL RIF
+
                     $rif_tabla = $rows['proveedor_rif'];
                     if(preg_match('/^[0-9]/', $rif_tabla)){
                         $rif_tabla = "J-" . $rif_tabla;
@@ -136,7 +141,7 @@
             $nombre=$this->limpiarCadena($_POST['proveedor_nombre']);
             $direccion=$this->limpiarCadena($_POST['proveedor_direccion']);
 
-            // --- NUEVO: CAPTURAMOS EL RIF DIVIDIDO ---
+            // --- CAPTURAMOS EL RIF DIVIDIDO ---
             $rif_tipo = $this->limpiarCadena($_POST['proveedor_rif_tipo']);
             $rif_numero = $this->limpiarCadena($_POST['proveedor_rif_numero']);
             $rif = $rif_tipo . "-" . $rif_numero; 
