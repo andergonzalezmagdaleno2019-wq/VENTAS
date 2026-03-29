@@ -288,10 +288,8 @@
                         <div class="control"><label>Método de Pago</label>
                             <div class="select is-fullwidth">
                                 <select name="pago_metodo" id="pago_metodo">
-                                    <option value="Zelle">Zelle</option>
+                                    <option value="Pago Movil">Pago Móvil</option>
                                     <option value="Transferencia">Transferencia</option>
-                                    <option value="Binance">Binance</option>
-                                    <option value="Zinli">Zinli</option>
                                 </select>
                             </div>
                         </div>
@@ -352,7 +350,7 @@
                     <div class="column">
                         <label class="has-text-weight-bold">Monto de la Cuota ($)</label>
                         <div class="control">
-                            <input class="input is-link has-text-weight-bold" type="number" name="pago_monto" id="pago_monto_credito" step="0.01" required oninput="calcularConversionBsCredito()">
+                            <input class="input is-link has-text-weight-bold" type="number" name="pago_monto" id="pago_monto_credito" step="0.01" required readonly oninput="calcularConversionBsCredito()">
                         </div>
                         <p class="help is-link has-text-weight-bold" id="monto_conversion_bs_credito">Equivale a: Bs 0.00</p>
                     </div>
@@ -363,20 +361,26 @@
                         <div class="control"><label>Método de Pago</label>
                             <div class="select is-fullwidth">
                                 <select name="pago_metodo">
-                                    <option value="Zelle">Zelle</option>
-                                    <option value="Transferencia">Transferencia</option>
-                                    <option value="Binance">Binance</option>
-                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Pago Movil">Pago Móvil</option>
+                                    <option value="Transferencia" selected>Transferencia</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                     <div class="column">
                         <div class="control">
-                            <label>Referencia Operación</label>
-                            <input class="input" type="text" name="pago_referencia" 
-                            id="pago_referencia_credito" 
-                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); validarReferenciaDinamica(this)">
+                            <label class="has-text-weight-bold">Referencia Operación</label>
+                            <input class="input" 
+                                type="text"
+                                placeholder="6 Números" 
+                                name="pago_referencia" 
+                                id="pago_referencia_credito" 
+                                required 
+                                minlength="6" 
+                                maxlength="6" 
+                                pattern="[0-9]{6}"
+                                title="La referencia debe tener exactamente 6 números"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 6) this.value = this.value.slice(0,6); validarReferenciaDinamica(this)">
                         </div>
                     </div>
                 </div>

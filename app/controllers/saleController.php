@@ -162,90 +162,113 @@
 			unset($_SESSION['datos_cliente_venta']);
 			return json_encode(["tipo"=>"recargar","titulo"=>"Removido","texto"=>"Cliente desasignado","icono"=>"success"]);
         }
-
+        
         /*---------- Controlador registrar venta ----------*/
         public function registrarVentaControlador(){
             $caja=$this->limpiarCadena($_POST['venta_caja']);
             $venta_metodo_pago = $this->limpiarCadena($_POST['venta_metodo_pago']);
             $venta_referencia = isset($_POST['venta_referencia']) ? $this->limpiarCadena($_POST['venta_referencia']) : "";
 
-            if($venta_metodo_pago == "Pago Movil" || $venta_metodo_pago == "Transferencia"){
-                if(!preg_match("/^[0-9]{6}$/", $venta_referencia)){
-                    return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Referencia debe ser de 6 números exactos","icono"=>"error"]); exit();
-                }
-            } else { $venta_referencia = ""; }
+            // VALIDACIÓN: Como ya no hay efectivo, la referencia es OBLIGATORIA (6 dígitos)
+            if(!preg_match("/^[0-9]{6}$/", $venta_referencia)){
+                return json_encode([
+                    "tipo"=>"simple",
+                    "titulo"=>"Error",
+                    "texto"=>"La referencia bancaria es obligatoria y debe ser de 6 números exactos",
+                    "icono"=>"error"
+                ]); 
+                exit();
+            }
 
             $venta_tasa_bcv=$this->limpiarCadena($_POST['venta_tasa_bcv']);
             if(!is_numeric($venta_tasa_bcv) || $venta_tasa_bcv == ""){ $venta_tasa_bcv = 0; }
 
-            if($_SESSION['venta_total']<=0 || count($_SESSION['datos_producto_venta'])<=0){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Carrito vacío","icono"=>"error"]); exit(); }
-            if(!isset($_SESSION['datos_cliente_venta'])){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Sin cliente","icono"=>"error"]); exit(); }
-			
+            if($_SESSION['venta_total']<=0 || count($_SESSION['datos_producto_venta'])<=0){ 
+                return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Carrito vacío","icono"=>"error"]); exit(); 
+            }
+            
+            if(!isset($_SESSION['datos_cliente_venta'])){ 
+                return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Sin cliente","icono"=>"error"]); exit(); 
+            }
+            
             $check_caja=$this->ejecutarConsulta("SELECT * FROM caja WHERE caja_id='$caja'");
-			if($check_caja->rowCount()<=0){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Caja inválida","icono"=>"error"]); exit(); }else{ $datos_caja=$check_caja->fetch(); }
+            if($check_caja->rowCount()<=0){ 
+                return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Caja inválida","icono"=>"error"]); exit(); 
+            }else{ 
+                $datos_caja=$check_caja->fetch(); 
+            }
 
             // BLINDAJE DE AUDITORÍA: Forzamos el pago exacto.
             $venta_total_final = number_format($_SESSION['venta_total'],MONEDA_DECIMALES,'.','');
             $venta_pagado = $venta_total_final; 
             $venta_cambio = 0.00; 
             
-            $venta_fecha=date("Y-m-d"); $venta_hora=date("h:i a"); 
+            $venta_fecha=date("Y-m-d"); 
+            $venta_hora=date("h:i a"); 
 
-            /* LA CAJA EFECTIVO SOLO SUMA SI EL PAGO ES FÍSICO */
-            if($venta_metodo_pago == "Efectivo" || $venta_metodo_pago == "Divisas"){
-                $movimiento_cantidad = $venta_total_final; 
-                $total_caja = $datos_caja['caja_efectivo'] + $movimiento_cantidad;
-                $total_caja = number_format($total_caja,MONEDA_DECIMALES,'.','');
-            } else {
-                $total_caja = $datos_caja['caja_efectivo']; 
-            }
+            $total_caja = $datos_caja['caja_efectivo']; 
+            $total_caja = number_format($total_caja,MONEDA_DECIMALES,'.','');
 
             $errores_productos=0;
-			foreach($_SESSION['datos_producto_venta'] as $productos){
+            foreach($_SESSION['datos_producto_venta'] as $productos){
                 $check_producto=$this->ejecutarConsulta("SELECT * FROM producto WHERE producto_id='".$productos['producto_id']."'");
                 if($check_producto->rowCount()<1){ $errores_productos=1; break; }else{ $datos_producto=$check_producto->fetch(); }
+                
                 $nuevo_stock = $datos_producto['producto_stock'] - $productos['venta_detalle_cantidad'];
-                if(!$this->actualizarDatos("producto",[ ["campo_nombre"=>"producto_stock","campo_marcador"=>":S","campo_valor"=>$nuevo_stock] ],["condicion_campo"=>"producto_id","condicion_marcador"=>":I","condicion_valor"=>$productos['producto_id']])){ $errores_productos=1; break; }
+                
+                if(!$this->actualizarDatos("producto",[ ["campo_nombre"=>"producto_stock","campo_marcador"=>":S","campo_valor"=>$nuevo_stock] ],["condicion_campo"=>"producto_id","condicion_marcador"=>":I","condicion_valor"=>$productos['producto_id']])){ 
+                    $errores_productos=1; break; 
+                }
             }
 
-            if($errores_productos==1){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Error actualizando stock","icono"=>"error"]); exit(); }
+            if($errores_productos==1){ 
+                return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Error actualizando stock","icono"=>"error"]); exit(); 
+            }
 
             $siguiente_numero = (int)$this->ejecutarConsulta("SELECT MAX(venta_id) AS id_maximo FROM venta")->fetch()['id_maximo'] + 1;
             $codigo_venta = "VEN-" . str_pad($siguiente_numero, 6, "0", STR_PAD_LEFT);
 
-			$datos_venta_reg=[
-				["campo_nombre"=>"venta_codigo","campo_marcador"=>":Codigo","campo_valor"=>$codigo_venta],
-				["campo_nombre"=>"venta_fecha","campo_marcador"=>":Fecha","campo_valor"=>$venta_fecha],
-				["campo_nombre"=>"venta_hora","campo_marcador"=>":Hora","campo_valor"=>$venta_hora],
-				["campo_nombre"=>"venta_total","campo_marcador"=>":Total","campo_valor"=>$venta_total_final],
-				["campo_nombre"=>"venta_pagado","campo_marcador"=>":Pagado","campo_valor"=>$venta_pagado],
-				["campo_nombre"=>"venta_cambio","campo_marcador"=>":Cambio","campo_valor"=>$venta_cambio],
+            $datos_venta_reg=[
+                ["campo_nombre"=>"venta_codigo","campo_marcador"=>":Codigo","campo_valor"=>$codigo_venta],
+                ["campo_nombre"=>"venta_fecha","campo_marcador"=>":Fecha","campo_valor"=>$venta_fecha],
+                ["campo_nombre"=>"venta_hora","campo_marcador"=>":Hora","campo_valor"=>$venta_hora],
+                ["campo_nombre"=>"venta_total","campo_marcador"=>":Total","campo_valor"=>$venta_total_final],
+                ["campo_nombre"=>"venta_pagado","campo_marcador"=>":Pagado","campo_valor"=>$venta_pagado],
+                ["campo_nombre"=>"venta_cambio","campo_marcador"=>":Cambio","campo_valor"=>$venta_cambio],
                 ["campo_nombre"=>"venta_tasa_bcv","campo_marcador"=>":Tasa","campo_valor"=>$venta_tasa_bcv],
                 ["campo_nombre"=>"venta_metodo_pago","campo_marcador"=>":Metodo","campo_valor"=>$venta_metodo_pago],
                 ["campo_nombre"=>"venta_referencia","campo_marcador"=>":Referencia","campo_valor"=>$venta_referencia],
-				["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
-				["campo_nombre"=>"cliente_id","campo_marcador"=>":Cliente","campo_valor"=>$_SESSION['datos_cliente_venta']['cliente_id']],
-				["campo_nombre"=>"caja_id","campo_marcador"=>":Caja","campo_valor"=>$caja]
+                ["campo_nombre"=>"usuario_id","campo_marcador"=>":Usuario","campo_valor"=>$_SESSION['id']],
+                ["campo_nombre"=>"cliente_id","campo_marcador"=>":Cliente","campo_valor"=>$_SESSION['datos_cliente_venta']['cliente_id']],
+                ["campo_nombre"=>"caja_id","campo_marcador"=>":Caja","campo_valor"=>$caja]
             ];
-            if($this->guardarDatos("venta",$datos_venta_reg)->rowCount()!=1){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Error al crear factura","icono"=>"error"]); exit(); }
+
+            if($this->guardarDatos("venta",$datos_venta_reg)->rowCount()!=1){ 
+                return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Error al crear factura","icono"=>"error"]); exit(); 
+            }
 
             foreach($_SESSION['datos_producto_venta'] as $venta_detalle){
                 $this->guardarDatos("venta_detalle",[
-                	["campo_nombre"=>"venta_detalle_cantidad","campo_marcador"=>":Cantidad","campo_valor"=>$venta_detalle['venta_detalle_cantidad']],
-					["campo_nombre"=>"venta_detalle_precio_compra","campo_marcador"=>":PrecioCompra","campo_valor"=>$venta_detalle['venta_detalle_precio_compra']],
-					["campo_nombre"=>"venta_detalle_precio_venta","campo_marcador"=>":PrecioVenta","campo_valor"=>$venta_detalle['venta_detalle_precio_venta']],
-					["campo_nombre"=>"venta_detalle_total","campo_marcador"=>":Total","campo_valor"=>$venta_detalle['venta_detalle_total']],
-					["campo_nombre"=>"venta_detalle_descripcion","campo_marcador"=>":Descripcion","campo_valor"=>$venta_detalle['venta_detalle_descripcion']],
-					["campo_nombre"=>"venta_codigo","campo_marcador"=>":VentaCodigo","campo_valor"=>$codigo_venta],
-					["campo_nombre"=>"producto_id","campo_marcador"=>":Producto","campo_valor"=>$venta_detalle['producto_id']]
+                    ["campo_nombre"=>"venta_detalle_cantidad","campo_marcador"=>":Cantidad","campo_valor"=>$venta_detalle['venta_detalle_cantidad']],
+                    ["campo_nombre"=>"venta_detalle_precio_compra","campo_marcador"=>":PrecioCompra","campo_valor"=>$venta_detalle['venta_detalle_precio_compra']],
+                    ["campo_nombre"=>"venta_detalle_precio_venta","campo_marcador"=>":PrecioVenta","campo_valor"=>$venta_detalle['venta_detalle_precio_venta']],
+                    ["campo_nombre"=>"venta_detalle_total","campo_marcador"=>":Total","campo_valor"=>$venta_detalle['venta_detalle_total']],
+                    ["campo_nombre"=>"venta_detalle_descripcion","campo_marcador"=>":Descripcion","campo_valor"=>$venta_detalle['venta_detalle_descripcion']],
+                    ["campo_nombre"=>"venta_codigo","campo_marcador"=>":VentaCodigo","campo_valor"=>$codigo_venta],
+                    ["campo_nombre"=>"producto_id","campo_marcador"=>":Producto","campo_valor"=>$venta_detalle['producto_id']]
                 ]);
             }
 
+            // Se mantiene el monto de la caja igual (sin sumar el pago digital)
             $this->actualizarDatos("caja",[ ["campo_nombre"=>"caja_efectivo","campo_marcador"=>":E","campo_valor"=>$total_caja] ],["condicion_campo"=>"caja_id","condicion_marcador"=>":I","condicion_valor"=>$caja]);
 
-            unset($_SESSION['venta_total']); unset($_SESSION['datos_cliente_venta']); unset($_SESSION['datos_producto_venta']);
+            unset($_SESSION['venta_total']); 
+            unset($_SESSION['datos_cliente_venta']); 
+            unset($_SESSION['datos_producto_venta']);
+            
             $_SESSION['venta_codigo_factura']=$codigo_venta;
-			return json_encode(["tipo"=>"recargar","titulo"=>"¡Venta registrada!","texto"=>"Código: $codigo_venta","icono"=>"success"]); exit();
+            return json_encode(["tipo"=>"recargar","titulo"=>"¡Venta registrada!","texto"=>"Código: $codigo_venta","icono"=>"success"]); 
+            exit();
         }
 
 		/*----------  Controlador listar venta  ----------*/

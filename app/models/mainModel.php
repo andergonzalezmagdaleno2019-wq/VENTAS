@@ -128,7 +128,7 @@
 	        return $tabla;
 	    }
 
-        /*---------- Función generar select (¡LA QUE FALTABA!) ----------*/
+        /*---------- Función generar select ----------*/
         public function generarSelect($datos,$campo_db){
             $check_select='';
             $text_select='';

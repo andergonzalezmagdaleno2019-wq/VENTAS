@@ -173,10 +173,8 @@
                                     <label>Método de Pago <?php echo CAMPO_OBLIGATORIO; ?></label>
                                     <div class="select is-fullwidth">
                                         <select name="venta_metodo_pago" id="venta_metodo_pago" required>
-                                            <option value="Efectivo" selected>Efectivo</option>
                                             <option value="Pago Movil">Pago Móvil</option>
                                             <option value="Transferencia">Transferencia</option>
-                                            <option value="Divisas">Divisas ($ / €)</option>
                                         </select>
                                     </div>
                                 </div>

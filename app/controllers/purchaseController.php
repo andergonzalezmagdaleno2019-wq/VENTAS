@@ -25,7 +25,7 @@
 			}else{ return '<div class="notification is-warning is-light">No encontrado.</div>'; }
 		}
 
-        /*---------- Buscar productos por PROVEEDOR (Diseño Unificado) ----------*/
+        /*---------- Buscar productos por PROVEEDOR ----------*/
         public function buscarProductoProveedorControlador(){
             $id_prov = $this->limpiarCadena($_POST['proveedor_id']);
 
