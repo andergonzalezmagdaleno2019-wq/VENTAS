@@ -312,18 +312,20 @@ class productController extends mainModel
 						</tr>';
 
                             // MODAL DE DETALLE 
+                            $estado_modal = ($rows['producto_estado'] == 'Activo') ? '<span class="tag is-success is-light">Activo</span>' : '<span class="tag is-danger is-light">Inactivo</span>';
+                            
                             $tabla .= '
                             <div id="modal-detalle-' . $rows['producto_id'] . '" class="modal">
                                 <div class="modal-background"></div>
-                                <div class="modal-card">
+                                <div class="modal-card" style="width: 800px; max-width: 95vw;">
                                     <header class="modal-card-head">
-                                        <p class="modal-card-title has-text-dark">Detalle de Producto</p>
+                                        <p class="modal-card-title has-text-dark">Detalle Completo del Producto</p>
                                         <button class="delete" aria-label="close"></button>
                                     </header>
                                     <section class="modal-card-body has-text-dark has-text-left">
                                         <div class="columns">
-                                            <div class="column is-one-third">
-                                                <figure class="image is-4by3">';
+                                            <div class="column is-4 has-text-centered">
+                                                <figure class="image is-4by3 mb-4">';
                                                     
                                                     // Lógica de validación de imagen
                                                     $foto_ruta = "./app/views/productos/" . $rows['producto_foto'];
@@ -335,9 +337,10 @@ class productController extends mainModel
                                                     }
 
                                     $tabla .= ' </figure>
-                                                <div class="mt-4">
+                                                ' . $estado_modal . '
+                                                <div class="mt-4 has-text-left">
                                                     <p class="is-size-7 has-text-grey"><strong>Distribuido por:</strong></p>
-                                                    <div class="tags">';
+                                                    <div class="tags mt-1">';
                                                         /* --- CONSULTA DE PROVEEDORES --- */
                                                         $id_p = $rows['producto_id'];
                                                         $cons_prov = $this->ejecutarConsulta("SELECT p.proveedor_nombre 
@@ -356,23 +359,50 @@ class productController extends mainModel
                                     $tabla .= '     </div>
                                                 </div>
                                             </div>
-                                            <div class="column">
+                                            
+                                            <div class="column is-8">
                                                 <p class="is-size-4 has-text-weight-bold">' . $rows['producto_nombre'] . '</p>
                                                 <hr style="margin: 10px 0;">
-                                                <p><strong>Código:</strong> ' . $rows['producto_codigo'] . '</p>
-                                                <p><strong>Marca/Modelo:</strong> ' . $rows['producto_marca'] . ' ' . $rows['producto_modelo'] . '</p>
-                                                <p><strong>Categoría:</strong> ' . ($rows['categoria_padre_nombre'] ?? 'Sin Categoría') . '</p>
-                                                <p><strong>Stock Actual:</strong> ' . $rows['producto_stock'] . ' ' . $rows['producto_unidad'] . '</p>
-                                                <p><strong>Tipo de Producto:</strong> ' . $rows['producto_unidad'] . '</p>
-                                                <br>
-                                                <div class="notification is-light is-info">
-                                                    <p class="is-size-5"><strong>Precio:</strong> <span class="has-text-link">$' . $rows['producto_precio'] . '</span></p>
+                                                
+                                                <div class="columns is-multiline is-mobile">
+                                                    <div class="column is-6">
+                                                        <p><strong>Código:</strong> ' . $rows['producto_codigo'] . '</p>
+                                                        <p><strong>Marca:</strong> ' . ($rows['producto_marca'] != "" ? $rows['producto_marca'] : "N/A") . '</p>
+                                                        <p><strong>Modelo:</strong> ' . ($rows['producto_modelo'] != "" ? $rows['producto_modelo'] : "N/A") . '</p>
+                                                        <p><strong>Categoría:</strong> ' . ($rows['categoria_padre_nombre'] ?? 'Sin Categoría') . ' <i class="fas fa-angle-right"></i> ' . $rows['subcategoria_nombre'] . '</p>
+                                                    </div>
+                                                    
+                                                    <div class="column is-6">
+                                                        <p><strong>Tipo Unidad:</strong> ' . $rows['producto_unidad'] . '</p>
+                                                        <p><strong>Stock Mínimo:</strong> ' . $rows['producto_stock_min'] . ' ' . $rows['producto_unidad'] . '</p>
+                                                        <p><strong>Stock Máximo:</strong> ' . $rows['producto_stock_max'] . ' ' . $rows['producto_unidad'] . '</p>
+                                                        <p><strong>Stock Actual:</strong> <span class="has-text-weight-bold is-size-6">' . $rows['producto_stock'] . ' ' . $rows['producto_unidad'] . '</span></p>
+                                                    </div>
                                                 </div>
+                                                
+                                                <br>
+                                                <div class="columns is-mobile">
+                                                    <div class="column is-6">
+                                                        <div class="notification is-light is-warning has-text-centered p-3">
+                                                            <p class="is-size-7 has-text-grey-dark"><strong>Costo (Compra)</strong></p>
+                                                            <p class="is-size-5 has-text-dark">$' . $rows['producto_costo'] . '</p>
+                                                            <p class="is-size-7 has-text-dark precio-bcv" data-usd="' . $rows['producto_costo'] . '">Calculando Bs...</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="column is-6">
+                                                        <div class="notification is-light is-info has-text-centered p-3">
+                                                            <p class="is-size-7 has-text-link"><strong>Precio (Venta)</strong></p>
+                                                            <p class="is-size-4 has-text-link has-text-weight-bold">$' . $rows['producto_precio'] . '</p>
+                                                            <p class="is-size-7 has-text-link has-text-weight-bold precio-bcv" data-usd="' . $rows['producto_precio'] . '">Calculando Bs...</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
                                             </div>
                                         </div>
                                     </section>
                                     <footer class="modal-card-foot is-justify-content-flex-end">
-                                        <button class="button is-info js-modal-close">Cerrar</button>
+                                        <button class="button is-dark js-modal-close">Cerrar Detalle</button>
                                     </footer>
                                 </div>
                             </div>';
