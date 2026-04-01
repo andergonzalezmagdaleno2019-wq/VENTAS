@@ -140,28 +140,24 @@
                             <input class="input" type="date" value="<?php echo date("Y-m-d"); ?>" readonly>
                         </div>
                         <input type="hidden" name="venta_caja" value="1">
-                        <label>Cliente</label>
+                        
+                        <label>Cliente <?php echo CAMPO_OBLIGATORIO; ?></label>
                         <?php
-                        if (!isset($_SESSION['datos_cliente_venta'])) {
-                            $datos_cliente = $insVenta->seleccionarDatos("Normal", "cliente WHERE cliente_id='1'", "*", 0);
-                            if ($datos_cliente->rowCount() == 1) {
-                                $datos_cliente = $datos_cliente->fetch();
-                                $_SESSION['datos_cliente_venta'] = [
-                                    "cliente_id" => $datos_cliente['cliente_id'],
-                                    "cliente_tipo_documento" => $datos_cliente['cliente_tipo_documento'],
-                                    "cliente_numero_documento" => $datos_cliente['cliente_numero_documento'],
-                                    "cliente_nombre" => $datos_cliente['cliente_nombre'],
-                                    "cliente_apellido" => $datos_cliente['cliente_apellido']
-                                ];
-                            }
+                        // Si no hay cliente seleccionado, mostramos una advertencia
+                        $cliente_seleccionado = "¡Debe seleccionar un cliente!->";
+                        $color_texto = "has-text-danger has-text-weight-bold has-background-danger-light";
+                        
+                        if (isset($_SESSION['datos_cliente_venta'])) {
+                            $cliente_seleccionado = $_SESSION['datos_cliente_venta']['cliente_nombre'] . " " . $_SESSION['datos_cliente_venta']['cliente_apellido'];
+                            $color_texto = "has-text-link has-text-weight-bold";
                         }
                         ?>
                         <div class="field has-addons mb-5">
-                            <div class="control">
-                                <input class="input" type="text" readonly id="venta_cliente" value="<?php echo $_SESSION['datos_cliente_venta']['cliente_nombre'] . " " . $_SESSION['datos_cliente_venta']['cliente_apellido']; ?>">
+                            <div class="control is-expanded">
+                                <input class="input <?php echo $color_texto; ?>" type="text" readonly id="venta_cliente" value="<?php echo $cliente_seleccionado; ?>">
                             </div>
                             <div class="control">
-                                <a class="button is-info js-modal-trigger" data-target="modal-js-client" title="Cambiar cliente" id="btn_add_client">
+                                <a class="button is-info js-modal-trigger" data-target="modal-js-client" title="Buscar y seleccionar cliente" id="btn_add_client">
                                     <i class="fas fa-users fa-fw"></i>
                                 </a>
                             </div>
@@ -181,8 +177,8 @@
                             </div>
                             <div class="column is-half">
                                 <div class="control mb-5">
-                                    <label>Referencia <span id="req_referencia" style="color:red; display:none;">*</span></label>
-                                    <input class="input" type="text" name="venta_referencia" id="venta_referencia" pattern="[0-9]{6}" maxlength="6" placeholder="Ej: 123456" disabled>
+                                    <label>Referencia <span style="color:red;">*</span></label>
+                                    <input class="input" type="text" name="venta_referencia" id="venta_referencia" pattern="[0-9]{6}" maxlength="6" placeholder="Ej: 123456" required>
                                 </div>
                             </div>
                         </div>
@@ -204,6 +200,10 @@
                         <?php if ($_SESSION['venta_total'] > 0) { ?>
                             <p class="has-text-centered">
                                 <button type="submit" class="button is-info is-rounded is-medium mt-4"><i class="far fa-save"></i> &nbsp; Procesar Venta</button>
+                                
+                                <button type="button" class="button is-danger is-outlined is-rounded is-medium mt-4 ml-3" onclick="vaciar_carrito_venta()">
+                                    <i class="fas fa-trash-alt"></i> &nbsp; Vaciar Carrito
+                                </button>
                             </p>
                         <?php } ?>
                         <input type="hidden" value="<?php echo number_format($_SESSION['venta_total'], MONEDA_DECIMALES, '.', ""); ?>" id="venta_total_hidden">
@@ -332,16 +332,6 @@
         }
     });
 
-    /* Select Método Pago */
-    document.getElementById('venta_metodo_pago').addEventListener('change', function() {
-        let metodo = this.value; let refInput = document.getElementById('venta_referencia'); let reqSpan = document.getElementById('req_referencia');
-        if (metodo === 'Pago Movil' || metodo === 'Transferencia') {
-            refInput.disabled = false; refInput.required = true; reqSpan.style.display = 'inline';
-        } else {
-            refInput.disabled = true; refInput.required = false; refInput.value = ''; reqSpan.style.display = 'none';
-        }
-    });
-
     let form_sale_action = document.querySelector("form[name='formsale']");
     if (form_sale_action) {
         form_sale_action.addEventListener('submit', function(e) {
@@ -389,6 +379,30 @@
     function agregar_cliente(id) {
         let datos = new FormData(); datos.append("cliente_id", id); datos.append("modulo_venta", "agregar_cliente");
         fetch('<?php echo APP_URL; ?>app/ajax/ventaAjax.php', { method: 'POST', body: datos }).then(r => r.json()).then(r => { return alertas_ajax(r); });
+    }
+
+    /* FUNCIÓN VACIAR CARRITO */
+    function vaciar_carrito_venta() {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Se borrarán todos los productos y el cliente seleccionado.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#f14668',
+            cancelButtonColor: '#3e8ed0',
+            confirmButtonText: 'Sí, vaciar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let datos = new FormData(); 
+                datos.append("modulo_venta", "vaciar_carrito");
+                fetch('<?php echo APP_URL; ?>app/ajax/ventaAjax.php', { 
+                    method: 'POST', body: datos 
+                })
+                .then(res => res.json())
+                .then(res => { return alertas_ajax(res); });
+            }
+        });
     }
 </script>
 

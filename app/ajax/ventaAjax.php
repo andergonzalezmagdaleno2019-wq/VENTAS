@@ -74,6 +74,11 @@
 			echo $insVenta->registrarVentaControlador();
 		}
 
+		/*--------- Vaciar carrito de venta ---------*/
+		if($_POST['modulo_venta']=="vaciar_carrito"){
+			echo $insVenta->vaciarCarritoVentaControlador();
+		}
+
 		/*--------- Eliminar venta ---------*/
 		if($_POST['modulo_venta']=="eliminar_venta"){
 			echo $insVenta->eliminarVentaControlador();

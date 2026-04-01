@@ -273,10 +273,15 @@
 
 		/*----------  Controlador listar venta  ----------*/
 		public function listarVentaControlador($pagina,$registros,$url,$busqueda){
-			$pagina=$this->limpiarCadena($pagina); $registros=$this->limpiarCadena($registros); $url=$this->limpiarCadena($url); $url=APP_URL.$url."/"; $busqueda=$this->limpiarCadena($busqueda); $tabla="";
+			$pagina=$this->limpiarCadena($pagina); $registros=$this->limpiarCadena($registros); $url=$this->limpiarCadena($url); $url=APP_URL.$url."/"; $busqueda=$this->limpiarCadena($busqueda); $tabla=""; 
+            
+            // NUEVA VARIABLE PARA GUARDAR LOS MODALES FUERA DE LA TABLA
+            $modales = ""; 
+            
 			$pagina = (isset($pagina) && $pagina>0) ? (int) $pagina : 1; $inicio = ($pagina>0) ? (($pagina * $registros)-$registros) : 0;
 			
-            $campos_tablas="venta.venta_id,venta.venta_codigo,venta.venta_fecha,venta.venta_hora,venta.venta_total,venta.venta_tasa_bcv,venta.venta_metodo_pago,venta.venta_referencia,venta.usuario_id,venta.cliente_id,venta.caja_id,usuario.usuario_id,usuario.usuario_nombre,usuario.usuario_apellido,cliente.cliente_id,cliente.cliente_nombre,cliente.cliente_apellido";
+            // AGREGAMOS TODOS LOS DATOS RESTANTES DEL CLIENTE A LA CONSULTA
+            $campos_tablas="venta.venta_id,venta.venta_codigo,venta.venta_fecha,venta.venta_hora,venta.venta_total,venta.venta_tasa_bcv,venta.venta_metodo_pago,venta.venta_referencia,venta.usuario_id,venta.cliente_id,venta.caja_id,usuario.usuario_id,usuario.usuario_nombre,usuario.usuario_apellido,cliente.cliente_id,cliente.cliente_nombre,cliente.cliente_apellido,cliente.cliente_tipo_documento,cliente.cliente_numero_documento,cliente.cliente_provincia,cliente.cliente_ciudad,cliente.cliente_direccion,cliente.cliente_telefono,cliente.cliente_email";
 			
             if(isset($busqueda) && $busqueda!=""){
 				$consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id WHERE (venta.venta_codigo='$busqueda' OR venta.venta_referencia='$busqueda') ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
@@ -307,11 +312,11 @@
                         <td><strong>'.$metodo.'</strong>'.$referencia.'</td>
                         <td><strong>'.MONEDA_SIMBOLO.number_format($rows['venta_total'],MONEDA_DECIMALES,MONEDA_SEPARADOR_DECIMAL,MONEDA_SEPARADOR_MILLAR).' '.MONEDA_NOMBRE.'</strong><br><span class="has-text-link is-size-7">'.$str_bs.'</span></td>
                         <td>
+                            <button type="button" class="button is-success is-rounded is-small" onclick="document.querySelector(\'#modal-detalle-venta-'.$rows['venta_codigo'].'\').classList.add(\'is-active\')" title="Ver detalle completo de la venta" ><i class="fas fa-eye fa-fw"></i></button>
+
                             <button type="button" class="button is-link is-outlined is-rounded is-small btn-sale-options" onclick="print_invoice(\''.APP_URL.'app/pdf/invoice.php?code='.$rows['venta_codigo'].'\')" title="Factura Fiscal (Bs + IVA)" ><i class="fas fa-file-invoice-dollar fa-fw"></i></button> 
                             
-                            <button type="button" class="button is-info is-outlined is-rounded is-small btn-sale-options" onclick="print_invoice(\''.APP_URL.'app/pdf/delivery_note.php?code='.$rows['venta_codigo'].'\')" title="Nota de Entrega ($ sin IVA)" ><i class="fas fa-file-alt fa-fw"></i></button> 
-                            
-                            <a href="'.APP_URL.'saleDetail/'.$rows['venta_codigo'].'/" class="button is-link is-rounded is-small" title="Información de venta" ><i class="fas fa-shopping-bag fa-fw"></i></a>';
+                            <button type="button" class="button is-info is-outlined is-rounded is-small btn-sale-options" onclick="print_invoice(\''.APP_URL.'app/pdf/delivery_note.php?code='.$rows['venta_codigo'].'\')" title="Nota de Entrega ($ sin IVA)" ><i class="fas fa-file-alt fa-fw"></i></button>';
 
                             // Solo si el rol es 1 (Administrador) se muestra el botón de anular
                             if($_SESSION['rol'] == 1){
@@ -324,12 +329,99 @@
                                 </form>';
                             }
 
-            $tabla.='   </td>
-                    </tr>';
+                    $tabla.='   </td>
+                            </tr>';
+
+                /* ==========================================
+                   MODAL CON EL DETALLE (GUARDADO EN $modales)
+                   ========================================== */
+                $codigo_v = $rows['venta_codigo'];
+                $detalles_venta = $this->ejecutarConsulta("SELECT * FROM venta_detalle WHERE venta_codigo='$codigo_v'")->fetchAll();
+                
+                $modales .= '
+                <div id="modal-detalle-venta-'.$rows['venta_codigo'].'" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-card" style="width: 900px; max-width: 95vw;">
+                        <header class="modal-card-head has-background-link">
+                            <p class="modal-card-title has-text-white is-size-5"><i class="fas fa-receipt"></i> Detalle de la Venta: '.$rows['venta_codigo'].'</p>
+                            <button class="delete" aria-label="close" onclick="document.querySelector(\'#modal-detalle-venta-'.$rows['venta_codigo'].'\').classList.remove(\'is-active\')"></button>
+                        </header>
+                        <section class="modal-card-body has-text-dark has-text-left">
+                            
+                            <div class="columns is-multiline mb-2">
+                                <div class="column is-6">
+                                    <h5 class="title is-6 has-text-link mb-2"><i class="fas fa-user-tag"></i> Datos del Cliente</h5>
+                                    <div class="box p-3 is-shadowless" style="border: 1px solid #e1e1e1;">
+                                        <p><strong>Nombre:</strong> '.$rows['cliente_nombre'].' '.$rows['cliente_apellido'].'</p>
+                                        <p><strong>Documento:</strong> '.$rows['cliente_tipo_documento'].'-'.$rows['cliente_numero_documento'].'</p>
+                                        <p><strong>Teléfono:</strong> '.($rows['cliente_telefono'] != "" ? $rows['cliente_telefono'] : "N/A").'</p>
+                                        <p><strong>Email:</strong> '.($rows['cliente_email'] != "" ? $rows['cliente_email'] : "N/A").'</p>
+                                        <p><strong>Ubicación:</strong> '.($rows['cliente_provincia'] != "" ? $rows['cliente_provincia']." - " : "").($rows['cliente_ciudad'] != "" ? $rows['cliente_ciudad'] : "N/A").'</p>
+                                        <p><strong>Dirección:</strong> '.($rows['cliente_direccion'] != "" ? $rows['cliente_direccion'] : "N/A").'</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="column is-6">
+                                    <h5 class="title is-6 has-text-link mb-2"><i class="fas fa-info-circle"></i> Información de Pago</h5>
+                                    <div class="box p-3 is-shadowless" style="border: 1px solid #e1e1e1;">
+                                        <p><strong>Fecha y Hora:</strong> '.date("d/m/Y", strtotime($rows['venta_fecha'])).' - '.$rows['venta_hora'].'</p>
+                                        <p><strong>Vendedor:</strong> '.$rows['usuario_nombre'].' '.$rows['usuario_apellido'].'</p>
+                                        <p><strong>Método de Pago:</strong> <span class="tag is-info is-light">'.$metodo.'</span></p>
+                                        <p><strong>Referencia de Pago (ult. 6 dígitos):</strong> '.($rows['venta_referencia'] != "" ? $rows['venta_referencia'] : "N/A").'</p>
+                                        <p><strong>Tasa BCV Aplicada:</strong> Bs. '.number_format($tasa, 2, ',', '.').'</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 class="title is-6 has-text-link mb-2 mt-4"><i class="fas fa-box-open"></i> Productos Adquiridos</h5>
+                            <div class="table-container">
+                                <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+                                    <thead class="has-background-link-light">
+                                        <tr>
+                                            <th class="has-text-centered">Cant.</th>
+                                            <th>Descripción del Producto</th>
+                                            <th class="has-text-centered">Precio Unit.</th>
+                                            <th class="has-text-centered">SubTotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>';
+                                        foreach($detalles_venta as $item){
+                                            $modales .= '
+                                            <tr>
+                                                <td class="has-text-centered">'.$item['venta_detalle_cantidad'].'</td>
+                                                <td>'.$item['venta_detalle_descripcion'].'</td>
+                                                <td class="has-text-centered">$'.$item['venta_detalle_precio_venta'].'</td>
+                                                <td class="has-text-centered has-text-weight-bold">$'.$item['venta_detalle_total'].'</td>
+                                            </tr>';
+                                        }
+                                    $modales .= '
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="columns">
+                                <div class="column is-offset-6 is-6 has-text-right">
+                                    <p class="is-size-4 has-text-weight-bold has-text-link">TOTAL FACTURA: $'.number_format($rows['venta_total'], 2, '.', ',').'</p>
+                                    '.($tasa > 0 ? '<p class="is-size-6 has-text-grey-dark has-text-weight-bold">EQUIVALENTE PAGADO: Bs. '.number_format($total_bs, 2, ',', '.').'</p>' : '').'
+                                </div>
+                            </div>
+
+                        </section>
+                        <footer class="modal-card-foot is-justify-content-flex-end">
+                            <button class="button is-dark" onclick="document.querySelector(\'#modal-detalle-venta-'.$rows['venta_codigo'].'\').classList.remove(\'is-active\')">Cerrar</button>
+                        </footer>
+                    </div>
+                </div>';
+                /* --- FIN MODAL DETALLE --- */
+
             $contador++;
 				} $pag_final=$contador-1;
 			}else{ $tabla.='<tr class="has-text-centered" ><td colspan="8">No hay registros</td></tr>'; }
-			$tabla.='</tbody></table></div>';
+			
+            // CERRAMOS LA TABLA Y LUEGO IMPRIMIMOS LOS MODALES AFUERA PARA NO ROMPER EL HTML
+            $tabla.='</tbody></table></div>';
+            $tabla .= $modales;
+
 			if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de <strong>'.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7); }
 			return $tabla;
 		}
@@ -366,5 +458,19 @@
 		    if($this->eliminarRegistro("venta","venta_id",$id)->rowCount()==1){
 		        return json_encode(["tipo"=>"recargar","titulo"=>"Venta anulada","texto"=>"Stock y cuentas restauradas correctamente","icono"=>"success"]);
 		    }else{ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo eliminar la cabecera de la venta","icono"=>"error"]); }
+		}
+
+        /*---------- Controlador vaciar carrito ----------*/
+		public function vaciarCarritoVentaControlador(){
+			unset($_SESSION['datos_producto_venta']);
+			unset($_SESSION['datos_cliente_venta']);
+			unset($_SESSION['venta_total']);
+			
+			return json_encode([
+				"tipo"=>"recargar",
+				"titulo"=>"Carrito Vaciado",
+				"texto"=>"Se han removido todos los productos y el cliente.",
+				"icono"=>"success"
+			]);
 		}
 	}

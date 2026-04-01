@@ -210,8 +210,12 @@
                             <input class="input" type="text" name="compra_nota" placeholder="Ej: Pago a 30 días">
                         </div>
                     </div>
-                    <p class="has-text-centered mt-5">
-                        <button type="submit" class="button is-success is-large is-rounded">GENERAR ORDEN</button>
+                   <p class="has-text-centered mt-5">
+                        <button type="submit" class="button is-success is-rounded"><i class="far fa-save"></i> &nbsp; GENERAR ORDEN</button>
+                        
+                        <button type="button" class="button is-danger is-outlined is-rounded ml-3" onclick="vaciarCarritoCompleto()">
+                            <i class="fas fa-trash-alt"></i> &nbsp; Vaciar Carrito
+                        </button>
                     </p>
                     <?php } ?>
                 </div>
@@ -250,7 +254,7 @@
 
         function vaciarCarritoCompleto(){
             Swal.fire({
-                title: '¿Estás seguro?', text: "Se vaciará la orden", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, vaciar'
+                title: '¿Estás seguro?', text: "Se vaciará la orden y podrá cambiar de proveedor", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, vaciar'
             }).then((result) => {
                 if (result.isConfirmed) {
                     let datos = new FormData(); datos.append('modulo_compra', 'vaciar');
