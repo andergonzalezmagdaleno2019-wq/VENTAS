@@ -53,7 +53,7 @@
                 <div class="column is-6">
                     <label class="label">Pregunta 1</label>
                     <div class="select is-fullwidth is-info">
-                        <select name="usuario_pregunta_1" required>
+                        <select name="usuario_pregunta_1" <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?>>
                             <option value="Nombre de tu primera mascota">¿Nombre de tu primera mascota?</option>
                             <option value="Ciudad de nacimiento">¿En qué ciudad naciste?</option>
                         </select>
@@ -61,13 +61,13 @@
                 </div>
                 <div class="column is-6">
                     <label class="label">Respuesta 1</label>
-                    <input class="input" type="text" name="usuario_respuesta_1" required maxlength="100">
+                    <input class="input" type="text" name="usuario_respuesta_1" <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?> maxlength="100">
                 </div>
 
                 <div class="column is-6">
                     <label class="label">Pregunta 2</label>
                     <div class="select is-fullwidth is-info">
-                        <select name="usuario_pregunta_2" required>
+                        <select name="usuario_pregunta_2" <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?>>
                             <option value="Nombre de tu escuela primaria">¿Nombre de tu escuela primaria?</option>
                             <option value="Color favorito">¿Cuál es tu color favorito?</option>
                         </select>
@@ -75,13 +75,13 @@
                 </div>
                 <div class="column is-6">
                     <label class="label">Respuesta 2</label>
-                    <input class="input" type="text" name="usuario_respuesta_2" required maxlength="100">
+                    <input class="input" type="text" name="usuario_respuesta_2" <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?> maxlength="100">
                 </div>
 
                 <div class="column is-6">
                     <label class="label">Pregunta 3</label>
                     <div class="select is-fullwidth is-info">
-                        <select name="usuario_pregunta_3" required>
+                        <select name="usuario_pregunta_3" <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?>>
                             <option value="Marca de tu primer carro">¿Marca de tu primer carro/moto?</option>
                             <option value="Nombre de tu abuelo">¿Nombre de tu abuelo paterno?</option>
                         </select>
@@ -89,7 +89,7 @@
                 </div>
                 <div class="column is-6">
                     <label class="label">Respuesta 3</label>
-                    <input class="input" type="text" name="usuario_respuesta_3" required maxlength="100">
+                    <input class="input" type="text" name="usuario_respuesta_3" <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?> maxlength="100">
                 </div>
             </div>
 

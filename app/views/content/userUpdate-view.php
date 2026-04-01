@@ -10,7 +10,7 @@
 		<h2 class="subtitle"><i class="fas fa-sync-alt"></i> &nbsp; Actualizar mis datos y contraseña</h2>
 	<?php }else{ ?>
 		<h1 class="title">Usuarios</h1>
-		<h2 class="subtitle"><i class="fas fa-sync-alt"></i> &nbsp; Actualizar datos del empleado</h2>
+		<h2 class="subtitle"><i class="fas fa-user-edit"></i> &nbsp; Actualizar datos del empleado</h2>
 	<?php } ?>
 </div>
 
@@ -99,24 +99,32 @@
         <?php } ?>
 
 		<hr>
-		<p class="has-text-centered has-text-info mb-4">
-			<i class="fas fa-lock"></i> <strong>ZONA DE SEGURIDAD:</strong> Si desea actualizar la contraseña, llene ambos campos. Si NO desea cambiarla, déjelos vacíos.
-		</p>
 		
-		<div class="columns">
-		  	<div class="column">
-		    	<div class="control">
-					<label>Nueva contraseña (Mínimo 7 caracteres)</label>
-				  	<input class="input" type="password" name="usuario_clave_1" pattern="[a-zA-Z0-9$@.-]{7,100}" minlength="7" maxlength="100" title="Mínimo 7 caracteres permitidos." >
-				</div>
-		  	</div>
-		  	<div class="column">
-		    	<div class="control">
-					<label>Repetir nueva contraseña</label>
-				  	<input class="input" type="password" name="usuario_clave_2" pattern="[a-zA-Z0-9$@.-]{7,100}" minlength="7" maxlength="100" title="Debe coincidir con la clave anterior." >
-				</div>
-		  	</div>
-		</div>
+		<!-- La zona de contraseña SOLO se muestra si el usuario está editando su propia cuenta -->
+		<?php if($id == $_SESSION['id']): ?>
+			<p class="has-text-centered has-text-info mb-4">
+				<i class="fas fa-lock"></i> <strong>ZONA DE SEGURIDAD:</strong> Si desea actualizar la contraseña, llene ambos campos. Si NO desea cambiarla, déjelos vacíos.
+			</p>
+			
+			<div class="columns">
+			  	<div class="column">
+			    	<div class="control">
+						<label>Nueva contraseña (Mínimo 7 caracteres)</label>
+					  	<input class="input" type="password" name="usuario_clave_1" pattern="[a-zA-Z0-9$@.-]{7,100}" minlength="7" maxlength="100" title="Mínimo 7 caracteres permitidos." >
+					</div>
+			  	</div>
+			  	<div class="column">
+			    	<div class="control">
+						<label>Repetir nueva contraseña</label>
+					  	<input class="input" type="password" name="usuario_clave_2" pattern="[a-zA-Z0-9$@.-]{7,100}" minlength="7" maxlength="100" title="Debe coincidir con la clave anterior." >
+					</div>
+			  	</div>
+			</div>
+		<?php else: ?>
+			<!-- Si es admin editando otro usuario, NO se muestran campos de contraseña -->
+			<input type="hidden" name="usuario_clave_1" value="">
+			<input type="hidden" name="usuario_clave_2" value="">
+		<?php endif; ?>
 
 		<p class="has-text-centered mt-5">
 			<button type="submit" class="button is-success is-rounded"><i class="fas fa-sync-alt"></i> &nbsp; Guardar Cambios</button>

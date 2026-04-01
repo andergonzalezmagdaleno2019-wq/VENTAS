@@ -310,7 +310,7 @@
             }
             return json_encode($alerta);
         }
-       /*----------  Controlador actualizar usuario  ----------*/
+        /*----------  Controlador actualizar usuario  ----------*/
         public function actualizarUsuarioControlador(){
 
             $id=$this->limpiarCadena($_POST['usuario_id']);
@@ -325,6 +325,12 @@
             // Verificamos si es una actualización de PERFIL (Usuario normal) o de ADMINISTRACIÓN
             $tipo_edicion = isset($_POST['tipo_edicion']) && $_POST['tipo_edicion'] == "perfil" ? "perfil" : "admin";
 
+            // Variable para saber si el usuario está editando su propia cuenta
+            $es_propia_cuenta = ($id == $_SESSION['id']);
+
+            // === Variable para saber si es obligatorio completar preguntas (primer inicio) ===
+            $es_obligatorio_seguridad = isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente'] === true;
+
             if($tipo_edicion == "perfil"){
                 /*========== EDICIÓN LIMITADA PARA USUARIOS NO ADMIN ==========*/
                 $nombre = $datos['usuario_nombre'];
@@ -336,19 +342,42 @@
                 $caja = $datos['caja_id'];
                 $rol = $datos['rol_id'];
 
-                // Captura de las 3 PREGUNTAS Y RESPUESTAS
-                $p1 = $this->limpiarCadena($_POST['usuario_pregunta_1']);
-                $r1 = $this->limpiarCadena($_POST['usuario_respuesta_1']);
-                $p2 = $this->limpiarCadena($_POST['usuario_pregunta_2']);
-                $r2 = $this->limpiarCadena($_POST['usuario_respuesta_2']);
-                $p3 = $this->limpiarCadena($_POST['usuario_pregunta_3']);
-                $r3 = $this->limpiarCadena($_POST['usuario_respuesta_3']);
+                // === Preguntas de seguridad - Solo se actualizan si se enviaron nuevos valores ===
+                $p1 = isset($_POST['usuario_pregunta_1']) && !empty($_POST['usuario_pregunta_1']) 
+                    ? $this->limpiarCadena($_POST['usuario_pregunta_1']) 
+                    : $datos['usuario_pregunta_1'];
+                
+                $r1 = isset($_POST['usuario_respuesta_1']) && !empty($_POST['usuario_respuesta_1']) 
+                    ? $this->limpiarCadena($_POST['usuario_respuesta_1']) 
+                    : $datos['usuario_respuesta_1'];
+                
+                $p2 = isset($_POST['usuario_pregunta_2']) && !empty($_POST['usuario_pregunta_2']) 
+                    ? $this->limpiarCadena($_POST['usuario_pregunta_2']) 
+                    : $datos['usuario_pregunta_2'];
+                
+                $r2 = isset($_POST['usuario_respuesta_2']) && !empty($_POST['usuario_respuesta_2']) 
+                    ? $this->limpiarCadena($_POST['usuario_respuesta_2']) 
+                    : $datos['usuario_respuesta_2'];
+                
+                $p3 = isset($_POST['usuario_pregunta_3']) && !empty($_POST['usuario_pregunta_3']) 
+                    ? $this->limpiarCadena($_POST['usuario_pregunta_3']) 
+                    : $datos['usuario_pregunta_3'];
+                
+                $r3 = isset($_POST['usuario_respuesta_3']) && !empty($_POST['usuario_respuesta_3']) 
+                    ? $this->limpiarCadena($_POST['usuario_respuesta_3']) 
+                    : $datos['usuario_respuesta_3'];
                 
                 $clave1=$this->limpiarCadena($_POST['usuario_clave_1']);
                 $clave2=$this->limpiarCadena($_POST['usuario_clave_2']);
 
-                // Validación de obligatoriedad para las 3 preguntas
-                if($r1=="" || $r2=="" || $r3==""){
+                // Si NO es su propia cuenta, forzamos que las contraseñas lleguen vacías
+                if(!$es_propia_cuenta){
+                    $clave1 = '';
+                    $clave2 = '';
+                }
+
+                // === Validación de preguntas SOLO si es primer inicio (seguridad_pendiente) ===
+                if($es_obligatorio_seguridad && ($r1=="" || $r2=="" || $r3=="")){
                     $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Debes responder las 3 preguntas de seguridad obligatoriamente","icono"=>"error"];
                     return json_encode($alerta); exit();
                 }
@@ -365,10 +394,47 @@
                 $caja=$this->limpiarCadena($_POST['usuario_caja']);
                 $rol = isset($_POST['usuario_rol']) ? $this->limpiarCadena($_POST['usuario_rol']) : $datos['rol_id'];
                 
-                // El admin mantiene las preguntas que ya existían
-                $p1 = $datos['usuario_pregunta_1']; $r1 = $datos['usuario_respuesta_1'];
-                $p2 = $datos['usuario_pregunta_2']; $r2 = $datos['usuario_respuesta_2'];
-                $p3 = $datos['usuario_pregunta_3']; $r3 = $datos['usuario_respuesta_3'];
+                // Si NO es su propia cuenta, forzamos que las contraseñas lleguen vacías
+                if(!$es_propia_cuenta){
+                    $clave1 = '';
+                    $clave2 = '';
+                }
+                
+                // === Admin editando a otro usuario NO modifica preguntas de seguridad ===
+                if($es_propia_cuenta){
+                    // Si es su propia cuenta, el admin puede modificar sus preguntas de seguridad (si las envía)
+                    $p1 = isset($_POST['usuario_pregunta_1']) && !empty($_POST['usuario_pregunta_1']) 
+                        ? $this->limpiarCadena($_POST['usuario_pregunta_1']) 
+                        : $datos['usuario_pregunta_1'];
+                    
+                    $r1 = isset($_POST['usuario_respuesta_1']) && !empty($_POST['usuario_respuesta_1']) 
+                        ? $this->limpiarCadena($_POST['usuario_respuesta_1']) 
+                        : $datos['usuario_respuesta_1'];
+                    
+                    $p2 = isset($_POST['usuario_pregunta_2']) && !empty($_POST['usuario_pregunta_2']) 
+                        ? $this->limpiarCadena($_POST['usuario_pregunta_2']) 
+                        : $datos['usuario_pregunta_2'];
+                    
+                    $r2 = isset($_POST['usuario_respuesta_2']) && !empty($_POST['usuario_respuesta_2']) 
+                        ? $this->limpiarCadena($_POST['usuario_respuesta_2']) 
+                        : $datos['usuario_respuesta_2'];
+                    
+                    $p3 = isset($_POST['usuario_pregunta_3']) && !empty($_POST['usuario_pregunta_3']) 
+                        ? $this->limpiarCadena($_POST['usuario_pregunta_3']) 
+                        : $datos['usuario_pregunta_3'];
+                    
+                    $r3 = isset($_POST['usuario_respuesta_3']) && !empty($_POST['usuario_respuesta_3']) 
+                        ? $this->limpiarCadena($_POST['usuario_respuesta_3']) 
+                        : $datos['usuario_respuesta_3'];
+                } else {
+                    // Admin editando a otro usuario: NO se modifican las preguntas
+                    $p1 = $datos['usuario_pregunta_1'];
+                    $r1 = $datos['usuario_respuesta_1'];
+                    $p2 = $datos['usuario_pregunta_2'];
+                    $r2 = $datos['usuario_respuesta_2'];
+                    $p3 = $datos['usuario_pregunta_3'];
+                    $r3 = $datos['usuario_respuesta_3'];
+                }
 
                 if($tipo_doc=="" || $dni=="" || $nombre=="" || $apellido=="" || $usuario==""){
                     $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Faltan campos obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
@@ -376,7 +442,8 @@
             }
 
             /*== Gestión de Claves ==*/
-            if($clave1!="" || $clave2!=""){
+            // Solo permitir cambio de contraseña si es su propia cuenta
+            if($es_propia_cuenta && ($clave1!="" || $clave2!="")){
                 if (strlen($clave1) < 7) {
                     $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "La clave debe tener al menos 7 caracteres.", "icono" => "error"];
                     return json_encode($alerta); exit();
@@ -428,7 +495,7 @@
                     $url_redireccion = APP_URL."dashboard/";
                     
                     $mensaje_titulo = "¡Perfil actualizado!";
-                    $mensaje_texto = "Tus preguntas de seguridad se guardaron correctamente";
+                    $mensaje_texto = "Tus datos se actualizaron correctamente";
                     
                 } else if($id == $_SESSION['id'] && $_SESSION['id'] == 1) {
                     // Es el admin editándose a sí mismo
