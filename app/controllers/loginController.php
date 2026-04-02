@@ -73,26 +73,24 @@
             if(isset($_POST['login_email']) && isset($_POST['login_clave'])){
                 
                 $email=$this->limpiarCadena($_POST['login_email']);
-                $clave=$this->limpiarCadena($_POST['login_clave']);
+                $clave = $_POST['login_clave'];
                 $captcha = isset($_POST['login_captcha']) ? $this->limpiarCadena($_POST['login_captcha']) : "";
 
                 /*== 1. VERIFICAR CORREO ==*/
-                if($email==""){
-                    echo '<article class="message is-danger"><div class="message-body"><strong>Campo Requerido:</strong><br>Por favor, ingresa tu <strong>Correo Electrónico</strong> para continuar.</div></article>';
-                    return;
-                }
-                if($this->verificarDatos("[a-zA-Z0-9@.-]{7,100}",$email)){
-                    echo '<article class="message is-danger"><div class="message-body"><strong>Formato de correo incorrecto</strong><br>El correo electrónico no es válido. Asegúrese de que no contenga espacios en blanco.</div></article>';
-                    return;
-                }
+                    if($email == "" || !filter_var($email, FILTER_VALIDATE_EMAIL)){
+                        echo '<article class="message is-danger"><div class="message-body"><strong>Error:</strong> Ingrese un correo electrónico válido.</div></article>';
+                        return;
+                    }
 
                 /*== 2. VERIFICAR CONTRASEÑA ==*/
                 if($clave==""){
                     echo '<article class="message is-danger"><div class="message-body"><strong>Campo Requerido:</strong><br>Por favor, ingresa tu <strong>Clave (Contraseña)</strong> para continuar.</div></article>';
                     return;
                 }
-                if($this->verificarDatos("[a-zA-Z0-9$@.-]{7,100}",$clave)){
-                    echo '<article class="message is-danger"><div class="message-body"><strong>Formato de clave incorrecto</strong><br>La contraseña no cumple con los requisitos de seguridad. Debe tener entre 7 y 100 caracteres.</div></article>';
+
+                // Validamos solo el largo (mínimo 7 caracteres) para permitir cualquier símbolo o letra
+                if(strlen($clave) < 7 || strlen($clave) > 100){
+                    echo '<article class="message is-danger"><div class="message-body"><strong>Formato de clave incorrecto</strong><br>La contraseña debe tener entre 7 y 100 caracteres.</div></article>';
                     return;
                 }
 
@@ -118,7 +116,8 @@
                         return;
                     }
 
-                    if(password_verify($clave,$check_usuario['usuario_clave'])){
+                    if(password_verify($clave, $check_usuario['usuario_clave'])){
+                        
 
                         # (ÉXITO) RESETEAR INTENTOS FALLIDOS #
                         if(isset($_SESSION['intentos_fallidos'][$email])){

@@ -1129,3 +1129,39 @@ body.dark-mode figure.image.is-inline-block {
 .acordeon-contenido button {
     transition: all 0.2s ease;
 }
+/* --- COMPONENTES DEL LOGIN --- */
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    border-top: 5px solid #3273dc;
+    padding: 2.5rem 2rem;
+    background-color: #ffffff;
+}
+
+/* Lógica de visibilidad de Logos */
+.logo-dark { display: none !important; }
+.logo-light { display: block !important; }
+
+/* Integración con tu Dark Mode actual */
+/* (Asegúrate de que coincida con la clase que usas para el modo oscuro) */
+.dark-mode .login-card {
+    background-color: #2c2c2c;
+    border-top-color: #4a8df8;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    color: #ffffff;
+}
+
+.dark-mode .login-card .label {
+    color: #eeeeee;
+}
+
+.dark-mode .logo-light { display: none !important; }
+.dark-mode .logo-dark { display: block !important; }
+
+/* Ajuste de la alerta de captcha en modo oscuro */
+.dark-mode .notification.is-info.is-light {
+    background-color: #243b55;
+    color: #d1e1f3;
+}

@@ -26,22 +26,39 @@
                 <p class="mb-4">Si no deseas cambiar tu contraseña, deja estos campos vacíos.</p>
             <?php endif; ?>
             
-            <div class="columns is-multiline">
-                <div class="column is-6">
-                    <label class="label">Nueva Contraseña <small class="has-text-grey">(mínimo 7 caracteres)</small></label>
-                    <input class="input" type="password" name="usuario_clave_1" 
+        <div class="columns is-multiline">
+            <div class="column is-6">
+                <label class="label">Nueva Contraseña <small class="has-text-grey">(mínimo 7 caracteres)</small></label>
+                <div class="control has-icons-right">
+                    <input class="input" type="password" name="usuario_clave_1" id="user_profile_clave_1"
                         pattern="[a-zA-Z0-9$@.-]{7,100}" maxlength="100"
                         title="La contraseña debe tener al menos 7 caracteres y puede incluir letras, números y los caracteres $ @ . -"
                         <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?>>
+                    
+                    <span class="icon is-small is-right" onclick="togglePassword('user_profile_clave_1', 'icon_profile_1')" style="pointer-events: all; cursor: pointer;">
+                        <i class="fas fa-eye" id="icon_profile_1"></i>
+                    </span>
                 </div>
-                <div class="column is-6">
-                    <label class="label">Repetir Nueva Contraseña <small class="has-text-grey">(mínimo 7 caracteres)</small></label>
-                    <input class="input" type="password" name="usuario_clave_2" 
+                <p class="help is-info mt-0" style="font-size: 0.85rem; line-height: 1.2;">
+                    <i class="fas fa-info-circle"></i> 
+                    Nota: Si tu clave inicia con una letra, se marcará en <strong>Mayúscula</strong> por defecto.
+                </p>
+            </div>
+
+            <div class="column is-6">
+                <label class="label">Repetir Nueva Contraseña <small class="has-text-grey">(mínimo 7 caracteres)</small></label>
+                <div class="control has-icons-right">
+                    <input class="input" type="password" name="usuario_clave_2" id="user_profile_clave_2"
                         pattern="[a-zA-Z0-9$@.-]{7,100}" maxlength="100"
                         title="La contraseña debe tener al menos 7 caracteres y puede incluir letras, números y los caracteres $ @ . -"
                         <?php echo (isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente']) ? 'required' : ''; ?>>
+                    
+                    <span class="icon is-small is-right" onclick="togglePassword('user_profile_clave_2', 'icon_profile_2')" style="pointer-events: all; cursor: pointer;">
+                        <i class="fas fa-eye" id="icon_profile_2"></i>
+                    </span>
                 </div>
             </div>
+</div>
             <p class="help is-info"><i class="fas fa-info-circle"></i> La contraseña debe tener mínimo 7 caracteres (letras, números y/o $ @ . -)</p>
 
             <hr>
@@ -101,3 +118,24 @@
         </form>
     </div>
 </div>
+
+<script>
+    function togglePassword(inputId, iconId) {
+    const passwordInput = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+
+    if (passwordInput.type === 'password') {
+        // Mostramos la contraseña
+        passwordInput.type = 'text';
+        // Cambiamos el icono a un ojo tachado
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        // Ocultamos la contraseña
+        passwordInput.type = 'password';
+        // Volvemos al icono original
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>

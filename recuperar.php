@@ -79,18 +79,31 @@
 
                         <div id="paso-nueva-clave" style="display: none;">
                             <p class="has-text-success is-size-7 mb-4">Identidad confirmada. Ingresa tu nueva clave:</p>
+                            
                             <div class="field">
-                                <div class="control has-icons-left">
+                                <div class="control has-icons-left has-icons-right">
                                     <input class="input is-rounded" type="password" id="nueva_clave" placeholder="Nueva clave">
-                                    <span class="icon is-left"><i class="fas fa-lock"></i></span>
+                                    <span class="icon is-left">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <span class="icon is-small is-right" onclick="togglePassword('nueva_clave', 'icon_nueva')" style="pointer-events: all; cursor: pointer;">
+                                        <i class="fas fa-eye" id="icon_nueva"></i>
+                                    </span>
                                 </div>
                             </div>
+
                             <div class="field">
-                                <div class="control has-icons-left">
+                                <div class="control has-icons-left has-icons-right">
                                     <input class="input is-rounded" type="password" id="confirmar_clave" placeholder="Confirmar clave">
-                                    <span class="icon is-left"><i class="fas fa-check-double"></i></span>
+                                    <span class="icon is-left">
+                                        <i class="fas fa-check-double"></i>
+                                    </span>
+                                    <span class="icon is-small is-right" onclick="togglePassword('confirmar_clave', 'icon_confirmar')" style="pointer-events: all; cursor: pointer;">
+                                        <i class="fas fa-eye" id="icon_confirmar"></i>
+                                    </span>
                                 </div>
                             </div>
+
                             <button class="button is-success is-rounded is-fullwidth mt-5" onclick="cambiarPassword('<?php echo $user_email; ?>')">
                                 <strong>Actualizar Contraseña</strong>
                             </button>
@@ -109,6 +122,19 @@
     <?php require_once "./app/views/inc/script.php"; ?>
 
     <script>
+
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = "password";
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
         // Lógica para manejar las 3 preguntas
         const listaPreguntas = <?php echo json_encode($preguntas); ?>;
         let preguntaActualNum = 1;
