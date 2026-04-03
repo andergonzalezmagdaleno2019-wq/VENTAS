@@ -186,11 +186,25 @@
             let p1 = document.getElementById('nueva_clave').value;
             let p2 = document.getElementById('confirmar_clave').value;
 
-            if(p1 !== p2 || p1 == "") {
-                Swal.fire('Error', 'Las claves no coinciden', 'error');
+            // 1. Validar que no estén vacíos
+            if(p1 == "" || p2 == "") {
+                Swal.fire('Atención', 'Por favor, completa ambos campos de contraseña.', 'warning');
                 return;
             }
 
+            // 2. Validar longitud mínima (7 caracteres)
+            if(p1.length < 7) {
+                Swal.fire('Seguridad', 'La nueva contraseña debe tener al menos 7 caracteres.', 'error');
+                return;
+            }
+
+            // 3. Validar que coincidan
+            if(p1 !== p2) {
+                Swal.fire('Error', 'Las contraseñas ingresadas no coinciden.', 'error');
+                return;
+            }
+
+            // Si pasa las validaciones, se procede con el envío
             let datos = new FormData();
             datos.append("modulo_recuperacion", "cambiar_password");
             datos.append("user_email", email);
@@ -209,6 +223,10 @@
                 } else {
                     Swal.fire('Error', res.mensaje, 'error');
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'No se pudo procesar la solicitud', 'error');
             });
         }
     </script>
