@@ -1,12 +1,14 @@
 <section class="full-width navLateral scroll" id="navLateral">
     <div class="full-width navLateral-body">
-        <div class="full-width navLateral-body-logo has-text-centered tittles is-uppercase">
-            Sistema de ventas 
+        
+        <div class="full-width navLateral-body-logo has-text-centered tittles is-uppercase" style="color: white; font-size: 22px;">
+            <strong style="color: white;">FASTNET</strong>
         </div>
+        
         <figure class="full-width" style="height: 77px;">
             <div class="navLateral-body-cl">
                 <?php
-                    if(is_file("./app/views/fotos/".$_SESSION['foto'])){
+                    if(isset($_SESSION['foto']) && is_file("./app/views/fotos/".$_SESSION['foto'])){
                         echo '<img class="is-rounded img-responsive" src="'.APP_URL.'app/views/fotos/'.$_SESSION['foto'].'">';
                     }else{
                         echo '<img class="is-rounded img-responsive" src="'.APP_URL.'app/views/fotos/default.png">';
@@ -14,66 +16,44 @@
                 ?>
             </div>
             <figcaption class="navLateral-body-cr">
-                <span>
-                    <?php echo $_SESSION['nombre']; ?><br>
-                    <small><?php echo $_SESSION['usuario']; ?></small>
+                <span class="has-text-dark" style="display: block; padding-top: 23px; font-size: 17px; font-weight: bold; line-height: 1.2;">
+                    <?php echo $_SESSION['nombre'] . " " . $_SESSION['apellido']; ?>
                 </span>
             </figcaption>
         </figure>
+        
         <div class="full-width tittles navLateral-body-tittle-menu has-text-centered is-uppercase">
-            <i class="fas fa-th-large fa-fw"></i> &nbsp; <?php echo APP_NAME; ?>
+            <i class="fas fa-compass fa-fw"></i> &nbsp; Menú Principal
         </div>
+        
         <nav class="full-width">
             <ul class="full-width list-unstyle menu-principal">
 
                 <?php 
-                // =============================================
-                // CAJA FUERTE: Para CUALQUIER usuario con seguridad pendiente
-                // que NO sea el admin (ID 1)
-                // =============================================
                 if(isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente'] == true && $_SESSION['id'] != 1){ 
                 ?>
-                    
-                    <!-- MODO CAJA FUERTE - SOLO MI SEGURIDAD -->
                     <li class="full-width">
                         <a href="<?php echo APP_URL; ?>userProfile/" class="full-width" style="background-color: #fff3f3; border-left: 4px solid #ff3860;">
-                            <div class="navLateral-body-cl">
-                                <i class="fas fa-user-shield fa-fw" style="color: #ff3860;"></i>
-                            </div>
-                            <div class="navLateral-body-cr" style="color: #ff3860; font-weight: bold;">
-                                MI SEGURIDAD (Pendiente)
-                            </div>
+                            <div class="navLateral-body-cl"><i class="fas fa-user-shield fa-fw" style="color: #ff3860;"></i></div>
+                            <div class="navLateral-body-cr" style="color: #ff3860; font-weight: bold;">MI SEGURIDAD (Pendiente)</div>
                         </a>
                     </li>
-                    
                     <li class="full-width divider-menu-h"></li>
-
-                    <!-- Cerrar sesión -->
                     <li class="full-width">
                         <a href="<?php echo APP_URL; ?>logOut/" class="full-width btn-exit">
                             <div class="navLateral-body-cl"><i class="fas fa-power-off"></i></div>
                             <div class="navLateral-body-cr">CERRAR SESIÓN</div>
                         </a>
                     </li>
-
                 <?php 
                 } else { 
-                    // =============================================
-                    // MODO NORMAL - MENÚ COMPLETO (para admin y usuarios sin seguridad pendiente)
-                    // =============================================
                 ?>
-
                     <li class="full-width">
                         <a href="<?php echo APP_URL; ?>dashboard/" class="full-width">
-                            <div class="navLateral-body-cl">
-                                <i class="fab fa-dashcube fa-fw"></i>
-                            </div>
-                            <div class="navLateral-body-cr">
-                                Inicio
-                            </div>
+                            <div class="navLateral-body-cl"><i class="fab fa-dashcube fa-fw"></i></div>
+                            <div class="navLateral-body-cr">Inicio</div>
                         </a>
                     </li>
-
                     <li class="full-width divider-menu-h"></li>
 
                     <?php if($_SESSION['rol'] == 1){ ?>
@@ -146,7 +126,6 @@
                             </li>
                         </ul>
                     </li>
-
                     <li class="full-width divider-menu-h"></li>
                     
                     <li class="full-width">
@@ -183,9 +162,7 @@
                         </ul>
                     </li>
                     <li class="full-width divider-menu-h"></li>
-                    <?php } ?>
-
-                    <?php if($_SESSION['rol'] == 1){ ?>
+                    
                     <li class="full-width">
                         <a href="#" class="full-width btn-subMenu">
                             <div class="navLateral-body-cl"><i class="fas fa-tags fa-fw"></i></div>
@@ -256,7 +233,6 @@
                     </li>
                     <li class="full-width divider-menu-h"></li>
                     <?php } ?>
-
                     <li class="full-width">
                         <a href="#" class="full-width btn-subMenu">
                             <div class="navLateral-body-cl"><i class="fas fa-shopping-cart fa-fw"></i></div>
@@ -284,7 +260,6 @@
                             </li>
                         </ul>
                     </li>
-
                     <li class="full-width divider-menu-h"></li>
 
                     <?php if($_SESSION['rol'] == 1){ ?>
@@ -327,35 +302,26 @@
                             </li>
                         </ul>
                     </li>
-                    
                     <li class="full-width divider-menu-h"></li>
                     <?php } ?>
 
-                    <!-- MI SEGURIDAD para usuarios NO ADMIN (roles 2, 3, etc.) -->
                     <?php if($_SESSION['id'] != 1){ ?>
                     <li class="full-width">
                         <a href="<?php echo APP_URL; ?>userProfile/" class="full-width">
-                            <div class="navLateral-body-cl">
-                                <i class="fas fa-user-shield fa-fw"></i>
-                            </div>
-                            <div class="navLateral-body-cr">
-                                MI SEGURIDAD
-                            </div>
+                            <div class="navLateral-body-cl"><i class="fas fa-user-shield fa-fw"></i></div>
+                            <div class="navLateral-body-cr">MI SEGURIDAD</div>
                         </a>
                     </li>
                     <li class="full-width divider-menu-h"></li>
                     <?php } ?>
 
-                    <!-- Cerrar sesión en modo normal -->
                     <li class="full-width">
                         <a href="<?php echo APP_URL; ?>logOut/" class="full-width btn-exit">
                             <div class="navLateral-body-cl"><i class="fas fa-power-off"></i></div>
                             <div class="navLateral-body-cr">Cerrar sesión</div>
                         </a>
                     </li>
-
                 <?php } ?>
-
             </ul>
         </nav>
     </div>
