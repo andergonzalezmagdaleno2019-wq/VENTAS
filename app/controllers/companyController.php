@@ -83,11 +83,11 @@
                 }
             }
 
-            $empresa_datos_reg=[
+			$empresa_datos_reg=[
 				["campo_nombre"=>"empresa_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
-                ["campo_nombre"=>"empresa_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
+				["campo_nombre"=>"empresa_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
 				["campo_nombre"=>"empresa_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono],
-				["campo_nombre"=>"empresa_email","campo_marcador"=>":Email","campo_valor"=>$email],
+				["campo_nombre"=>"empresa_emailKV","campo_marcador"=>":Email","campo_valor"=>$email], // <-- Corregido aquí
 				["campo_nombre"=>"empresa_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
 			];
 
@@ -161,11 +161,11 @@
 				}
             }
 
-            $empresa_datos_up=[
+			$empresa_datos_up=[
 				["campo_nombre"=>"empresa_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
-                ["campo_nombre"=>"empresa_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
+				["campo_nombre"=>"empresa_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
 				["campo_nombre"=>"empresa_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono],
-				["campo_nombre"=>"empresa_email","campo_marcador"=>":Email","campo_valor"=>$email],
+				["campo_nombre"=>"empresa_emailKV","campo_marcador"=>":Email","campo_valor"=>$email], // <-- Corregido aquí
 				["campo_nombre"=>"empresa_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
 			];
 

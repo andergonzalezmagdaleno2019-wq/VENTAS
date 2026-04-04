@@ -270,34 +270,65 @@
 
 			return $tabla;
 		}
-
 		/*----------  Controlador eliminar categoria  ----------*/
 		public function eliminarCategoriaControlador(){
 
 			$id=$this->limpiarCadena($_POST['categoria_id']);
 
-		    $datos=$this->ejecutarConsulta("SELECT * FROM categoria WHERE categoria_id='$id'");
-		    if($datos->rowCount()<=0){
-		        $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos encontrado la categoría en el sistema","icono"=>"error"]; return json_encode($alerta); exit();
-		    }else{
-		    	$datos=$datos->fetch();
-		    }
+			# Verificando existencia y obteniendo datos #
+			$datos=$this->ejecutarConsulta("SELECT * FROM categoria WHERE categoria_id='$id'");
+			if($datos->rowCount()<=0){
+				$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos encontrado el registro en el sistema","icono"=>"error"]; return json_encode($alerta); exit();
+			}else{
+				$datos=$datos->fetch();
+			}
 
-		    $check_productos=$this->ejecutarConsulta("SELECT categoria_id FROM producto WHERE categoria_id='$id' LIMIT 1");
-		    if($check_productos->rowCount()>0){
-		        $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No podemos eliminar la categoría del sistema ya que tiene productos asociados. Debe eliminar o cambiar de categoría los productos primero.","icono"=>"error"]; return json_encode($alerta); exit();
-		    }
+			# IDENTIFICAR SI ES CATEGORÍA O SUBCATEGORÍA #
+			$es_subcategoria = ($datos['categoria_padre_id'] != NULL && $datos['categoria_padre_id'] != "");
+			$termino = ($es_subcategoria) ? "subcategoría" : "categoría";
 
-		    $eliminarCategoria=$this->eliminarRegistro("categoria","categoria_id",$id);
+			# VALIDACIÓN 1: Si es Categoría Principal, verificar si tiene hijos (Subcategorías) #
+			if(!$es_subcategoria){
+				$check_subcategorias=$this->ejecutarConsulta("SELECT categoria_id FROM categoria WHERE categoria_padre_id='$id' LIMIT 1");
+				if($check_subcategorias->rowCount()>0){
+					$alerta=[
+						"tipo"=>"simple",
+						"titulo"=>"Operación denegada",
+						"texto"=>"No podemos eliminar esta categoría porque tiene subcategorías dependientes. Elimine primero las subcategorías asociadas.",
+						"icono"=>"error"
+					]; 
+					return json_encode($alerta); exit();
+				}
+			}
 
-		    if($eliminarCategoria->rowCount()==1){
-                $this->guardarBitacora("Categorías", "Eliminación", "Se eliminó la categoría: ".$datos['categoria_nombre']);
-		        $alerta=["tipo"=>"recargar","titulo"=>"Categoría eliminada","texto"=>"La categoría ".$datos['categoria_nombre']." ha sido eliminada del sistema correctamente","icono"=>"success"];
-		    }else{
-		    	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos podido eliminar la categoría ".$datos['categoria_nombre']." del sistema, por favor intente nuevamente","icono"=>"error"];
-		    }
+			# VALIDACIÓN 2: Verificar productos asociados (aplica para ambas) #
+			$check_productos=$this->ejecutarConsulta("SELECT categoria_id FROM producto WHERE categoria_id='$id' LIMIT 1");
+			if($check_productos->rowCount()>0){
+				$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Error",
+					"texto"=>"No podemos eliminar la ".$termino." ya que tiene productos asociados en el inventario.",
+					"icono"=>"error"
+				]; 
+				return json_encode($alerta); exit();
+			}
 
-		    return json_encode($alerta);
+			$eliminarCategoria=$this->eliminarRegistro("categoria","categoria_id",$id);
+
+			if($eliminarCategoria->rowCount()==1){
+				$this->guardarBitacora("Categorías", "Eliminación", "Se eliminó la ".$termino.": ".$datos['categoria_nombre']);
+				
+				$alerta=[
+					"tipo"=>"recargar",
+					"titulo"=>ucfirst($termino)." eliminada",
+					"texto"=>"La ".$termino." '".$datos['categoria_nombre']."' ha sido eliminada correctamente.",
+					"icono"=>"success"
+				];
+			}else{
+				$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos podido eliminar la ".$termino.", por favor intente nuevamente","icono"=>"error"];
+			}
+
+			return json_encode($alerta);
 		}
 
 
