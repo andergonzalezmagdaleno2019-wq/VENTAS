@@ -12,7 +12,9 @@ if (isset($_POST['modulo_recuperacion'])) {
     // VALIDAR RESPUESTA DE SEGURIDAD
     if ($_POST['modulo_recuperacion'] == "validar_respuesta") {
         $email = $insLogin->limpiarCadena($_POST['user_email']);
-        $respuesta_usuario = $insLogin->limpiarCadena($_POST['user_resp']);
+        
+        // MODIFICACIÓN: Capturamos, limpiamos espacios y pasamos a minúsculas
+        $respuesta_usuario_limpia = strtolower(trim($insLogin->limpiarCadena($_POST['user_resp'])));
         $num = (int)$_POST['pregunta_num']; // 1, 2 o 3
 
         // Definimos las columnas según el número enviado desde el JS
@@ -23,8 +25,8 @@ if (isset($_POST['modulo_recuperacion'])) {
         if ($check_user->rowCount() == 1) {
             $datos = $check_user->fetch();
             
-            // Comparamos la respuesta 
-            if ($datos[$columna_respuesta] == $respuesta_usuario) {
+            // MODIFICACIÓN: Comparamos usando password_verify para leer el Hash de la base de datos
+            if (password_verify($respuesta_usuario_limpia, $datos[$columna_respuesta])) {
                 echo json_encode([
                     "error" => false,
                     "mensaje" => "Identidad confirmada"
