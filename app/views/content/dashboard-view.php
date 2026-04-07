@@ -88,11 +88,9 @@
                     </p>
                 </div>
 
-                <?php if($_SESSION['rol'] != 2): ?>
                 <a href="<?php echo APP_URL; ?>app/pdf/report_daily_closing.php" target="_blank" class="button is-success is-rounded is-outlined mt-2 is-small">
                     <i class="fas fa-file-pdf"></i> &nbsp; Imprimir Cierre Diario
                 </a>
-                <?php endif; ?>
             </div>
         </div>
     </div>
