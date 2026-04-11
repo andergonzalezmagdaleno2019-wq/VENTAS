@@ -180,7 +180,7 @@ public function agregarProductoCompraControlador(){
     $cantidad=$this->limpiarCadena($_POST['compra_cantidad']);
     $costo=$this->limpiarCadena($_POST['compra_costo']);
     
-    // 1. CAPTURAMOS EL PROVEEDOR QUE VIENE DEL FORMULARIO
+    // PROVEEDOR QUE VIENE DEL FORMULARIO
     $proveedor_form = isset($_POST['compra_proveedor']) ? $this->limpiarCadena($_POST['compra_proveedor']) : "";
 
     if($cantidad<=0){ 
@@ -188,13 +188,12 @@ public function agregarProductoCompraControlador(){
         exit(); 
     }
     
-    // 2. VALIDACIÓN: SI NO VIENE PROVEEDOR, REBOTAR
+    // SI NO VIENE PROVEEDOR, REBOTAR
     if($proveedor_form == ""){
         return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Seleccione un proveedor antes de agregar productos","icono"=>"error"]);
         exit();
     }
 
-    // 3. BLOQUEO ESTRICTO: 
     // Si ya existe un proveedor en la sesión Y hay productos en el carrito...
     if(isset($_SESSION['compra_proveedor_id']) && !empty($_SESSION['datos_compra'])){
         // Si el proveedor que intenta enviar es distinto al que ya inició la orden
@@ -223,7 +222,6 @@ public function agregarProductoCompraControlador(){
     
     $costo_ref = $campos['producto_costo'];
 
-    /*--- TU LÓGICA ORIGINAL ---*/
     $detalle=[ 
         "producto_id"=>$campos['producto_id'], 
         "producto_codigo"=>$campos['producto_codigo'], 
@@ -267,7 +265,7 @@ public function agregarProductoCompraControlador(){
             // Limpiamos los productos
             unset($_SESSION['datos_compra']);
             
-            // LIBERAMOS AL PROVEEDOR PARA PODER SELECCIONAR OTRO
+            // LIBERAR AL PROVEEDOR PARA PODER SELECCIONAR OTRO
             unset($_SESSION['compra_proveedor_id']);
             
             return json_encode(["tipo"=>"recargar","titulo"=>"Vaciado","texto"=>"Orden limpiada","icono"=>"success"]);
@@ -386,7 +384,7 @@ public function agregarProductoCompraControlador(){
             }else{ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar","icono"=>"error"]); }
         }
 
-        /*---------- Función Inteligente: Actualizar Saldos Financieros ----------*/
+        // Actualizar Saldos Financieros 
         protected function actualizarSaldosCompra($compra_id){
             $total_factura = (float) $this->ejecutarConsulta("SELECT compra_total FROM compra WHERE compra_id='$compra_id'")->fetchColumn();
             $total_pagado = (float) $this->ejecutarConsulta("SELECT SUM(pago_monto) FROM compra_pagos WHERE compra_id='$compra_id'")->fetchColumn();
@@ -403,7 +401,7 @@ public function agregarProductoCompraControlador(){
 
             $this->ejecutarConsulta("UPDATE compra SET compra_saldo_pendiente='$nuevo_saldo', compra_estado_pago='$estado' WHERE compra_id='$compra_id'");
         }
-        /*---------- Recibir Mercancía (Lógica ERP con Auto-Pago y Cuotas de Crédito) ----------*/
+        // Recibir Mercancía (Lógica ERP con Auto-Pago y Cuotas de Crédito) 
         public function registrarRecepcionControlador() {
             $compra_id = $this->limpiarCadena($_POST['compra_id']);
             
@@ -421,11 +419,11 @@ public function agregarProductoCompraControlador(){
             $fecha_emision = isset($_POST['recepcion_fecha_emision']) ? $this->limpiarCadena($_POST['recepcion_fecha_emision']) : date("Y-m-d");
             $fecha_vencimiento = isset($_POST['compra_fecha_vencimiento']) ? $this->limpiarCadena($_POST['compra_fecha_vencimiento']) : date("Y-m-d");
             
-            // CAPTURAMOS LA CONDICIÓN DESDE EL SELECT QUE AGREGAMOS
+            // CAPTURAMOS LA CONDICIÓN DESDE EL SELECT 
             $condicion_pago = isset($_POST['compra_condicion']) ? $this->limpiarCadena($_POST['compra_condicion']) : "Contado";
             $nota_usuario = isset($_POST['recepcion_nota']) ? $this->limpiarCadena($_POST['recepcion_nota']) : "";
 
-            // --- ESCUDO ANTI-DUPLICADOS ---
+            // Cero duplicado
             if($numero_doc != "S/N" && $numero_doc != ""){
                 $check_doc = $this->ejecutarConsulta("SELECT recepcion_id FROM recepcion WHERE recepcion_nota LIKE '%[$tipo_doc Nro: $numero_doc %'");
                 if($check_doc->rowCount() > 0){ return json_encode(["tipo" => "simple", "titulo" => "Documento Duplicado", "texto" => "Este $tipo_doc ya fue registrado.", "icono" => "error"]); exit(); }
@@ -528,7 +526,7 @@ public function agregarProductoCompraControlador(){
             $fecha_emision = $this->limpiarCadena($_POST['factura_fecha']);
             $fecha_vencimiento = $this->limpiarCadena($_POST['factura_vencimiento']);
 
-            // --- ESCUDO ANTI-DUPLICADOS ---
+            // Cero duplicados
             if($numero_doc != ""){
                 $check_fac_recepcion = $this->ejecutarConsulta("SELECT recepcion_id FROM recepcion WHERE recepcion_nota LIKE '%[Factura Nro: $numero_doc %'");
                 $check_fac_compra = $this->ejecutarConsulta("SELECT compra_id FROM compra WHERE compra_nota_interna LIKE '%[Factura Oficial Nro: $numero_doc %'");
@@ -646,7 +644,6 @@ public function agregarProductoCompraControlador(){
 
             if($this->guardarDatos("compra_pagos", $datos_pago)->rowCount() >= 1){
 
-                // --- INICIO LÓGICA DE CUOTAS ---
                 // Buscamos las cuotas que falten por pagar de esta compra
                 $cuotas = $this->ejecutarConsulta("SELECT * FROM compra_cuotas WHERE compra_codigo='$codigo_compra' AND cuota_estado='Pendiente' ORDER BY cuota_numero ASC")->fetchAll();
 
@@ -658,19 +655,20 @@ public function agregarProductoCompraControlador(){
                     $monto_cuota = (float)$c['cuota_monto'];
                     $id_cuota = $c['cuota_id'];
 
-                    // Si el abono cubre o sobra para esta cuota, la marcamos como Pagada
                     if($monto_para_cuotas >= $monto_cuota){
+                        // 1. Marcamos la cuota individual como pagada
                         $this->ejecutarConsulta("UPDATE compra_cuotas SET cuota_estado='Pagado' WHERE cuota_id='$id_cuota'");
+                        
+                        // 2. Sumamos +1 a las cuotas pagadas en la tabla compra para que la frecuencia se resetee
+                        $this->ejecutarConsulta("UPDATE compra SET compra_cuotas_pagadas = compra_cuotas_pagadas + 1 WHERE compra_id='$id'");
+
                         $monto_para_cuotas -= $monto_cuota;
                     } else {
-                        // Si el abono no alcanza para completar la siguiente cuota, 
-                        // el saldo general bajará pero la cuota seguirá pendiente hasta el próximo abono.
                         break; 
                     }
                 }
-                // --- FIN LÓGICA DE CUOTAS ---
 
-                // 4. Actualizar saldos y estados generales
+                // Actualizar saldos y estados generales
                 $this->actualizarSaldosCompra($id);
 
                 // Si el saldo quedó en 0, que todas las cuotas digan Pagado
@@ -872,11 +870,11 @@ public function agregarProductoCompraControlador(){
             if (count($datos) >= 1) {
                 foreach ($datos as $rows) {
                     
-                    // --- LÓGICA CORREGIDA PARA DOCUMENTOS ---
+                    // LÓGICA PARA DOCUMENTOS
                     $doc_info = "S/N";
                     $doc_color = "is-light";
 
-                    // 1. Intentar extraer de la nota de recepción (recepcion_base)
+                    // Intentar extraer de la nota de recepción (recepcion_base)
                     if(!empty($rows['recepcion_base'])){
                         // Busca "Nro:" y captura todo hasta el siguiente espacio o "|"
                         if(preg_match('/Nro:\s*([^ |\]]+)/', $rows['recepcion_base'], $match_rec)) {
@@ -884,8 +882,9 @@ public function agregarProductoCompraControlador(){
                             $doc_color = "is-info is-light";
                         }
                     }
+                    
 
-                    // 2. Prioridad: Si hay una nota interna de factura, sobreescribir con ese número
+                    // Si hay una nota interna de factura, sobreescribir con ese número
                     if(!empty($rows['compra_nota_interna'])){
                         // Esta expresión es más flexible y omite palabras como "Oficial"
                         if(preg_match('/Nro:\s*([^ \]]+)/', $rows['compra_nota_interna'], $match_fac)) {
@@ -902,7 +901,7 @@ public function agregarProductoCompraControlador(){
                         else { $color_pago = "is-danger"; $texto_pago = "Pendiente"; }
                     }
 
-                    // --- MAGIA: INDICADOR DE CUOTAS VENCIDAS ---
+                    // INDICADOR DE CUOTAS VENCIDAS ---
                     $alerta_cuotas = "";
                     if($rows['compra_estado'] == "Facturada" || $rows['compra_estado'] == "Completado"){
                         $check_vencidas = $this->ejecutarConsulta("SELECT COUNT(cuota_id) FROM compra_cuotas WHERE compra_codigo='".$rows['compra_codigo']."' AND cuota_estado='Pendiente' AND cuota_fecha_vencimiento < '".date("Y-m-d")."'")->fetchColumn();
@@ -913,6 +912,7 @@ public function agregarProductoCompraControlador(){
 
                     $color_fisico = ($rows['compra_estado'] == "Completado" || $rows['compra_estado'] == "Facturada") ? "has-text-success" : "has-text-info";
                     if($rows['compra_estado'] == "Pendiente Factura") { $color_fisico = "has-text-warning-dark"; }
+                    
 
                     $tabla .= '<tr class="has-text-centered">
                         <td style="vertical-align: middle;">' . $rows['compra_codigo'] . '</td>

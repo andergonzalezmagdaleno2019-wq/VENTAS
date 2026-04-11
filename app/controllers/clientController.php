@@ -120,6 +120,7 @@ class clientController extends mainModel
 			$alerta = ["tipo" => "recargar", "titulo" => "Cliente eliminado", "texto" => "Eliminado con éxito", "icono" => "success"];
 		} else { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo eliminar el cliente", "icono" => "error"]; }
 		return json_encode($alerta);
+
 	}
 
     /*----------  Controlador actualizar cliente  ----------*/

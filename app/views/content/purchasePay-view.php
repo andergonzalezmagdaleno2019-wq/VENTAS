@@ -196,10 +196,53 @@
                                 </span>
                             </td>
                                                         
-                            <td class="<?php echo $clase_color; ?>" style="vertical-align: middle; line-height: 1.4;">
-                                <i class="fas <?php echo $icono; ?> is-size-5 mb-1"></i><br>
-                                <?php echo date("d/m/Y", strtotime($c['compra_fecha_vencimiento'])); ?><br>
-                                <small><?php echo $mensaje; ?></small>
+                            <td class="<?php echo $clase_color; ?>" style="vertical-align: middle; line-height: 1.2;">
+                                <?php if($condicion == "Crédito" || $condicion == "Credito"): ?>
+                                    
+                                    <?php 
+                                        $frecuencia = (int)$c['compra_frecuencia'];
+                                        $cuotas_pagadas = (int)$c['compra_cuotas_pagadas'];
+
+                                        // 1. Obtenemos la fecha de la compra
+                                        $fecha_compra = new DateTime($c['compra_fecha']);
+                                        $hoy = new DateTime(date("Y-m-d"));
+
+                                        // 2. Calculamos la fecha en la que "debería" empezar el ciclo actual
+                                        // Si ha pagado 1 cuota de 10 días, el nuevo ciclo empezó 10 días después de la compra
+                                        $dias_a_sumar = $cuotas_pagadas * $frecuencia;
+                                        $fecha_inicio_ciclo_actual = clone $fecha_compra;
+                                        $fecha_inicio_ciclo_actual->modify("+$dias_a_sumar days");
+
+                                        // 3. La nueva cuenta regresiva es: Frecuencia + (Días que van del ciclo actual)
+                                        $intervalo = $fecha_inicio_ciclo_actual->diff($hoy);
+                                        $dias_desde_inicio_ciclo = (int)$intervalo->format("%r%a");
+
+                                        // Frecuencia menos los días que han pasado desde que empezó el ciclo actual
+                                        $cuenta_regresiva = $frecuencia - $dias_desde_inicio_ciclo;
+                                    ?>
+
+                                    <span class="has-text-weight-bold is-size-3" style="display: block;">
+                                        <?php 
+                                            if($cuenta_regresiva < 0){
+                                                echo '<span class="has-text-danger">' . abs($cuenta_regresiva) . ' Días Vencidos</span>';
+                                            } elseif($cuenta_regresiva == 0){
+                                                echo '<span class="has-text-warning-dark">Paga Hoy</span>';
+                                            } else {
+                                                echo $cuenta_regresiva . ' Días';
+                                            }
+                                        ?>
+                                    </span>
+                                    
+                                    <span class="tag is-small is-link is-light has-text-weight-bold" style="font-size: 0.7rem; margin-top: 5px;">
+                                        PRÓXIMO ABONO (CADA <?php echo $frecuencia; ?> DÍAS)
+                                    </span>
+
+                                <?php else: ?>
+                                    <i class="fas <?php echo $icono; ?> is-size-5 mb-1"></i><br>
+                                    <span class="has-text-weight-bold">
+                                        <?php echo date("d/m/Y", strtotime($c['compra_fecha_vencimiento'])); ?>
+                                    </span>
+                                <?php endif; ?>
                             </td>
                             
                             <td style="vertical-align: middle; line-height: 1.4;">
@@ -213,24 +256,33 @@
                             
                             <td style="vertical-align: middle;">
                                 <div class="buttons is-centered">
-                                    <button class="button is-success is-small is-rounded" 
-                                            onclick="abrirModalAbono(
-                                                '<?php echo $c['compra_id']; ?>',
-                                                '<?php echo $c['compra_codigo']; ?>',
-                                                '<?php echo $c['compra_saldo_pendiente']; ?>',
-                                                '<?php echo $tasa_compra; ?>',
-                                                '<?php echo $c['compra_condicion']; ?>',
-                                                '<?php echo $c['compra_total']; ?>',
-                                                '<?php echo $c['compra_cuotas_total'] ?? 1; ?>', 
-                                                '<?php echo $c['compra_cuotas_pagadas'] ?? 0; ?>',
-                                                '<?php echo $c['compra_frecuencia'] ?? 0; ?>'
-                                            )"
-                                        <i class="fas fa-hand-holding-usd"></i>&nbsp; Abonar
-                                    </button>
+                                    <?php 
+                                        // Solo permitir abonos si ya tiene factura registrada
+                                        if($c['compra_estado'] == "Facturada" || $c['compra_estado'] == "Completado"): 
+                                    ?>
+                                        <button class="button is-success is-small is-rounded" 
+                                                onclick="abrirModalAbono(
+                                                    '<?php echo $c['compra_id']; ?>',
+                                                    '<?php echo $c['compra_codigo']; ?>',
+                                                    '<?php echo $c['compra_saldo_pendiente']; ?>',
+                                                    '<?php echo $tasa_compra; ?>',
+                                                    '<?php echo $c['compra_condicion']; ?>',
+                                                    '<?php echo $c['compra_total']; ?>',
+                                                    '<?php echo $c['compra_cuotas_total'] ?? 1; ?>', 
+                                                    '<?php echo $c['compra_cuotas_pagadas'] ?? 0; ?>',
+                                                    '<?php echo $c['compra_frecuencia'] ?? 0; ?>'
+                                                )">
+                                            <i class="fas fa-hand-holding-usd"></i>&nbsp; Abonar
+                                        </button>
+                                    <?php else: ?>
+                                        <span class="tag is-warning is-light has-text-weight-bold" title="Debe registrar la factura oficial para poder realizar abonos">
+                                            <i class="fas fa-file-invoice"></i>&nbsp; Pendiente Factura
+                                        </span>
+                                    <?php endif; ?>
                                     
                                     <button class="button is-info is-small is-rounded" 
-                                        onclick="verHistorialAbonos('<?php echo $c['compra_id']; ?>', '<?php echo $c['compra_codigo']; ?>')" 
-                                        title="Ver Historial">
+                                            onclick="verHistorialAbonos('<?php echo $c['compra_id']; ?>', '<?php echo $c['compra_codigo']; ?>')" 
+                                            title="Ver Historial">
                                         <i class="fas fa-history"></i>
                                     </button>
                                 </div>
@@ -431,7 +483,7 @@
         if(btnCredito) btnCredito.disabled = !esValido;
     }
 
-    /* BÚSQUEDA EN TIEMPO REAL */
+    // BÚSQUEDA EN TIEMPO REAL
     document.addEventListener('DOMContentLoaded', () => {
         const buscador = document.getElementById('buscador_cxp');
         if(buscador){
@@ -493,7 +545,7 @@
             document.getElementById('txt_codigo_credito').innerText = codigo;
             document.getElementById('pago_saldo_actual_credito').value = saldoFloat.toFixed(2);
             
-            // ASIGNACIÓN DE FRECUENCIA (Aquí estaba el fallo)
+            // ASIGNACIÓN DE FRECUENCIA 
             const txtFrecuencia = document.getElementById('info_frecuencia');
             if(txtFrecuencia) {
                 txtFrecuencia.innerText = diasFrecuencia + " días";
