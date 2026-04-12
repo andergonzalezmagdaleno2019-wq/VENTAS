@@ -23,7 +23,7 @@
         <h1 class="title is-2 has-text-weight-bold has-text-link"><?php echo $nombre_empresa; ?></h1>
     </div>
     <div class="columns is-flex is-justify-content-center">
-        <h2 class="subtitle">¡Bienvenido <?php 
+        <h2 class="subtitle bienvenida-texto">¡Bienvenido <?php 
             $nombre = isset($_SESSION['nombre']) ? $_SESSION['nombre'] : '';
             $apellido = isset($_SESSION['apellido']) ? $_SESSION['apellido'] : '';
             echo $nombre . " " . $apellido; 
@@ -42,6 +42,15 @@
     // 2. Alertas
     $alertas_bajas = $insLogin->seleccionarDatos("Normal", "producto WHERE producto_stock <= producto_stock_min AND producto_estado='Activo' ORDER BY producto_stock ASC", "*", 0);
     $alertas_altas = $insLogin->seleccionarDatos("Normal", "producto WHERE producto_stock >= producto_stock_max AND producto_estado='Activo' ORDER BY producto_stock DESC", "*", 0);
+    // Cuotas próximas a vencer (3 días o menos)
+    $alertas_deudas = $insLogin->ejecutarConsulta("
+    SELECT * FROM compra 
+    WHERE compra_condicion='Crédito' 
+    AND compra_saldo_pendiente > 0 
+    AND (
+        compra_frecuencia - DATEDIFF(CURRENT_DATE, DATE_ADD(compra_fecha, INTERVAL (compra_cuotas_pagadas * compra_frecuencia) DAY))
+    ) <= 3
+");
 
     // 3. Balance Diario de Ventas
     $condicion_venta = "WHERE venta_fecha = '".date("Y-m-d")."'";
@@ -116,6 +125,17 @@
                 <h4 class="title is-4"><i class="fas fa-boxes"></i> &nbsp; Aviso de Exceso de Inventario</h4>
                 <p>Hay <strong><?php echo $alertas_altas->rowCount(); ?></strong> productos que superan el stock máximo recomendado.</p>
                 <a href="<?php echo APP_URL; ?>productList/" class="button is-warning is-small is-rounded mt-2">Ver Inventario</a>
+            </div>
+        </div>
+        <?php } ?>
+
+        <?php if($_SESSION['rol'] != 2 && $alertas_deudas && $alertas_deudas->rowCount()>0){ ?>
+        <div class="column is-12">
+            <div class="notification is-link is-light">
+                <button class="delete"></button>
+                <h4 class="title is-4"><i class="fas fa-hand-holding-usd"></i> &nbsp; ¡Atención! Cuotas Próximas a Vencer</h4>
+                <p>Hay <strong><?php echo $alertas_deudas->rowCount(); ?></strong> factura(s) que vencen en los próximos 3 días. Por favor, revisa el cronograma de pagos.</p>
+                <a href="<?php echo APP_URL; ?>purchasePay/" class="button is-link is-small is-rounded mt-2">Gestionar Pagos Pendientes</a>
             </div>
         </div>
         <?php } ?>
@@ -199,6 +219,19 @@
     <?php endif; ?>
 
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Buscamos todos los botones "delete" que estén dentro de una "notification"
+        (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+            const $notification = $delete.parentNode;
+
+            $delete.addEventListener('click', () => {
+                // Esto elimina la notificación visualmente de la pantalla
+                $notification.style.display = 'none';
+            });
+        });
+    });
+</script>
 <?php if(isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente'] && $_SESSION['id'] != 1): ?>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
