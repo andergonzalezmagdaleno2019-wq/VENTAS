@@ -272,38 +272,38 @@
         }
 
 		/*----------  Controlador listar venta  ----------*/
-		public function listarVentaControlador($pagina,$registros,$url,$busqueda){
-			$pagina=$this->limpiarCadena($pagina); $registros=$this->limpiarCadena($registros); $url=$this->limpiarCadena($url); $url=APP_URL.$url."/"; $busqueda=$this->limpiarCadena($busqueda); $tabla=""; 
+        public function listarVentaControlador($pagina,$registros,$url,$busqueda){
+            $pagina=$this->limpiarCadena($pagina); $registros=$this->limpiarCadena($registros); $url=$this->limpiarCadena($url); $url=APP_URL.$url."/"; $busqueda=$this->limpiarCadena($busqueda); $tabla=""; 
             
             // NUEVA VARIABLE PARA GUARDAR LOS MODALES FUERA DE LA TABLA
             $modales = ""; 
             
-			$pagina = (isset($pagina) && $pagina>0) ? (int) $pagina : 1; $inicio = ($pagina>0) ? (($pagina * $registros)-$registros) : 0;
-			
+            $pagina = (isset($pagina) && $pagina>0) ? (int) $pagina : 1; $inicio = ($pagina>0) ? (($pagina * $registros)-$registros) : 0;
+            
             // AGREGAMOS TODOS LOS DATOS RESTANTES DEL CLIENTE A LA CONSULTA
             $campos_tablas="venta.venta_id,venta.venta_codigo,venta.venta_fecha,venta.venta_hora,venta.venta_total,venta.venta_tasa_bcv,venta.venta_metodo_pago,venta.venta_referencia,venta.usuario_id,venta.cliente_id,venta.caja_id,usuario.usuario_id,usuario.usuario_nombre,usuario.usuario_apellido,cliente.cliente_id,cliente.cliente_nombre,cliente.cliente_apellido,cliente.cliente_tipo_documento,cliente.cliente_numero_documento,cliente.cliente_provincia,cliente.cliente_ciudad,cliente.cliente_direccion,cliente.cliente_telefono,cliente.cliente_email";
-			
+            
             if(isset($busqueda) && $busqueda!=""){
-				$consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id WHERE (venta.venta_codigo='$busqueda' OR venta.venta_referencia='$busqueda') ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
-				$consulta_total="SELECT COUNT(venta_id) FROM venta WHERE (venta.venta_codigo='$busqueda' OR venta.venta_referencia='$busqueda')";
-			}else{
-				$consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
-				$consulta_total="SELECT COUNT(venta_id) FROM venta";
-			}
-			$datos = $this->ejecutarConsulta($consulta_datos); $datos = $datos->fetchAll(); $total = $this->ejecutarConsulta($consulta_total); $total = (int) $total->fetchColumn(); $numeroPaginas =ceil($total/$registros);
-			
+                $consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id WHERE (venta.venta_codigo='$busqueda' OR venta.venta_referencia='$busqueda') ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
+                $consulta_total="SELECT COUNT(venta_id) FROM venta WHERE (venta.venta_codigo='$busqueda' OR venta.venta_referencia='$busqueda')";
+            }else{
+                $consulta_datos="SELECT $campos_tablas FROM venta INNER JOIN cliente ON venta.cliente_id=cliente.cliente_id INNER JOIN usuario ON venta.usuario_id=usuario.usuario_id ORDER BY venta.venta_id DESC LIMIT $inicio,$registros";
+                $consulta_total="SELECT COUNT(venta_id) FROM venta";
+            }
+            $datos = $this->ejecutarConsulta($consulta_datos); $datos = $datos->fetchAll(); $total = $this->ejecutarConsulta($consulta_total); $total = (int) $total->fetchColumn(); $numeroPaginas =ceil($total/$registros);
+            
             $tabla.='<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-light"><th class="has-text-centered">NRO.</th><th class="has-text-centered">Codigo</th><th class="has-text-centered">Fecha</th><th class="has-text-centered">Cliente</th><th class="has-text-centered">Vendedor</th><th class="has-text-centered">Pago</th><th class="has-text-centered">Total Facturado</th><th class="has-text-centered">Opciones</th></tr></thead><tbody>';
-		    
+            
             if($total>=1 && $pagina<=$numeroPaginas){
-				$contador=$inicio+1; $pag_inicio=$inicio+1;
-				foreach($datos as $rows){
+                $contador=$inicio+1; $pag_inicio=$inicio+1;
+                foreach($datos as $rows){
                     $tasa = (isset($rows['venta_tasa_bcv']) && $rows['venta_tasa_bcv'] > 0) ? $rows['venta_tasa_bcv'] : 0;
                     $total_bs = $rows['venta_total'] * $tasa;
                     $str_bs = ($tasa > 0) ? 'Bs. '.number_format($total_bs, 2, ',', '.') : '<small class="has-text-grey">N/A</small>';
                     $metodo = isset($rows['venta_metodo_pago']) ? $rows['venta_metodo_pago'] : "N/A";
                     $referencia = (isset($rows['venta_referencia']) && $rows['venta_referencia']!="") ? "<br><small class='has-text-grey'>Ref: ".$rows['venta_referencia']."</small>" : "";
 
-					$tabla.='<tr class="has-text-centered" >
+                    $tabla.='<tr class="has-text-centered" >
                         <td>'.$rows['venta_id'].'</td>
                         <td>'.$rows['venta_codigo'].'</td>
                         <td>'.date("d-m-Y", strtotime($rows['venta_fecha'])).' '.$rows['venta_hora'].'</td>
@@ -320,7 +320,7 @@
 
                             // Solo si el rol es 1 (Administrador) se muestra el botón de anular
                             if($_SESSION['rol'] == 1){
-                                $tabla.='<form class="FormularioAjax is-inline-block" action="'.APP_URL.'app/ajax/ventaAjax.php" method="POST" autocomplete="off" >
+                                $tabla.='<form class="FormularioAjax is-inline-block" action="'.APP_URL.'app/ajax/ventaAjax.php" method="POST" autocomplete="off" data-pregunta="¿Está seguro de que desea ANULAR esta venta? El stock de los productos será devuelto al inventario y esta acción no se puede deshacer.">
                                     <input type="hidden" name="modulo_venta" value="eliminar_venta">
                                     <input type="hidden" name="venta_id" value="'.$rows['venta_id'].'">
                                     <button type="submit" class="button is-danger is-rounded is-small" title="Anular venta" >
@@ -333,8 +333,8 @@
                             </tr>';
 
                 /* ==========================================
-                   MODAL CON EL DETALLE (GUARDADO EN $modales)
-                   ========================================== */
+                    MODAL CON EL DETALLE (GUARDADO EN $modales)
+                    ========================================== */
                 $codigo_v = $rows['venta_codigo'];
                 $detalles_venta = $this->ejecutarConsulta("SELECT * FROM venta_detalle WHERE venta_codigo='$codigo_v'")->fetchAll();
                 
@@ -412,19 +412,18 @@
                         </footer>
                     </div>
                 </div>';
-                /* --- FIN MODAL DETALLE --- */
-
+        
             $contador++;
-				} $pag_final=$contador-1;
-			}else{ $tabla.='<tr class="has-text-centered" ><td colspan="8">No hay registros</td></tr>'; }
-			
+                } $pag_final=$contador-1;
+            }else{ $tabla.='<tr class="has-text-centered" ><td colspan="8">No hay registros</td></tr>'; }
+            
             // CERRAMOS LA TABLA Y LUEGO IMPRIMIMOS LOS MODALES AFUERA PARA NO ROMPER EL HTML
             $tabla.='</tbody></table></div>';
             $tabla .= $modales;
 
-			if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de <strong>'.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7); }
-			return $tabla;
-		}
+            if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de <strong>'.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7); }
+            return $tabla;
+        }
 
 		/*----------  Controlador eliminar venta ----------*/
 		public function eliminarVentaControlador(){
@@ -434,7 +433,7 @@
 		    
             $detalles = $this->ejecutarConsulta("SELECT * FROM venta_detalle WHERE venta_codigo='".$datos['venta_codigo']."'")->fetchAll();
             
-            // OPTIMIZACIÓN: Abrir conexión una sola vez
+            // Abrir conexión una sola vez
             $conexion_db = $this->conectar();
             $stmt_stock = $conexion_db->prepare("UPDATE producto SET producto_stock = producto_stock + :Cantidad WHERE producto_id = :ID");
             
@@ -445,7 +444,7 @@
                 ]);
             }
             
-            /* SOLO SE RESTA DE LA CAJA SI EL PAGO FUE EN EFECTIVO/DIVISAS */
+            
             if($datos['venta_metodo_pago'] == "Efectivo" || $datos['venta_metodo_pago'] == "Divisas"){
                 $update_caja = $conexion_db->prepare("UPDATE caja SET caja_efectivo = caja_efectivo - :Efectivo WHERE caja_id = :CajaID");
                 $update_caja->execute([

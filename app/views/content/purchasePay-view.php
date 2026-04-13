@@ -151,7 +151,7 @@
                                     }
                                 }
 
-                            // Prioridad: Nota Interna (Factura Oficial) usando $c
+                            // Nota Interna (Factura Oficial) usando $c
                             if(!empty($c['compra_nota_interna'])){
                                 if(preg_match('/Nro:\s*([^ \]]+)/', $c['compra_nota_interna'], $match_fac)) {
                                     $num_fac = trim($match_fac[1]);
@@ -658,45 +658,59 @@
 </script>
 <?php 
     /* --- AUTO-APERTURA DE MODAL DESDE OTRA PANTALLA --- */
-        if($auto_pago_id > 0){
+    if($auto_pago_id > 0){
 
-            $check_deuda = $insCompra->ejecutarConsulta("SELECT compra_id, compra_codigo, 
-                compra_saldo_pendiente, compra_tasa_bcv, compra_condicion, 
-                compra_total, compra_cuotas_total, compra_frecuencia 
-                FROM compra WHERE compra_id='$auto_pago_id' AND compra_saldo_pendiente > 0");
+        $check_deuda = $insCompra->ejecutarConsulta("SELECT compra_id, compra_codigo, 
+            compra_saldo_pendiente, compra_tasa_bcv, compra_condicion, 
+            compra_total, compra_cuotas_total, compra_frecuencia 
+            FROM compra WHERE compra_id='$auto_pago_id' AND compra_saldo_pendiente > 0");
 
-            if($check_deuda->rowCount() > 0){
-                $datos_auto = $check_deuda->fetch();
-                $t_bcv = ($datos_auto['compra_tasa_bcv'] > 0) ? $datos_auto['compra_tasa_bcv'] : 1;
-                
-                echo "<script>
-                    document.addEventListener('DOMContentLoaded', () => {
-                        setTimeout(() => {
-                            // 2. Pasamos los 8 parámetros necesarios
-                            abrirModalAbono(
-                                '".$datos_auto['compra_id']."', 
-                                '".$datos_auto['compra_codigo']."', 
-                                '".$datos_auto['compra_saldo_pendiente']."', 
-                                '".$t_bcv."',
-                                '".$datos_auto['compra_condicion']."',
-                                '".$datos_auto['compra_total']."',
-                                '".$datos_auto['compra_cuotas_total']."',
-                                '".$datos_auto['compra_frecuencia']."'
-                            );
-                        }, 400); 
-                    });
-                </script>";
+        if($check_deuda->rowCount() > 0){
+            $datos_auto = $check_deuda->fetch();
+            $t_bcv = ($datos_auto['compra_tasa_bcv'] > 0) ? $datos_auto['compra_tasa_bcv'] : 1;
+            
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    setTimeout(() => {
+                        abrirModalAbono(
+                            '".$datos_auto['compra_id']."', 
+                            '".$datos_auto['compra_codigo']."', 
+                            '".$datos_auto['compra_saldo_pendiente']."', 
+                            '".$t_bcv."',
+                            '".$datos_auto['compra_condicion']."',
+                            '".$datos_auto['compra_total']."',
+                            '".$datos_auto['compra_cuotas_total']."',
+                            '".$datos_auto['compra_frecuencia']."'
+                        );
+                    }, 400); 
+                });
+            </script>";
+        } else {
+            /* --- CORRECCIÓN: DETECTAR SI ES PAGADA O ANULADA --- */
+            $check_estado = $insCompra->ejecutarConsulta("SELECT compra_estado FROM compra WHERE compra_id='$auto_pago_id'");
+            $info = $check_estado->fetch();
+
+            if($info['compra_estado'] == "Anulada"){
+                $titulo = "Orden Anulada";
+                $texto = "No se pueden realizar abonos porque esta compra ha sido anulada.";
+                $icono = "error";
             } else {
-                echo "<script>
-                    document.addEventListener('DOMContentLoaded', () => {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Orden sin deuda',
-                            text: 'La compra seleccionada ya está pagada en su totalidad o fue anulada.',
-                            confirmButtonText: 'Entendido'
-                        });
-                    });
-                </script>";
+                $titulo = "Orden Pagada";
+                $texto = "Esta compra ya ha sido pagada en su totalidad.";
+                $icono = "success";
             }
+
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    Swal.fire({
+                        icon: '$icono',
+                        title: '$titulo',
+                        text: '$texto',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#3085d6'
+                    });
+                });
+            </script>";
         }
+    }
 ?>

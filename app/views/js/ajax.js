@@ -1,16 +1,17 @@
 /* ================================================================
-   SCRIPT AJAX PROFESIONAL (ESTÁNDAR FETCH API)
+    SCRIPT AJAX PROFESIONAL (ESTÁNDAR FETCH API)
 ================================================================ */
 
 const formularios_ajax = document.querySelectorAll(".FormularioAjax");
 
 function enviar_formulario_ajax(e){
-    // Pausa el envío tradicional para hacerlo por Ajax
     e.preventDefault();
 
+    // 'this' ahora se refiere al formulario que disparó el evento
     let data = new FormData(this);
     let method = this.getAttribute("method");
     let action = this.getAttribute("action");
+    let texto_pregunta = this.getAttribute('data-pregunta') || "¿Quieres realizar la acción solicitada?";
 
     let config = {
         method: method,
@@ -19,13 +20,8 @@ function enviar_formulario_ajax(e){
         body: data
     };
 
-    // Verificamos si es el buscador (el buscador no requiere confirmación)
-    let es_buscador = false;
+    // Verificamos si es buscador
     if(this.querySelector('input[name="modulo_buscador"]')){
-        es_buscador = true;
-    }
-
-    if(es_buscador){
         fetch(action, config)
         .then(respuesta => respuesta.json())
         .then(respuesta => alertas_ajax(respuesta))
@@ -33,10 +29,10 @@ function enviar_formulario_ajax(e){
         return;
     }
 
-    // Si es un formulario de Guardar/Actualizar/Eliminar, preguntamos primero
+    // Confirmación con mensaje dinámico
     Swal.fire({
         title: '¿Estás seguro?',
-        text: "¿Quieres realizar la acción solicitada?",
+        text: texto_pregunta,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
@@ -47,24 +43,24 @@ function enviar_formulario_ajax(e){
         if (result.isConfirmed) {
             fetch(action, config)
             .then(respuesta => respuesta.json())
-            .then(respuesta => {
-                return alertas_ajax(respuesta);
-            })
+            .then(respuesta => alertas_ajax(respuesta))
             .catch(error => {
-                console.error('Error de Fetch:', error);
-                Swal.fire('Error', 'Ocurrió un error en la petición al servidor.', 'error');
+                console.error('Error:', error);
+                Swal.fire('Error', 'Ocurrió un error en el servidor.', 'error');
             });
         }
     });
 }
 
 // Escuchamos el evento 'submit' natural de los formularios
-formularios_ajax.forEach(formularios => {
-    formularios.addEventListener("submit", enviar_formulario_ajax);
+document.addEventListener("submit", function(e) {
+    if (e.target && e.target.classList.contains("FormularioAjax")) {
+        // Ejecutamos la función pasando el contexto correcto
+        enviar_formulario_ajax.call(e.target, e);
+    }
 });
-
 /* ================================================================
-   MANEJO DE ALERTAS SWEETALERT
+    MANEJO DE ALERTAS SWEETALERT
 ================================================================ */
 function alertas_ajax(alerta){
     if(alerta.tipo === "simple"){
@@ -118,7 +114,7 @@ function alertas_ajax(alerta){
 }
 
 /* ================================================================
-   BOTÓN CERRAR SESIÓN
+    BOTÓN CERRAR SESIÓN
 ================================================================ */
 let btn_exit = document.querySelectorAll(".btn-exit");
 btn_exit.forEach(exitSystem => {
@@ -142,7 +138,7 @@ btn_exit.forEach(exitSystem => {
 });
 
 /* ================================================================
-   UTILIDAD: ACTUALIZAR TEXTO DEL INPUT FILE (FOTOS)
+    UTILIDAD: ACTUALIZAR TEXTO DEL INPUT FILE (FOTOS)
 ================================================================ */
 let fileInputs = document.querySelectorAll('.file-input');
 if(fileInputs.length > 0){

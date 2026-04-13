@@ -1210,3 +1210,89 @@ body.dark-mode .navLateral-body-cr span.has-text-dark,
     color: #6aa9d6 !important; 
     text-shadow: 0 0 5px rgba(27,94,145,0.3) !important;
 }
+
+/* --- ARREGLO GLOBAL DE TABLAS (SIN TOCAR HTML) --- */
+
+/* 1. Forzar a todas las tablas a ocupar el 100% del ancho disponible */
+table {
+    width: 100% !important;
+    margin-bottom: 1.5rem !important;
+    border-collapse: collapse !important;
+}
+
+/* 2. Estilo para las celdas para que no se vean pegadas */
+table th, table td {
+    padding: 12px 8px !important;
+    vertical-align: middle !important;
+    text-align: center !important; /* Centra el contenido para que se vea equilibrado */
+}
+
+/* 3. Evitar que las columnas de botones (Actualizar/Eliminar) se estiren de más */
+/* Esto identifica las últimas celdas que suelen ser tus botones */
+table td:last-child, 
+table td:nth-last-child(2) {
+    width: 1% !important; /* Se ajusta al tamaño mínimo del botón */
+    white-space: nowrap !important;
+}
+
+/* 4. Contenedor responsivo automático */
+/* Si la tabla no cabe en la pantalla, permitirá scroll interno sin romper el diseño */
+.table-container, div[style*="overflow"] {
+    width: 100% !important;
+    overflow-x: auto !important;
+    display: block !important;
+}
+
+/* 5. Ajuste para el buscador (el input largo) */
+input[type="text"].input, 
+input[type="search"].input {
+    width: 100% !important; /* Asegura que el buscador no se desborde */
+}
+
+/* --- CENTRADO TOTAL SIN DESORDENAR --- */
+
+.swal2-container.swal2-center {
+    display: flex !important;
+    align-items: center !important;     
+    justify-content: center !important;  
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    z-index: 999999 !important;
+}
+
+.swal2-popup {
+    margin: 0 !important;
+    display: grid !important; 
+    top: auto !important;
+}
+
+.swal2-backdrop-show {
+    background: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* --- RESALTADO MODO OSCURO: GRIS Y NARANJA (UPTA) --- */
+
+/* Estilo para la opción seleccionada */
+.menu-principal a.active-link-orange, 
+[data-active="true"] {
+    background-color: #3d3d3d !important; /* Gris un poco más claro que el fondo */
+    color: #ff8c00 !important;            /* Texto Naranja */
+    border-left: 6px solid #ff8c00 !important; /* Línea Naranja vibrante */
+    font-weight: bold !important;
+}
+
+/* Forzar el color del icono */
+.menu-principal a.active-link-orange i,
+[data-active="true"] i {
+    color: #ff8c00 !important;
+}
+
+/* Efecto hover para mantener la estética */
+.menu-principal a:hover {
+    background-color: rgba(255, 140, 0, 0.1) !important;
+    color: #ff8c00 !important;
+}

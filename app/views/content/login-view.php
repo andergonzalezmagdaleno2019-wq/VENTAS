@@ -81,7 +81,7 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
                 </span>
             </div>
             <p id="nota_mayuscula" class="help is-info mt-1 ml-1" style="font-size: 0.8rem; display: none;">
-                <i class="fas fa-info-circle"></i> Inicial de letra será <strong>Mayúscula</strong>.
+                <i class="fas fa-info-circle"></i>Solo es de estilo la inicial <strong>Mayúscula</strong>.
             </p>
         </div>
 
@@ -97,9 +97,12 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
                 </div>
                 <div class="column is-5">
                     <input class="input is-rounded has-text-centered" type="text" id="fake_captcha" 
-                           maxlength="3" placeholder="?">
+                        maxlength="3" placeholder="?">
                 </div>
             </div>
+            <p id="error_captcha_msg" class="has-text-danger is-size-7 has-text-centered has-text-weight-bold mt-2" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i> POR FAVOR, RESUELVA EL CAPTCHA PARA CONTINUAR
+            </p>
         </div>
 
         <div class="field mt-5">
@@ -110,8 +113,9 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
         </div>
 
         <div class="has-text-centered mt-5">
-            <a href="#" onclick="recuperarCuenta()" class="is-size-7 has-text-grey">
-                <strong>Recuperar Cuenta</strong>
+            <a href="#" onclick="recuperarCuenta()" class="tag is-info is-light is-rounded p-3">
+                <i class="fas fa-question-circle mr-2"></i> 
+                <span class="has-text-weight-bold">¿No puedes acceder? Recuperar cuenta</span>
             </a>
         </div>
     </div>
@@ -144,57 +148,67 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
         }
     }
 
-       // Función de login 
-function ejecutarLoginInmune() {
-    // 1. Corregimos los IDs: 'fake_email' está bien, pero la clave es 'login_clave'
-    let email = document.getElementById('fake_email').value.trim();
-    let clave = document.getElementById('login_clave').value.trim();
-    let captcha = document.getElementById('fake_captcha').value.trim();
+    // Función de login 
+    function ejecutarLoginInmune() {
+        let email = document.getElementById('fake_email').value.trim();
+        let clave = document.getElementById('login_clave').value.trim();
+        let captcha = document.getElementById('fake_captcha').value.trim();
+        
+        // Elementos de error visual
+        let inputCaptchaElem = document.getElementById('fake_captcha');
+        let msgError = document.getElementById('error_captcha_msg');
 
-    // Validar que no estén vacíos antes de enviar (opcional pero recomendado)
-    if(email == "" || clave == "" || captcha == ""){
-        Swal.fire({
-            icon: 'warning',
-            title: 'Campos vacíos',
-            text: 'Por favor rellena todos los campos'
-        });
-        return false;
+        // 1. VALIDACIÓN ESPECÍFICA DEL CAPTCHA 
+        if(captcha === ""){
+            msgError.style.display = 'block'; // Muestra el texto rojo "POR FAVOR, RESUELVA EL CAPTCHA..."
+            inputCaptchaElem.classList.add('is-danger'); // Pone el borde del input rojo
+            inputCaptchaElem.focus();
+            return false; // Detiene la ejecución
+        } else {
+            // Si el usuario escribió algo, limpia el rastro del error
+            msgError.style.display = 'none';
+            inputCaptchaElem.classList.remove('is-danger');
+        }
+
+        // 2. VALIDACIÓN DE OTROS CAMPOS
+        if(email == "" || clave == ""){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campos vacíos',
+                text: 'Por favor rellena el correo y la contraseña'
+            });
+            return false;
+        }
+
+        // 4. CREAR FORMULARIO FANTASMA PARA ENVÍO SEGURO
+        let formFantasma = document.createElement('form');
+        formFantasma.method = 'POST';
+        formFantasma.action = ''; 
+        formFantasma.style.display = 'none';
+
+        let inputEmail = document.createElement('input');
+        inputEmail.type = 'hidden';
+        inputEmail.name = 'login_email';
+        inputEmail.value = email;
+        formFantasma.appendChild(inputEmail);
+
+        let inputClave = document.createElement('input');
+        inputClave.type = 'hidden';
+        inputClave.name = 'login_clave';
+        inputClave.value = clave;
+        formFantasma.appendChild(inputClave);
+
+        let inputCaptchaHidden = document.createElement('input');
+        inputCaptchaHidden.type = 'hidden';
+        inputCaptchaHidden.name = 'login_captcha';
+        inputCaptchaHidden.value = captcha;
+        formFantasma.appendChild(inputCaptchaHidden);
+
+        document.body.appendChild(formFantasma);
+        formFantasma.submit();
     }
 
-    // 2. Vaciamos los campos visuales por seguridad
-    document.getElementById('fake_email').value = '';
-    document.getElementById('login_clave').value = ''; // ID corregido aquí también
-    document.getElementById('fake_captcha').value = '';
-
-    // 3. Crear el formulario fantasma para el envío POST
-    let formFantasma = document.createElement('form');
-    formFantasma.method = 'POST';
-    formFantasma.action = '';
-    formFantasma.style.display = 'none';
-
-    let inputEmail = document.createElement('input');
-    inputEmail.type = 'hidden';
-    inputEmail.name = 'login_email';
-    inputEmail.value = email;
-    formFantasma.appendChild(inputEmail);
-
-    let inputClave = document.createElement('input');
-    inputClave.type = 'hidden';
-    inputClave.name = 'login_clave';
-    inputClave.value = clave;
-    formFantasma.appendChild(inputClave);
-
-    let inputCaptcha = document.createElement('input');
-    inputCaptcha.type = 'hidden';
-    inputCaptcha.name = 'login_captcha';
-    inputCaptcha.value = captcha;
-    formFantasma.appendChild(inputCaptcha);
-
-    document.body.appendChild(formFantasma);
-    formFantasma.submit();
-}
-
-        // ===== FUNCIONES DE RECUPERACIÓN (Mantenemos SweetAlert solo para esto) =====
+        // ===== FUNCIONES DE RECUPERACIÓN =====
 
         function recuperarCuenta() {
             Swal.fire({
@@ -271,32 +285,35 @@ function ejecutarLoginInmune() {
                         window.location.href = data.redirect;
                     });
                 } else {
+                    // CONFIGURACIÓN DINÁMICA DE LA ALERTA
+                    let tituloAlerta = "Correo no registrado";
+                    let iconoAlerta = "error";
+                    let mostrarReintento = true;
+
+                    // Si el controlador detectó que faltan las preguntas de seguridad
+                    if (data.tipo === 'seguridad') {
+                        tituloAlerta = "Seguridad Pendiente";
+                        iconoAlerta = "info"; 
+                        mostrarReintento = false; // No mostramos reintentar porque el correo SI existe, pero falta configurar seguridad
+                    }
+
                     Swal.fire({
-                        icon: 'error',
-                        title: 'Correo no registrado',
+                        icon: iconoAlerta,
+                        title: tituloAlerta,
                         text: data.mensaje,
-                        confirmButtonText: 'Intentar de nuevo',
+                        confirmButtonText: 'Entendido',
                         confirmButtonColor: '#3085d6',
-                        showCancelButton: true,
+                        showCancelButton: mostrarReintento,
                         cancelButtonText: 'Cancelar'
                     }).then((result) => {
-                        if (result.isConfirmed) {
+                        // Solo vuelve a abrir el modal si el error fue que el correo no existe
+                        if (result.isConfirmed && mostrarReintento) {
                             recuperarCuenta();
                         }
                     });
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.close();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error de conexión',
-                    text: 'No se pudo conectar con el servidor. Intenta de nuevo.',
-                    confirmButtonColor: '#3085d6'
-                });
-            });
-        }
+        }    
     </script>
 </div>
 </body>

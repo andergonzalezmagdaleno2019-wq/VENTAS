@@ -168,129 +168,129 @@ class productController extends mainModel
         return json_encode($alerta);
     }
 
-	/*----------  Controlador listar productos ----------*/
-	public function listarProductoControlador($pagina, $registros, $url, $categoria_id, $busqueda)
-	{
-		$pagina = $this->limpiarCadena($pagina);
-		$registros = $this->limpiarCadena($registros);
-		$url = $this->limpiarCadena($url);
-		$url = APP_URL . $url . "/";
-		$categoria_id = $this->limpiarCadena($categoria_id);
-		$busqueda = $this->limpiarCadena($busqueda);
-		$tabla = "";
+    /*----------  Controlador listar productos ----------*/
+    public function listarProductoControlador($pagina, $registros, $url, $categoria_id, $busqueda)
+    {
+        $pagina = $this->limpiarCadena($pagina);
+        $registros = $this->limpiarCadena($registros);
+        $url = $this->limpiarCadena($url);
+        $url = APP_URL . $url . "/";
+        $categoria_id = $this->limpiarCadena($categoria_id);
+        $busqueda = $this->limpiarCadena($busqueda);
+        $tabla = "";
 
-		$pagina = (isset($pagina) && $pagina > 0) ? (int) $pagina : 1;
-		$inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
+        $pagina = (isset($pagina) && $pagina > 0) ? (int) $pagina : 1;
+        $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
-		$orden_actual = isset($_SESSION['orden_producto']) ? $_SESSION['orden_producto'] : "nombre_asc";
-		$orden_sql = "producto.producto_nombre ASC";
-		if ($orden_actual == "menor_stock") {
-			$orden_sql = "producto.producto_stock ASC, producto.producto_nombre ASC";
-		} elseif ($orden_actual == "mayor_stock") {
-			$orden_sql = "producto.producto_stock DESC, producto.producto_nombre ASC";
-		}
+        $orden_actual = isset($_SESSION['orden_producto']) ? $_SESSION['orden_producto'] : "nombre_asc";
+        $orden_sql = "producto.producto_nombre ASC";
+        if ($orden_actual == "menor_stock") {
+            $orden_sql = "producto.producto_stock ASC, producto.producto_nombre ASC";
+        } elseif ($orden_actual == "mayor_stock") {
+            $orden_sql = "producto.producto_stock DESC, producto.producto_nombre ASC";
+        }
 
-		$campos = "producto.producto_id,producto.producto_codigo,producto.producto_nombre,producto.producto_marca,producto.producto_modelo,producto.producto_precio,producto.producto_costo,producto.producto_stock,producto.producto_stock_min,producto.producto_stock_max,producto.producto_estado,producto.producto_foto,producto.producto_unidad,categoria.categoria_nombre AS subcategoria_nombre, padre.categoria_nombre AS categoria_padre_nombre";
+        $campos = "producto.producto_id,producto.producto_codigo,producto.producto_nombre,producto.producto_marca,producto.producto_modelo,producto.producto_precio,producto.producto_costo,producto.producto_stock,producto.producto_stock_min,producto.producto_stock_max,producto.producto_estado,producto.producto_foto,producto.producto_unidad,categoria.categoria_nombre AS subcategoria_nombre, padre.categoria_nombre AS categoria_padre_nombre";
 
-		$join_sql = " FROM producto 
+        $join_sql = " FROM producto 
               INNER JOIN categoria ON producto.categoria_id=categoria.categoria_id 
               LEFT JOIN categoria AS padre ON categoria.categoria_padre_id=padre.categoria_id ";
 
-		if (isset($busqueda) && $busqueda != "") {
-			$consulta_datos = "SELECT $campos $join_sql WHERE producto_codigo LIKE '%$busqueda%' OR producto_nombre LIKE '%$busqueda%' ORDER BY $orden_sql LIMIT $inicio,$registros";
-			$consulta_total = "SELECT COUNT(producto_id) FROM producto WHERE producto_codigo LIKE '%$busqueda%' OR producto_nombre LIKE '%$busqueda%'";
-		} elseif ($categoria_id > 0) {
-			$consulta_datos = "SELECT $campos $join_sql WHERE producto.categoria_id='$categoria_id' ORDER BY $orden_sql LIMIT $inicio,$registros";
-			$consulta_total = "SELECT COUNT(producto_id) FROM producto WHERE categoria_id='$categoria_id'";
-		} else {
-			$consulta_datos = "SELECT $campos $join_sql ORDER BY $orden_sql LIMIT $inicio,$registros";
-			$consulta_total = "SELECT COUNT(producto_id) FROM producto";
-		}
+        if (isset($busqueda) && $busqueda != "") {
+            $consulta_datos = "SELECT $campos $join_sql WHERE producto_codigo LIKE '%$busqueda%' OR producto_nombre LIKE '%$busqueda%' ORDER BY $orden_sql LIMIT $inicio,$registros";
+            $consulta_total = "SELECT COUNT(producto_id) FROM producto WHERE producto_codigo LIKE '%$busqueda%' OR producto_nombre LIKE '%$busqueda%'";
+        } elseif ($categoria_id > 0) {
+            $consulta_datos = "SELECT $campos $join_sql WHERE producto.categoria_id='$categoria_id' ORDER BY $orden_sql LIMIT $inicio,$registros";
+            $consulta_total = "SELECT COUNT(producto_id) FROM producto WHERE categoria_id='$categoria_id'";
+        } else {
+            $consulta_datos = "SELECT $campos $join_sql ORDER BY $orden_sql LIMIT $inicio,$registros";
+            $consulta_total = "SELECT COUNT(producto_id) FROM producto";
+        }
 
-		$datos = $this->ejecutarConsulta($consulta_datos);
-		$datos = $datos->fetchAll();
-		$total = $this->ejecutarConsulta($consulta_total);
-		$total = (int) $total->fetchColumn();
-		$numeroPaginas = ceil($total / $registros);
+        $datos = $this->ejecutarConsulta($consulta_datos);
+        $datos = $datos->fetchAll();
+        $total = $this->ejecutarConsulta($consulta_total);
+        $total = (int) $total->fetchColumn();
+        $numeroPaginas = ceil($total / $registros);
 
-		$tabla .= '<div class="table-container">
-		        <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-		            <thead>
-		                <tr>
-		                    <th class="has-text-centered">#</th>
-		                    <th class="has-text-centered">Código</th>
-		                    <th class="has-text-centered">Nombre</th>
+        $tabla .= '<div class="table-container">
+                <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th class="has-text-centered">#</th>
+                            <th class="has-text-centered">Código</th>
+                            <th class="has-text-centered">Nombre</th>
                             <th class="has-text-centered">Marca/Modelo</th>
-		                    <th class="has-text-centered">Categoría</th>
-		                    <th class="has-text-centered">Costo</th>
-		                    <th class="has-text-centered">Precio de Venta</th>
-		                    <th class="has-text-centered">Stock</th>
+                            <th class="has-text-centered">Categoría</th>
+                            <th class="has-text-centered">Costo</th>
+                            <th class="has-text-centered">Precio de Venta</th>
+                            <th class="has-text-centered">Stock</th>
                             <th class="has-text-centered">Estado</th>
-		                    <th class="has-text-centered">Foto</th>
-		                    <th class="has-text-centered" colspan="3">Opciones</th>
-		                </tr>
-		            </thead>
-		            <tbody>';
+                            <th class="has-text-centered">Foto</th>
+                            <th class="has-text-centered" colspan="3">Opciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
 
-		if ($total >= 1 && $pagina <= $numeroPaginas) {
-			$contador = $inicio + 1;
-			$pag_inicio = $inicio + 1;
-			foreach ($datos as $rows) {
+        if ($total >= 1 && $pagina <= $numeroPaginas) {
+            $contador = $inicio + 1;
+            $pag_inicio = $inicio + 1;
+            foreach ($datos as $rows) {
 
-				$stock_alerta = "";
-				if ($rows['producto_estado'] == 'Activo') {
-					if ($rows['producto_stock'] <= $rows['producto_stock_min']) {
-						$stock_alerta = 'has-background-danger-light has-text-danger-dark font-weight-bold';
-					} elseif ($rows['producto_stock'] >= $rows['producto_stock_max']) {
-						$stock_alerta = 'has-background-warning-light has-text-warning-dark';
-					}
-				}
+                $stock_alerta = "";
+                if ($rows['producto_estado'] == 'Activo') {
+                    if ($rows['producto_stock'] <= $rows['producto_stock_min']) {
+                        $stock_alerta = 'has-background-danger-light has-text-danger-dark font-weight-bold';
+                    } elseif ($rows['producto_stock'] >= $rows['producto_stock_max']) {
+                        $stock_alerta = 'has-background-warning-light has-text-warning-dark';
+                    }
+                }
 
-				if ($rows['producto_estado'] == 'Activo') {
-					$estado_tag = '<span class="tag is-success is-light">Activo</span>';
-					$btn_estado = 'warning';
-					$icon_estado = 'toggle-off';
-					$txt_estado = 'Inactivo';
-				} else {
-					$estado_tag = '<span class="tag is-danger is-light">Inactivo</span>';
-					$btn_estado = 'success';
-					$icon_estado = 'toggle-on';
-					$txt_estado = 'Activo';
-				}
+                if ($rows['producto_estado'] == 'Activo') {
+                    $estado_tag = '<span class="tag is-success is-light">Activo</span>';
+                    $btn_estado = 'warning';
+                    $icon_estado = 'toggle-off';
+                    $txt_estado = 'Inactivo';
+                } else {
+                    $estado_tag = '<span class="tag is-danger is-light">Inactivo</span>';
+                    $btn_estado = 'success';
+                    $icon_estado = 'toggle-on';
+                    $txt_estado = 'Activo';
+                }
 
-				$tabla .= '
-						<tr class="has-text-centered ' . $stock_alerta . '">
-							<td>' . $contador . '</td>
-							<td>' . $rows['producto_codigo'] . '</td>
-							<td>' . $rows['producto_nombre'] . '</td>
+                $tabla .= '
+                        <tr class="has-text-centered ' . $stock_alerta . '">
+                            <td>' . $contador . '</td>
+                            <td>' . $rows['producto_codigo'] . '</td>
+                            <td>' . $rows['producto_nombre'] . '</td>
                             <td>' . $rows['producto_marca'] . ' ' . $rows['producto_modelo'] . '</td>
-							<td>
-								<span class="has-text-weight-bold">' . ($rows['categoria_padre_nombre'] ?? 'Sin Categoría') . '</span><br>
-								<span class="is-size-7 has-text-grey"><i class="fas fa-level-up-alt fa-rotate-90"></i> ' . $rows['subcategoria_nombre'] . '</span>
-							</td>
-							
+                            <td>
+                                <span class="has-text-weight-bold">' . ($rows['categoria_padre_nombre'] ?? 'Sin Categoría') . '</span><br>
+                                <span class="is-size-7 has-text-grey"><i class="fas fa-level-up-alt fa-rotate-90"></i> ' . $rows['subcategoria_nombre'] . '</span>
+                            </td>
+                            
                             <td>
                                 <span>$' . $rows['producto_costo'] . '</span><br>
                                 <span class="is-size-7 has-text-grey precio-bcv" data-usd="' . $rows['producto_costo'] . '">Calculando Bs...</span>
                             </td>
 
-							<td>
+                            <td>
                                 <strong>$' . $rows['producto_precio'] . '</strong><br>
                                 <span class="is-size-7 has-text-link has-text-weight-bold precio-bcv" data-usd="' . $rows['producto_precio'] . '">Calculando Bs...</span>
                             </td>
 
-							<td class="has-text-weight-bold">' . $rows['producto_stock'] . ' ' . $rows['producto_unidad'] . '</td>
+                            <td class="has-text-weight-bold">' . $rows['producto_stock'] . ' ' . $rows['producto_unidad'] . '</td>
                             <td>' . $estado_tag . '</td>
-							<td>
-			                    <a href="' . APP_URL . 'productPhoto/' . $rows['producto_id'] . '/" class="button is-info is-rounded is-small" title="Foto"><i class="fas fa-camera"></i></a>
-			                </td>
                             <td>
-                                <form class="FormularioAjax" action="' . APP_URL . 'app/ajax/productoAjax.php" method="POST" autocomplete="off" >
-			                		<input type="hidden" name="modulo_producto" value="estado">
-			                		<input type="hidden" name="producto_id" value="' . $rows['producto_id'] . '">
+                                <a href="' . APP_URL . 'productPhoto/' . $rows['producto_id'] . '/" class="button is-info is-rounded is-small" title="Foto"><i class="fas fa-camera"></i></a>
+                            </td>
+                            <td>
+                                <form class="FormularioAjax" action="' . APP_URL . 'app/ajax/productoAjax.php" method="POST" autocomplete="off" data-pregunta="¿Está seguro de que desea cambiar el estado de este producto a '.$txt_estado.'? Los productos inactivos no aparecerán disponibles en el módulo de ventas.">
+                                    <input type="hidden" name="modulo_producto" value="estado">
+                                    <input type="hidden" name="producto_id" value="' . $rows['producto_id'] . '">
                                     <input type="hidden" name="producto_estado" value="' . $txt_estado . '">
-			                    	<button type="submit" class="button is-' . $btn_estado . ' is-rounded is-small" title="Cambiar a ' . $txt_estado . '"><i class="fas fa-' . $icon_estado . '"></i></button>
-			                    </form>
+                                    <button type="submit" class="button is-' . $btn_estado . ' is-rounded is-small" title="Cambiar a ' . $txt_estado . '"><i class="fas fa-' . $icon_estado . '"></i></button>
+                                </form>
                             </td>
 
                             <td>
@@ -299,17 +299,17 @@ class productController extends mainModel
                                 </button>
                             </td>
 
-			                <td>
-			                    <a href="' . APP_URL . 'productUpdate/' . $rows['producto_id'] . '/" class="button is-success is-rounded is-small" title="Actualizar"><i class="fas fa-sync"></i></a>
-			                </td>
-			                <td>
-			                	<form class="FormularioAjax" action="' . APP_URL . 'app/ajax/productoAjax.php" method="POST" autocomplete="off" >
-			                		<input type="hidden" name="modulo_producto" value="eliminar">
-			                		<input type="hidden" name="producto_id" value="' . $rows['producto_id'] . '">
-			                    	<button type="submit" class="button is-danger is-rounded is-small" title="Eliminar"><i class="far fa-trash-alt"></i></button>
-			                    </form>
-			                </td>
-						</tr>';
+                            <td>
+                                <a href="' . APP_URL . 'productUpdate/' . $rows['producto_id'] . '/" class="button is-success is-rounded is-small" title="Actualizar"><i class="fas fa-sync"></i></a>
+                            </td>
+                            <td>
+                                <form class="FormularioAjax" action="' . APP_URL . 'app/ajax/productoAjax.php" method="POST" autocomplete="off" data-pregunta="¿Está seguro de que desea ELIMINAR este producto? Esta acción lo eliminará de forma permanente del inventario y no podrá ser seleccionado en futuras transacciones.">
+                                    <input type="hidden" name="modulo_producto" value="eliminar">
+                                    <input type="hidden" name="producto_id" value="' . $rows['producto_id'] . '">
+                                    <button type="submit" class="button is-danger is-rounded is-small" title="Eliminar"><i class="far fa-trash-alt"></i></button>
+                                </form>
+                            </td>
+                        </tr>';
 
                             // MODAL DE DETALLE 
                             $estado_modal = ($rows['producto_estado'] == 'Activo') ? '<span class="tag is-success is-light">Activo</span>' : '<span class="tag is-danger is-light">Inactivo</span>';
@@ -327,7 +327,6 @@ class productController extends mainModel
                                             <div class="column is-4 has-text-centered">
                                                 <figure class="image is-4by3 mb-4">';
                                                     
-                                                    // Lógica de validación de imagen
                                                     $foto_ruta = "./app/views/productos/" . $rows['producto_foto'];
                                                     
                                                     if (is_file($foto_ruta)) {
@@ -341,7 +340,6 @@ class productController extends mainModel
                                                 <div class="mt-4 has-text-left">
                                                     <p class="is-size-7 has-text-grey"><strong>Distribuido por:</strong></p>
                                                     <div class="tags mt-1">';
-                                                        /* --- CONSULTA DE PROVEEDORES --- */
                                                         $id_p = $rows['producto_id'];
                                                         $cons_prov = $this->ejecutarConsulta("SELECT p.proveedor_nombre 
                                                             FROM producto_proveedor pp 
@@ -406,47 +404,19 @@ class productController extends mainModel
                                     </footer>
                                 </div>
                             </div>';
-				$contador++;
-			}
-			$pag_final = $contador - 1;
-		} else {
-			$tabla .= '<tr class="has-text-centered" ><td colspan="13">No hay registros</td></tr>';
-		}
-		$tabla .= '</tbody></table></div>';
-		if ($total > 0 && $pagina <= $numeroPaginas) {
-			$tabla .= '<p class="has-text-right">Mostrando productos <strong>' . $pag_inicio . '</strong> al <strong>' . $pag_final . '</strong> de un <strong>total de ' . $total . '</strong></p>';
-			$tabla .= $this->paginadorTablas($pagina, $numeroPaginas, $url, 7);
-		}
-		return $tabla;
-	}
-
-	/*---------- Controlador para Activar / Desactivar producto ----------*/
-	public function actualizarEstadoProductoControlador()
-	{
-		$id = $this->limpiarCadena($_POST['producto_id']);
-		$estado = $this->limpiarCadena($_POST['producto_estado']);
-
-		$datos = $this->ejecutarConsulta("SELECT producto_nombre FROM producto WHERE producto_id='$id'");
-		if ($datos->rowCount() <= 0) {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Producto no encontrado", "icono" => "error"];
-			return json_encode($alerta);
-			exit();
-		}
-		$datos = $datos->fetch();
-
-		$producto_datos_up = [
-			["campo_nombre" => "producto_estado", "campo_marcador" => ":Estado", "campo_valor" => $estado]
-		];
-		$condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
-
-		if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
-			$this->guardarBitacora("Productos", "Estado", "Se cambió el estado de " . $datos['producto_nombre'] . " a " . $estado);
-			$alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "El estado del producto fue actualizado", "icono" => "success"];
-		} else {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo actualizar el estado", "icono" => "error"];
-		}
-		return json_encode($alerta);
-	}
+                $contador++;
+            }
+            $pag_final = $contador - 1;
+        } else {
+            $tabla .= '<tr class="has-text-centered" ><td colspan="13">No hay registros</td></tr>';
+        }
+        $tabla .= '</tbody></table></div>';
+        if ($total > 0 && $pagina <= $numeroPaginas) {
+            $tabla .= '<p class="has-text-right">Mostrando productos <strong>' . $pag_inicio . '</strong> al <strong>' . $pag_final . '</strong> de un <strong>total de ' . $total . '</strong></p>';
+            $tabla .= $this->paginadorTablas($pagina, $numeroPaginas, $url, 7);
+        }
+        return $tabla;
+    }
 
 	/*----------  Controlador eliminar producto  ----------*/
 	public function eliminarProductoControlador()

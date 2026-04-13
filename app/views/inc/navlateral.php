@@ -33,7 +33,7 @@
                 if(isset($_SESSION['seguridad_pendiente']) && $_SESSION['seguridad_pendiente'] == true && $_SESSION['id'] != 1){ 
                 ?>
                     <li class="full-width">
-                        <a href="<?php echo APP_URL; ?>userProfile/" class="full-width" style="background-color: #fff3f3; border-left: 4px solid #ff3860;">
+                        <a href="<?php echo APP_URL; ?>userProfile/" class="full-width" style="background-color: #fff3f3; border-left: 4px solid #ff3860;" data-link="userProfile">
                             <div class="navLateral-body-cl"><i class="fas fa-user-shield fa-fw" style="color: #ff3860;"></i></div>
                             <div class="navLateral-body-cr" style="color: #ff3860; font-weight: bold;">MI SEGURIDAD (Pendiente)</div>
                         </a>
@@ -49,7 +49,7 @@
                 } else { 
                 ?>
                     <li class="full-width">
-                        <a href="<?php echo APP_URL; ?>dashboard/" class="full-width">
+                        <a href="<?php echo APP_URL; ?>dashboard/" class="full-width" data-link="dashboard">
                             <div class="navLateral-body-cl"><i class="fab fa-dashcube fa-fw"></i></div>
                             <div class="navLateral-body-cr">Inicio</div>
                         </a>
@@ -65,13 +65,13 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>userNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>userNew/" class="full-width" data-link="userNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-user-plus fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Nuevo usuario</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>userList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>userList/" class="full-width" data-link="userList">
                                     <div class="navLateral-body-cl"><i class="fas fa-clipboard-list fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Lista de usuarios</div>
                                 </a>
@@ -89,13 +89,13 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>clientNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>clientNew/" class="full-width" data-link="clientNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-male fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Nuevo cliente</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>clientList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>clientList/" class="full-width" data-link="clientList">
                                     <div class="navLateral-body-cl"><i class="fas fa-clipboard-list fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Lista de clientes</div>
                                 </a>
@@ -113,13 +113,13 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>providerNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>providerNew/" class="full-width" data-link="providerNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-shipping-fast fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Nuevo proveedor</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>providerList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>providerList/" class="full-width" data-link="providerList">
                                     <div class="navLateral-body-cl"><i class="fas fa-clipboard-list fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Lista de proveedores</div>
                                 </a>
@@ -136,25 +136,25 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>purchaseNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>purchaseNew/" class="full-width" data-link="purchaseNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-cart-plus fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Nueva compra</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>purchaseList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>purchaseList/" class="full-width" data-link="purchaseList">
                                     <div class="navLateral-body-cl"><i class="fas fa-clipboard-list fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Lista de compras</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>purchasePay/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>purchasePay/" class="full-width" data-link="purchasePay">
                                     <div class="navLateral-body-cl"><i class="fas fa-file-invoice-dollar fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Cuentas por Pagar</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>purchaseReport/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>purchaseReport/" class="full-width" data-link="purchaseReport">
                                     <div class="navLateral-body-cl"><i class="fas fa-chart-bar fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Reporte de compras</div>
                                 </a>
@@ -171,25 +171,25 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>categoryNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>categoryNew/" class="full-width" data-link="categoryNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-tag fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Nueva categoría</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>subcategoryNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>subcategoryNew/" class="full-width" data-link="subcategoryNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-sitemap"></i></div>
                                     <div class="navLateral-body-cr">Nueva subcategoría</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>subcategorylist/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>subcategorylist/" class="full-width" data-link="subcategorylist">
                                     <div class="navLateral-body-cl"><i class="fas fa-sitemap"></i></div>
                                     <div class="navLateral-body-cr">Lista de subcategorías</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>categoryList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>categoryList/" class="full-width" data-link="categoryList">
                                     <div class="navLateral-body-cl"><i class="fas fa-clipboard-list fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Lista de categorías</div>
                                 </a>
@@ -206,25 +206,25 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>productNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>productNew/" class="full-width" data-link="productNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-box fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Nuevo producto</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>productList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>productList/" class="full-width" data-link="productList">
                                     <div class="navLateral-body-cl"><i class="fas fa-clipboard-list fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Lista de productos</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>productCategory/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>productCategory/" class="full-width" data-link="productCategory">
                                     <div class="navLateral-body-cl"><i class="fas fa-boxes fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Productos por categoría</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>inventoryReport/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>inventoryReport/" class="full-width" data-link="inventoryReport">
                                     <div class="navLateral-body-cl"><i class="fas fa-file-pdf fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Reporte de inventario</div>
                                 </a>
@@ -241,19 +241,19 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>saleNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>saleNew/" class="full-width" data-link="saleNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-cart-plus fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Nueva venta</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>saleList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>saleList/" class="full-width" data-link="saleList">
                                     <div class="navLateral-body-cl"><i class="fas fa-clipboard-list fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Lista de ventas</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>saleReport/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>saleReport/" class="full-width" data-link="saleReport">
                                     <div class="navLateral-body-cl"><i class="fas fa-chart-bar fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Reporte de ventas</div>
                                 </a>
@@ -271,31 +271,31 @@
                         </a>
                         <ul class="full-width menu-principal sub-menu-options">
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>companyNew/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>companyNew/" class="full-width" data-link="companyNew">
                                     <div class="navLateral-body-cl"><i class="fas fa-store-alt fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Datos de empresa</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL."userUpdate/".$_SESSION['id']."/"; ?>" class="full-width">
+                                <a href="<?php echo APP_URL."userUpdate/".$_SESSION['id']."/"; ?>" class="full-width" data-link="userUpdate">
                                     <div class="navLateral-body-cl"><i class="fas fa-user-tie fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Mi cuenta</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL."userPhoto/".$_SESSION['id']."/"; ?>" class="full-width">
+                                <a href="<?php echo APP_URL."userPhoto/".$_SESSION['id']."/"; ?>" class="full-width" data-link="userPhoto">
                                     <div class="navLateral-body-cl"><i class="fas fa-camera"></i></div>
                                     <div class="navLateral-body-cr">Mi foto</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>backup/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>backup/" class="full-width" data-link="backup">
                                     <div class="navLateral-body-cl"><i class="fas fa-database fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Respaldo BD</div>
                                 </a>
                             </li>
                             <li class="full-width">
-                                <a href="<?php echo APP_URL; ?>auditList/" class="full-width">
+                                <a href="<?php echo APP_URL; ?>auditList/" class="full-width" data-link="auditList">
                                     <div class="navLateral-body-cl"><i class="fas fa-history fa-fw"></i></div>
                                     <div class="navLateral-body-cr">Auditoría (Bitácora)</div>
                                 </a>
@@ -307,7 +307,7 @@
 
                     <?php if($_SESSION['id'] != 1){ ?>
                     <li class="full-width">
-                        <a href="<?php echo APP_URL; ?>userProfile/" class="full-width">
+                        <a href="<?php echo APP_URL; ?>userProfile/" class="full-width" data-link="userProfile">
                             <div class="navLateral-body-cl"><i class="fas fa-user-shield fa-fw"></i></div>
                             <div class="navLateral-body-cr">MI SEGURIDAD</div>
                         </a>
@@ -326,3 +326,66 @@
         </nav>
     </div>
 </section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlActual = window.location.href;
+        const enlaces = document.querySelectorAll('.menu-principal a');
+
+        function actualizarResaltado() {
+            const isDarkMode = document.body.classList.contains('dark-mode');
+
+            enlaces.forEach(enlace => {
+                const linkHref = enlace.getAttribute('href');
+                
+                if (linkHref && linkHref !== "<?php echo APP_URL; ?>" && urlActual.includes(linkHref)) {
+                    
+                    if (isDarkMode) {
+                        // --- ESTILO OSCURO (GRIS Y NARANJA) ---
+                        enlace.style.setProperty('background-color', '#3d3d3d', 'important'); 
+                        enlace.style.setProperty('color', '#ff8c00', 'important');            
+                        enlace.style.setProperty('border-left', '8px solid #ff8c00', 'important'); 
+                    } else {
+                        // --- ESTILO CLARO (AZUL Y AMARILLO) ---
+                        enlace.style.setProperty('background-color', '#3273dc', 'important');
+                        enlace.style.setProperty('color', '#ffffff', 'important');
+                        enlace.style.setProperty('border-left', '8px solid #fce473', 'important');
+                    }
+
+                    enlace.style.setProperty('font-weight', 'bold', 'important');
+
+                    // Icono
+                    const icono = enlace.querySelector('i');
+                    if(icono) {
+                        icono.style.setProperty('color', isDarkMode ? '#ff8c00' : '#ffffff', 'important');
+                    }
+
+                    // Abrir submenú y resaltar padre
+                    const subMenu = enlace.closest('.sub-menu-options');
+                    if (subMenu) {
+                        subMenu.style.setProperty('display', 'block', 'important');
+                        const btnPadre = subMenu.previousElementSibling;
+                        if(btnPadre) {
+                            btnPadre.classList.add('btn-subMenu-show');
+                            btnPadre.style.setProperty('color', isDarkMode ? '#ff8c00' : '#3273dc', 'important');
+                        }
+                    }
+                }
+            });
+        }
+
+        // 1. Ejecutar al cargar la página
+        actualizarResaltado();
+
+        // 2. VIGILANTE: Detecta cambios en el body (cuando cambias el modo oscuro)
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'class') {
+                    actualizarResaltado();
+                }
+            });
+        });
+
+        observer.observe(document.body, { attributes: true });
+    });
+</script>

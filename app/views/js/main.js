@@ -95,3 +95,41 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 });
+/*----------  RESALTADO DINÁMICO ----------*/
+window.addEventListener('load', function() {
+    // 1. Obtenemos la vista actual desde la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    let vista = urlParams.get('views');
+
+    if (!vista) return; // Si no hay vista, no hacemos nada
+
+    // 2. Mapeo para agrupar búsquedas y actualizaciones con sus listas
+    let target = vista;
+    if (["userSearch", "userUpdate"].includes(vista)) target = "userList";
+    if (["clientSearch", "clientUpdate"].includes(vista)) target = "clientList";
+    if (["productSearch", "productUpdate"].includes(vista)) target = "productList";
+    if (["saleSearch", "saleUpdate"].includes(vista)) target = "saleList";
+    if (["categorySearch", "categoryUpdate"].includes(vista)) target = "categoryList";
+
+    // 3. Buscamos el enlace (debes tener el atributo data-link en tu HTML)
+    const activeLink = document.querySelector(`[data-link="${target}"]`);
+
+    if (activeLink) {
+        // Aplicamos el estilo de resaltado (Azul Bulma y texto blanco)
+        activeLink.style.setProperty('background-color', '#3273dc', 'important');
+        activeLink.style.setProperty('color', '#ffffff', 'important');
+        activeLink.style.setProperty('border-left', '6px solid #fce473', 'important'); // Borde amarillo
+
+        // 4. Forzamos que el submenú se abra
+        const parentUl = activeLink.closest('.sub-menu-options');
+        if (parentUl) {
+            parentUl.style.display = "block";
+            // También rotamos la flechita del botón padre si existe
+            const btnPadre = parentUl.previousElementSibling;
+            if (btnPadre && btnPadre.classList.contains('btn-subMenu')) {
+                btnPadre.classList.add('btn-subMenu-show');
+                btnPadre.style.color = "#3273dc";
+            }
+        }
+    }
+});

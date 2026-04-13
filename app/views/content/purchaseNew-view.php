@@ -122,7 +122,7 @@
                             <div class="select"> 
                                 <select id="filtro_stock" onchange="aplicarFiltroStock()" style="max-width: 220px; border-radius: 6px;">
                                     <option value="todos" selected>📦 Todos los productos</option>
-                                    <option value="bajo">📉 Stock Bajo (Crítico)</option>
+                                    <option value="bajo">📉 Stock Bajo (Crítico) <5</option>
                                     <option value="alto">📈 Stock Suficiente</option>
                                 </select>
                             </div>
@@ -149,21 +149,24 @@
     </div>
 
     <div class="columns mt-4">
-        <div class="column">
+        <div class="column is-12">
             <form action="<?php echo APP_URL; ?>app/ajax/compraAjax.php" class="FormularioEnvioManual" method="POST" autocomplete="off" id="form-generar-orden">
                 <input type="hidden" name="modulo_compra" value="registrar">
                 <input type="hidden" name="compra_proveedor" id="hidden_compra_proveedor" value="">
                 <input type="hidden" name="compra_tasa_bcv" id="compra_tasa_bcv" value="">
+                
                 <div class="box">
                     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth mt-4">
                         <thead>
                             <tr class="has-background-link-light">
-                                <th>Producto Pedido</th>
-                                <th class="has-text-centered" style="width: 130px;">Costo Ref.</th>
-                                <th class="has-text-centered" style="width: 160px;">Costo Pactado ($)</th>
-                                <th class="has-text-centered" style="width: 120px;">Cantidad</th>
-                                <th class="has-text-centered" style="width: 150px;">Subtotal</th>
-                                <th class="has-text-centered" style="width: 60px;"><i class="fas fa-trash"></i></th>
+                                <th style="width: 30%;">Nombre del Producto</th>
+                                <th class="has-text-centered" style="width: 12%;">Marca</th>
+                                <th class="has-text-centered" style="width: 15%;">Modelo</th>
+                                <th class="has-text-centered" style="width: 10%;">Costo Ref.</th>
+                                <th class="has-text-centered" style="width: 15%;">Costo Pactado ($)</th>
+                                <th class="has-text-centered" style="width: 8%;">Cantidad</th>
+                                <th class="has-text-centered" style="width: 10%;">Subtotal</th>
+                                <th class="has-text-centered" style="width: 3%;"><i class="fas fa-trash"></i></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -174,49 +177,66 @@
                                         $id_prod = $detalle['producto_id'];
                                         $cant_actual = $detalle['compra_cantidad'];
                                         $costo_ref = (isset($detalle['costo_referencia'])) ? $detalle['costo_referencia'] : 0;
+                                        
+                                        $marca = (isset($detalle['producto_marca'])) ? $detalle['producto_marca'] : "N/A";
+                                        $modelo = (isset($detalle['producto_modelo'])) ? $detalle['producto_modelo'] : "N/A";
+
                                         $subtotal_est = $cant_actual * $costo_ref;
                                         $total_estimado_orden += $subtotal_est;
 
                                         echo '<tr class="fila-producto">
                                             <td style="vertical-align: middle;"><strong>'.$detalle['producto_nombre'].'</strong></td>
-                                            <td class="has-text-centered has-text-grey">'.($costo_ref > 0 ? "$".number_format($costo_ref, 2) : '$0.00').'</td>
-                                            <td><input class="input input-precio" type="number" step="0.01" name="detalle_precio['.$id_prod.']" value="'.$costo_ref.'" oninput="recalcularTotales()"></td>
-                                            <td><input class="input input-cantidad has-text-centered" type="number" name="detalle_cantidad['.$id_prod.']" value="'.$cant_actual.'" min="1" oninput="recalcularTotales()"></td>
-                                            <td class="has-text-centered has-text-weight-bold subtotal-txt">$'.number_format($subtotal_est, 2).'</td>
-                                            <td class="has-text-centered">
-                                                <button type="button" class="button is-danger is-small" onclick="eliminarDelCarrito('.$id_prod.')"><i class="fas fa-trash-alt"></i></button>
+                                            <td class="has-text-centered" style="vertical-align: middle;">'.$marca.'</td>
+                                            <td class="has-text-centered" style="vertical-align: middle;">'.$modelo.'</td>
+                                            <td class="has-text-centered has-text-grey" style="vertical-align: middle;">
+                                                '.($costo_ref > 0 ? "$".number_format($costo_ref, 2) : '$0.00').'
+                                            </td>
+                                            <td style="vertical-align: middle;">
+                                                <input class="input is-small has-text-centered" type="number" step="0.01" name="detalle_precio['.$id_prod.']" value="'.$costo_ref.'" oninput="recalcularTotales()" style="width: 100%; max-width: 110px; margin: 0 auto; display: block;">
+                                            </td>
+                                            <td style="vertical-align: middle;">
+                                                <input class="input is-small has-text-centered" type="number" name="detalle_cantidad['.$id_prod.']" value="'.$cant_actual.'" min="1" oninput="recalcularTotales()" style="width: 100%; max-width: 70px; margin: 0 auto; display: block;">
+                                            </td>
+                                            <td class="has-text-centered has-text-weight-bold" style="vertical-align: middle;">$'.number_format($subtotal_est, 2).'</td>
+                                            <td class="has-text-centered" style="vertical-align: middle;">
+                                                <button type="button" class="button is-danger is-small is-outlined" onclick="eliminarDelCarrito('.$id_prod.')">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
                                             </td>
                                         </tr>';
                                     }
                                     echo '<tr class="has-background-light">
-                                            <td colspan="4" class="has-text-right has-text-weight-bold">TOTAL:</td>
-                                            <td class="has-text-centered has-text-weight-bold has-text-link" id="total-orden-txt">$'.number_format($total_estimado_orden, 2).'</td>
-                                            <td></td></tr>';
+                                            <td colspan="6" class="has-text-right has-text-weight-bold" style="vertical-align: middle;">TOTAL:</td>
+                                            <td class="has-text-centered has-text-weight-bold has-text-link" id="total-orden-txt" colspan="2" style="vertical-align: middle;">$'.number_format($total_estimado_orden, 2).'</td>
+                                        </tr>';
                                 } else {
-                                    echo '<tr class="has-text-centered"><td colspan="6">Aún no hay productos</td></tr>';
+                                    echo '<tr class="has-text-centered"><td colspan="8">Aún no hay productos</td></tr>';
                                 }
                             ?>
                         </tbody>
                     </table>
 
                     <?php if(isset($_SESSION['datos_compra']) && count($_SESSION['datos_compra'])>=1){ ?>
-                    <div class="columns is-centered mt-4">
-                        <div class="column is-4">
-                            <label class="label">Anticipo ($)</label>
-                            <input class="input" type="number" step="0.01" name="compra_pago_inicial" id="compra_pago_inicial" placeholder="0.00">
+                        <div class="columns is-centered mt-4">
+                            <div class="column is-4">
+                                <label class="label">Anticipo ($)</label>
+                                <input class="input" type="number" step="0.01" name="compra_pago_inicial" id="compra_pago_inicial" placeholder="0.00">
+                            </div>
+                            <div class="column is-6">
+                                <label class="label">Condiciones (Nota)</label>
+                                <input class="input" type="text" name="compra_nota" placeholder="Ej: Pago a 30 días">
+                            </div>
                         </div>
-                        <div class="column is-6">
-                            <label class="label">Condiciones (Nota)</label>
-                            <input class="input" type="text" name="compra_nota" placeholder="Ej: Pago a 30 días">
-                        </div>
-                    </div>
-                   <p class="has-text-centered mt-5">
-                        <button type="submit" class="button is-success is-rounded"><i class="far fa-save"></i> &nbsp; GENERAR ORDEN</button>
-                        
-                        <button type="button" class="button is-danger is-outlined is-rounded ml-3" onclick="vaciarCarritoCompleto()">
-                            <i class="fas fa-trash-alt"></i> &nbsp; Vaciar Carrito
-                        </button>
-                    </p>
+
+                        <p class="has-text-centered mt-5">
+                            <button type="submit" class="button is-success is-rounded">
+                                <i class="far fa-save"></i> &nbsp; GENERAR ORDEN
+                            </button>
+                            
+                            <button type="button" class="button is-danger is-outlined is-rounded ml-3" onclick="vaciarCarritoCompleto()">
+                                <i class="fas fa-trash-alt"></i> &nbsp; Vaciar Carrito
+                            </button>
+                        </p>
                     <?php } ?>
                 </div>
             </form>

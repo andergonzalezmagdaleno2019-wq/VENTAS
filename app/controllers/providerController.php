@@ -64,45 +64,45 @@
 		}
 
 		/*----------  Controlador listar proveedor ----------*/
-		public function listarProveedorControlador($pagina,$registros,$url,$busqueda){
-			$pagina=$this->limpiarCadena($pagina); $registros=$this->limpiarCadena($registros); $url=$this->limpiarCadena($url); $url=APP_URL.$url."/"; $busqueda=$this->limpiarCadena($busqueda); $tabla="";
-			$pagina = (isset($pagina) && $pagina>0) ? (int) $pagina : 1; $inicio = ($pagina>0) ? (($pagina * $registros)-$registros) : 0;
+        public function listarProveedorControlador($pagina,$registros,$url,$busqueda){
+            $pagina=$this->limpiarCadena($pagina); $registros=$this->limpiarCadena($registros); $url=$this->limpiarCadena($url); $url=APP_URL.$url."/"; $busqueda=$this->limpiarCadena($busqueda); $tabla="";
+            $pagina = (isset($pagina) && $pagina>0) ? (int) $pagina : 1; $inicio = ($pagina>0) ? (($pagina * $registros)-$registros) : 0;
 
-			if(isset($busqueda) && $busqueda!=""){
-				$consulta_datos="SELECT * FROM proveedor WHERE proveedor_nombre LIKE '%$busqueda%' OR proveedor_rif LIKE '%$busqueda%' ORDER BY proveedor_nombre ASC LIMIT $inicio,$registros";
-				$consulta_total="SELECT COUNT(proveedor_id) FROM proveedor WHERE proveedor_nombre LIKE '%$busqueda%' OR proveedor_rif LIKE '%$busqueda%'";
-			}else{
-				$consulta_datos="SELECT * FROM proveedor ORDER BY proveedor_nombre ASC LIMIT $inicio,$registros";
-				$consulta_total="SELECT COUNT(proveedor_id) FROM proveedor";
-			}
+            if(isset($busqueda) && $busqueda!=""){
+                $consulta_datos="SELECT * FROM proveedor WHERE proveedor_nombre LIKE '%$busqueda%' OR proveedor_rif LIKE '%$busqueda%' ORDER BY proveedor_nombre ASC LIMIT $inicio,$registros";
+                $consulta_total="SELECT COUNT(proveedor_id) FROM proveedor WHERE proveedor_nombre LIKE '%$busqueda%' OR proveedor_rif LIKE '%$busqueda%'";
+            }else{
+                $consulta_datos="SELECT * FROM proveedor ORDER BY proveedor_nombre ASC LIMIT $inicio,$registros";
+                $consulta_total="SELECT COUNT(proveedor_id) FROM proveedor";
+            }
 
-			$datos = $this->ejecutarConsulta($consulta_datos); $datos = $datos->fetchAll(); $total = $this->ejecutarConsulta($consulta_total); $total = (int) $total->fetchColumn(); $numeroPaginas =ceil($total/$registros);
+            $datos = $this->ejecutarConsulta($consulta_datos); $datos = $datos->fetchAll(); $total = $this->ejecutarConsulta($consulta_total); $total = (int) $total->fetchColumn(); $numeroPaginas =ceil($total/$registros);
 
-			$tabla.='<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-light"><th class="has-text-centered">#</th><th class="has-text-centered">Nombre</th><th class="has-text-centered">RIF</th><th class="has-text-centered">Teléfono</th><th class="has-text-centered">Dirección</th><th class="has-text-centered" colspan="2">Opciones</th></tr></thead><tbody>';
+            $tabla.='<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-light"><th class="has-text-centered">#</th><th class="has-text-centered">Nombre</th><th class="has-text-centered">RIF</th><th class="has-text-centered">Teléfono</th><th class="has-text-centered">Dirección</th><th class="has-text-centered" colspan="2">Opciones</th></tr></thead><tbody>';
 
-			if($total>=1 && $pagina<=$numeroPaginas){
-				$contador=$inicio+1; $pag_inicio=$inicio+1;
-				foreach($datos as $rows){
+            if($total>=1 && $pagina<=$numeroPaginas){
+                $contador=$inicio+1; $pag_inicio=$inicio+1;
+                foreach($datos as $rows){
                     // Formatear teléfono para vista
                     $tel_tabla = ($rows['proveedor_telefono'] != "") ? substr($rows['proveedor_telefono'], 0, 4)."-".substr($rows['proveedor_telefono'], 4) : "N/A";
-					
+                    
 
                     $rif_tabla = $rows['proveedor_rif'];
                     if(preg_match('/^[0-9]/', $rif_tabla)){
                         $rif_tabla = "J-" . $rif_tabla;
                     }
 
-                    $tabla.='<tr class="has-text-centered" ><td>'.$contador.'</td><td><strong>'.$rows['proveedor_nombre'].'</strong></td><td>'.$rif_tabla.'</td><td>'.$tel_tabla.'</td><td>'.$rows['proveedor_direccion'].'</td><td><a href="'.APP_URL.'providerUpdate/'.$rows['proveedor_id'].'/" class="button is-success is-rounded is-small"><i class="fas fa-sync"></i></a></td><td><form class="FormularioAjax" action="'.APP_URL.'app/ajax/proveedorAjax.php" method="POST" autocomplete="off" ><input type="hidden" name="modulo_proveedor" value="eliminar"><input type="hidden" name="proveedor_id" value="'.$rows['proveedor_id'].'"><button type="submit" class="button is-danger is-rounded is-small"><i class="far fa-trash-alt"></i></button></form></td></tr>';
-					$contador++;
-				}
-				$pag_final=$contador-1;
-			}else{ $tabla.='<tr class="has-text-centered" ><td colspan="7">No hay proveedores registrados</td></tr>'; }
+                    $tabla.='<tr class="has-text-centered" ><td>'.$contador.'</td><td><strong>'.$rows['proveedor_nombre'].'</strong></td><td>'.$rif_tabla.'</td><td>'.$tel_tabla.'</td><td>'.$rows['proveedor_direccion'].'</td><td><a href="'.APP_URL.'providerUpdate/'.$rows['proveedor_id'].'/" class="button is-success is-rounded is-small"><i class="fas fa-sync"></i></a></td><td><form class="FormularioAjax" action="'.APP_URL.'app/ajax/proveedorAjax.php" method="POST" autocomplete="off" data-pregunta="¿Desea eliminar este proveedor? Se perderá el enlace directo para futuras órdenes de compra, aunque el historial de compras pasadas se mantendrá intacto."><input type="hidden" name="modulo_proveedor" value="eliminar"><input type="hidden" name="proveedor_id" value="'.$rows['proveedor_id'].'"><button type="submit" class="button is-danger is-rounded is-small"><i class="far fa-trash-alt"></i></button></form></td></tr>';
+                    $contador++;
+                }
+                $pag_final=$contador-1;
+            }else{ $tabla.='<tr class="has-text-centered" ><td colspan="7">No hay proveedores registrados</td></tr>'; }
 
-			$tabla.='</tbody></table></div>';
-			if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando proveedores <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de un <strong>total de '.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7); }
-			return $tabla;
-		}
-
+            $tabla.='</tbody></table></div>';
+            if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando proveedores <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de un <strong>total de '.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7); }
+            return $tabla;
+        }
+		
 		/*----------  Controlador eliminar proveedor  ----------*/
 		public function eliminarProveedorControlador(){
 			$id=$this->limpiarCadena($_POST['proveedor_id']);

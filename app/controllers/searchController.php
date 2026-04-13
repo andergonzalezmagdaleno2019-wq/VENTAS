@@ -6,7 +6,7 @@
 		public function modulosBusquedaControlador($modulo){
 			$listaModulos=[
                 'userSearch','cashierSearch','subcategorySearch',"subcategorylist",'clientSearch','categorySearch','productSearch','saleSearch',
-                'userList', 'productList', 'cashierList', 'clientList', 'categoryList', 'saleList', 'purchaseList', 'providerList'
+                'userList', 'productList', 'cashierList', 'clientList', 'categoryList', 'saleList', 'purchaseList', 'providerList', 'auditList'
             ];
 			if(in_array($modulo, $listaModulos)){
 				return false;

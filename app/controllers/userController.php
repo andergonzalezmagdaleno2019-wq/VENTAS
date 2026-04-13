@@ -142,7 +142,6 @@
             return json_encode($alerta);
         }
 
-
         /*----------  Controlador listar usuario  ----------*/
         public function listarUsuarioControlador($pagina,$registros,$url,$busqueda){
             $pagina=$this->limpiarCadena($pagina);
@@ -199,11 +198,12 @@
                     $estado = (isset($rows['usuario_estado'])) ? $rows['usuario_estado'] : "Activo";
                     if($estado == "Activo"){
                         $btn_estado = '<button type="submit" class="button is-warning is-rounded is-small" title="Inhabilitar Sistema"><i class="fas fa-user-slash"></i></button>';
+                        $pregunta_estado = "¿Está seguro de que desea INHABILITAR a este usuario? No podrá iniciar sesión hasta que sea activado nuevamente.";
                     } else {
                         $btn_estado = '<button type="submit" class="button is-dark is-rounded is-small" title="Activar Sistema"><i class="fas fa-user-check"></i></button>';
+                        $pregunta_estado = "¿Desea ACTIVAR el acceso al sistema para este usuario?";
                     }
 
-                    // Se añade visualización de Cédula en la tabla general
                     $cedula_str = $rows['usuario_tipo_documento']."-".$rows['usuario_dni'];
 
                     $tabla.='
@@ -217,7 +217,7 @@
                                 <a href="'.APP_URL.'userPhoto/'.$rows['usuario_id'].'/" class="button is-info is-rounded is-small"><i class="fas fa-camera"></i></a>
                             </td>
                             <td style="vertical-align: middle;">
-                                <form class="FormularioAjax" action="'.APP_URL.'app/ajax/usuarioAjax.php" method="POST" autocomplete="off" >
+                                <form class="FormularioAjax" action="'.APP_URL.'app/ajax/usuarioAjax.php" method="POST" autocomplete="off" data-pregunta="'.$pregunta_estado.'">
                                     <input type="hidden" name="modulo_usuario" value="inhabilitar">
                                     <input type="hidden" name="usuario_id" value="'.$rows['usuario_id'].'">
                                     '.$btn_estado.'
@@ -227,7 +227,7 @@
                                 <a href="'.APP_URL.'userUpdate/'.$rows['usuario_id'].'/" class="button is-success is-rounded is-small"><i class="fas fa-sync"></i></a>
                             </td>
                             <td style="vertical-align: middle;">
-                                <form class="FormularioAjax" action="'.APP_URL.'app/ajax/usuarioAjax.php" method="POST" autocomplete="off" >
+                                <form class="FormularioAjax" action="'.APP_URL.'app/ajax/usuarioAjax.php" method="POST" autocomplete="off" data-pregunta="¿Está seguro de que desea ELIMINAR a este usuario de forma permanente? Esta acción no se puede deshacer.">
                                     <input type="hidden" name="modulo_usuario" value="eliminar">
                                     <input type="hidden" name="usuario_id" value="'.$rows['usuario_id'].'">
                                     <button type="submit" class="button is-danger is-rounded is-small"><i class="far fa-trash-alt"></i></button>
@@ -245,7 +245,7 @@
 
             if($total>0 && $pagina<=$numeroPaginas){
                 $tabla.='<p class="has-text-right">Mostrando usuarios <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de un <strong>total de '.$total.'</strong></p>';
-                $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7);
+                $tabla.=$this->paginadorTablas($pagina, $numeroPaginas, $url, 7);
             }
             return $tabla;
         }

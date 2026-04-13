@@ -229,7 +229,9 @@ public function agregarProductoCompraControlador(){
         "compra_cantidad"=>$cantidad, 
         "compra_costo"=>$costo, 
         "subtotal"=>$cantidad*$costo,
-        "costo_referencia"=>$costo_ref 
+        "costo_referencia"=>$costo_ref,
+        "producto_marca" => $campos['producto_marca'],
+        "producto_modelo" => $campos['producto_modelo']
     ];
     
     $_SESSION['datos_compra'][$id]=$detalle;
@@ -391,16 +393,26 @@ public function agregarProductoCompraControlador(){
             
             $nuevo_saldo = $total_factura - $total_pagado;
             
-            if($nuevo_saldo <= 0 && $total_factura > 0){
-                $estado = "Pagado";
+            // Determinamos el estado del pago y el estado de la compra
+            if($nuevo_saldo <= 0.01 && $total_factura > 0){
+                $estado_pago = "Pagado";
+                $estado_compra = "Completado"; // <--- Esto la mueve a la pestaña 'Completadas'
             } elseif ($total_pagado > 0 && $nuevo_saldo > 0) {
-                $estado = "Parcial";
+                $estado_pago = "Parcial";
+                $estado_compra = "Facturada"; // Sigue en 'Por Pagar'
             } else {
-                $estado = "Pendiente";
+                $estado_pago = "Pendiente";
+                $estado_compra = "Facturada"; // Sigue en 'Por Pagar'
             }
 
-            $this->ejecutarConsulta("UPDATE compra SET compra_saldo_pendiente='$nuevo_saldo', compra_estado_pago='$estado' WHERE compra_id='$compra_id'");
+            // Actualizamos saldo, estado de pago y el estado general de la compra
+            $this->ejecutarConsulta("UPDATE compra SET 
+                compra_saldo_pendiente='$nuevo_saldo', 
+                compra_estado_pago='$estado_pago', 
+                compra_estado='$estado_compra' 
+                WHERE compra_id='$compra_id'");
         }
+
         // Recibir Mercancía (Lógica ERP con Auto-Pago y Cuotas de Crédito) 
         public function registrarRecepcionControlador() {
             $compra_id = $this->limpiarCadena($_POST['compra_id']);
@@ -668,20 +680,36 @@ public function agregarProductoCompraControlador(){
                     }
                 }
 
-                // Actualizar saldos y estados generales
+                // Actualizar saldos y estados generales en la tabla compra
                 $this->actualizarSaldosCompra($id);
 
-                // Si el saldo quedó en 0, que todas las cuotas digan Pagado
+                /* --- CORRECCIÓN AUTOMÁTICA DE ESTADO --- */
+                // Verificamos el saldo final después de actualizar
                 $check_saldo_final = (float) $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetchColumn();
+                
                 if($check_saldo_final <= 0.01){
+                    // 1. Aseguramos que todas las cuotas de esta orden digan 'Pagado'
                     $this->ejecutarConsulta("UPDATE compra_cuotas SET cuota_estado='Pagado' WHERE compra_codigo='$codigo_compra'");
+                    
+                    // 2. CAMBIO DE ESTADO CLAVE: Movemos la compra a Completado
+                    $this->ejecutarConsulta("UPDATE compra SET compra_estado='Completado' WHERE compra_id='$id'");
+                    
+                    $mensaje = "¡Compra totalmente pagada! Se ha movido a la sección de Completadas.";
+                } else {
+                    $mensaje = "Se procesó el pago y se actualizaron las cuotas.";
                 }
 
-                return json_encode(["tipo"=>"recargar", "titulo"=>"¡Abono registrado!", "texto"=>"Se procesó el pago y se actualizaron las cuotas.", "icono"=>"success"]);
+                return json_encode([
+                    "tipo"=>"recargar", 
+                    "titulo"=>"¡Abono registrado!", 
+                    "texto"=>$mensaje, 
+                    "icono"=>"success"
+                ]);
             }
 
             return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Error al registrar en la base de datos", "icono"=>"error"]);
         }
+        
         public function listarAbonosCompra($id){
             $id = $this->limpiarCadena($id);
             return $this->ejecutarConsulta("SELECT cp.*, u.usuario_nombre, u.usuario_apellido FROM compra_pagos cp INNER JOIN usuario u ON cp.usuario_id = u.usuario_id WHERE cp.compra_id='$id' ORDER BY cp.pago_fecha DESC");
@@ -692,22 +720,59 @@ public function agregarProductoCompraControlador(){
             if($datos->rowCount() > 0){
                 $tabla = '<table class="table is-bordered is-striped is-narrow is-fullwidth"><thead><tr class="is-info"><th class="has-text-centered">Fecha</th><th class="has-text-centered">Monto</th><th class="has-text-centered">Método</th><th class="has-text-centered">Acciones</th></tr></thead><tbody>';
                 foreach($datos->fetchAll() as $pago){
-                    $tabla .= '<tr class="has-text-centered"><td>'.date("d/m/Y", strtotime($pago['pago_fecha'])).'</td><td class="has-text-weight-bold">$'.number_format($pago['pago_monto'], 2).'</td><td>'.$pago['pago_metodo'].'</td><td><form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" style="display: inline-block;"><input type="hidden" name="modulo_compra" value="eliminar_abono"><input type="hidden" name="pago_id" value="'.$pago['pago_id'].'"><input type="hidden" name="compra_id" value="'.$id.'"><button type="submit" class="button is-danger is-outline is-small is-rounded"><i class="far fa-trash-alt"></i></button></form></td></tr>';
+                    $tabla .= '<tr class="has-text-centered">
+                        <td>'.date("d/m/Y", strtotime($pago['pago_fecha'])).'</td>
+                        <td class="has-text-weight-bold">$'.number_format($pago['pago_monto'], 2).'</td>
+                        <td>'.$pago['pago_metodo'].'</td>
+                        <td>
+                            <form class="FormularioAjax" action="'.APP_URL.'app/ajax/compraAjax.php" method="POST" style="display: inline-block;" data-pregunta="¿Está seguro de que desea ELIMINAR este abono? El monto será restado de los pagos realizados y aumentará el saldo pendiente de la cuenta por pagar.">
+                                <input type="hidden" name="modulo_compra" value="eliminar_abono">
+                                <input type="hidden" name="pago_id" value="'.$pago['pago_id'].'">
+                                <input type="hidden" name="compra_id" value="'.$id.'">
+                                <button type="submit" class="button is-danger is-outline is-small is-rounded">
+                                    <i class="far fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>';
                 }
                 $tabla .= '</tbody></table>';
-            } else { $tabla = '<p class="has-text-centered">No hay abonos registrados.</p>'; }
+            } else { 
+                $tabla = '<p class="has-text-centered">No hay abonos registrados.</p>'; 
+            }
             return $tabla;
         }
 
-        public function eliminarAbonoControlador(){
-            $pago_id = $this->limpiarCadena($_POST['pago_id']);
-            $compra_id = $this->limpiarCadena($_POST['compra_id']);
-            if($this->ejecutarConsulta("DELETE FROM compra_pagos WHERE pago_id='$pago_id'")->rowCount() == 1){
-                $this->actualizarSaldosCompra($compra_id);
-                return json_encode(["tipo"=>"recargar", "titulo"=>"Eliminado", "texto"=>"Abono borrado y saldo restaurado", "icono"=>"success"]);
-            }
-            return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"No se pudo eliminar", "icono"=>"error"]);
+    /*----------  Controlador eliminar abono compra  ----------*/
+    public function eliminarAbonoControlador(){
+        $pago_id = $this->limpiarCadena($_POST['pago_id']);
+        $compra_id = $this->limpiarCadena($_POST['compra_id']);
+
+        // Verificamos si el pago existe y lo eliminamos
+        $eliminar_pago = $this->ejecutarConsulta("DELETE FROM compra_pagos WHERE pago_id='$pago_id'");
+
+        if($eliminar_pago->rowCount() == 1){
+            
+            // Recalculamos el saldo de la compra
+            $this->actualizarSaldosCompra($compra_id);
+            
+            $alerta = [
+                "tipo" => "recargar",
+                "titulo" => "Abono eliminado",
+                "texto" => "El abono ha sido borrado correctamente y el saldo de la compra fue restaurado.",
+                "icono" => "success"
+            ];
+        } else {
+            $alerta = [
+                "tipo" => "simple",
+                "titulo" => "Error",
+                "texto" => "No se pudo eliminar el abono solicitado, por favor intente nuevamente.",
+                "icono" => "error"
+            ];
         }
+
+        return json_encode($alerta);
+    }
 
         /*---------- Anulación de Compra Segura ----------*/
         public function eliminarCompraControlador() {
@@ -728,7 +793,22 @@ public function agregarProductoCompraControlador(){
 
             $anular = $this->ejecutarConsulta("UPDATE compra SET compra_estado='Anulada', compra_saldo_pendiente='0', compra_nota_interna='$nueva_nota_auditoria' WHERE compra_id='$id'");
 
-            if($anular->rowCount() == 1){ return json_encode(["tipo" => "recargar", "titulo" => "Anulada", "texto" => "El inventario fue revertido y la compra se anuló.", "icono" => "success"]); } 
+            if($anular->rowCount() == 1){
+                // Si la consulta de recepciones trajo filas, significa que sí entró mercancía
+                if($recepciones->rowCount() > 0){
+                    $mensaje_texto = "El inventario fue revertido y la compra se anuló correctamente.";
+                } else {
+                    // Si no hay filas, la orden estaba "En Proceso" y no afectó el stock
+                    $mensaje_texto = "La orden de compra ha sido anulada (No hubo afectación de inventario).";
+                }
+
+                return json_encode([
+                    "tipo" => "recargar", 
+                    "titulo" => "Compra Anulada", 
+                    "texto" => $mensaje_texto, 
+                    "icono" => "success"
+                ]); 
+            }
             else { return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "Error al anular.", "icono" => "error"]); }
         }
 

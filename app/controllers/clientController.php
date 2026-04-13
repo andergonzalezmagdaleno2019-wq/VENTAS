@@ -4,7 +4,7 @@ use app\models\mainModel;
 
 class clientController extends mainModel
 {
-    /*----------  Controlador registrar cliente  ----------*/
+  /*----------  Controlador registrar cliente  ----------*/
     public function registrarClienteControlador()
     {
         $tipo_documento = $this->limpiarCadena($_POST['cliente_tipo_documento']);
@@ -20,89 +20,133 @@ class clientController extends mainModel
         $telefono_numero = $this->limpiarCadena($_POST['cliente_telefono']);
         $email = $this->limpiarCadena($_POST['cliente_email']);
 
-        if ($tipo_documento == "" || $numero_documento == "" || $nombre == "" || $apellido == "" || $provincia == "" || $ciudad == "" || $direccion == "") {
-            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Faltan campos obligatorios", "icono" => "error"]; return json_encode($alerta); exit();
+        /*---------- Verificando campos obligatorios con mensajes específicos ----------*/
+        if ($tipo_documento == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Campo incompleto", "texto" => "El campo 'Tipo de Documento' es obligatorio. Por favor, seleccione una opción.", "icono" => "error"]; return json_encode($alerta); exit();
+        }
+        if ($numero_documento == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Campo incompleto", "texto" => "El campo 'Número de Documento' es obligatorio. Debe contener al menos un carácter numérico.", "icono" => "error"]; return json_encode($alerta); exit();
+        }
+        if ($nombre == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Campo incompleto", "texto" => "El campo 'Nombre' es obligatorio. Debe contener al menos una letra.", "icono" => "error"]; return json_encode($alerta); exit();
+        }
+        if ($apellido == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Campo incompleto", "texto" => "El campo 'Apellido' es obligatorio. Debe contener al menos una letra.", "icono" => "error"]; return json_encode($alerta); exit();
+        }
+        if ($provincia == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Campo incompleto", "texto" => "El campo 'Estado/Provincia' es obligatorio. Debe contener al menos una letra.", "icono" => "error"]; return json_encode($alerta); exit();
+        }
+        if ($ciudad == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Campo incompleto", "texto" => "El campo 'Ciudad' es obligatorio. Debe contener al menos una letra.", "icono" => "error"]; return json_encode($alerta); exit();
+        }
+        if ($direccion == "") {
+            $alerta = ["tipo" => "simple", "titulo" => "Campo incompleto", "texto" => "El campo 'Dirección' es obligatorio. Debe contener al menos un carácter para identificar la ubicación.", "icono" => "error"]; return json_encode($alerta); exit();
         }
 
-        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $nombre)){ $alerta=["tipo"=>"simple","titulo"=>"Nombre no válido","texto"=>"Solo se permiten letras.","icono"=>"error"]; return json_encode($alerta); exit(); }
-        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $apellido)){ $alerta=["tipo"=>"simple","titulo"=>"Apellido no válido","texto"=>"Solo se permiten letras.","icono"=>"error"]; return json_encode($alerta); exit(); }
-        if(!preg_match("/^[0-9]{7,10}$/", $numero_documento)){ $alerta=["tipo"=>"simple","titulo"=>"Error en Documento","texto"=>"La cédula debe ser solo números (7 a 10 dígitos).","icono"=>"error"]; return json_encode($alerta); exit(); }
-        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $provincia)){ $alerta = ["tipo" => "simple", "titulo" => "Estado no válido", "texto" => "Sin números, de 4 a 30 letras.", "icono" => "error"]; return json_encode($alerta); exit(); }
-		if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $ciudad)){ $alerta = ["tipo" => "simple", "titulo" => "Ciudad no válida", "texto" => "Sin números, de 4 a 30 letras.", "icono" => "error"]; return json_encode($alerta); exit(); }
-		if(!preg_match("/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}$/", $direccion)){ $alerta = ["tipo" => "simple", "titulo" => "Dirección no válida", "texto" => "Caracteres no permitidos o longitud incorrecta.", "icono" => "error"]; return json_encode($alerta); exit(); }
+        /*---------- Verificando integridad de datos (RegEx) ----------*/
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $nombre)){ $alerta=["tipo"=>"simple","titulo"=>"Nombre no válido","texto"=>"El nombre debe tener entre 3 y 40 caracteres (solo letras).","icono"=>"error"]; return json_encode($alerta); exit(); }
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{3,40}$/", $apellido)){ $alerta=["tipo"=>"simple","titulo"=>"Apellido no válido","texto"=>"El apellido debe tener entre 3 y 40 caracteres (solo letras).","icono"=>"error"]; return json_encode($alerta); exit(); }
+        if(!preg_match("/^[0-9]{7,10}$/", $numero_documento)){ $alerta=["tipo"=>"simple","titulo"=>"Error en Documento","texto"=>"La cédula debe contener entre 7 y 10 dígitos numéricos.","icono"=>"error"]; return json_encode($alerta); exit(); }
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $provincia)){ $alerta = ["tipo" => "simple", "titulo" => "Estado no válido", "texto" => "El campo estado debe tener entre 4 y 30 letras.", "icono" => "error"]; return json_encode($alerta); exit(); }
+        if(!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]{4,30}$/", $ciudad)){ $alerta = ["tipo" => "simple", "titulo" => "Ciudad no válida", "texto" => "El campo ciudad debe tener entre 4 y 30 letras.", "icono" => "error"]; return json_encode($alerta); exit(); }
+        if(!preg_match("/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ().,#\- ]{4,70}$/", $direccion)){ $alerta = ["tipo" => "simple", "titulo" => "Dirección no válida", "texto" => "La dirección contiene caracteres no permitidos o no cumple con la longitud (4 a 70 caracteres).", "icono" => "error"]; return json_encode($alerta); exit(); }
 
         # VALIDACIÓN Y UNIFICACIÓN DE TELÉFONO #
         $telefono = "";
         if ($telefono_numero != "" || $telefono_prefijo != "") {
             if($telefono_prefijo == ""){ $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Debe seleccionar un código de área.", "icono" => "error"]; return json_encode($alerta); exit(); }
-            if (!preg_match("/^[0-9]{7}$/", $telefono_numero)) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número de teléfono debe tener exactamente 7 dígitos.", "icono" => "error"]; return json_encode($alerta); exit(); }
+            if (!preg_match("/^[0-9]{7}$/", $telefono_numero)) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número de teléfono debe tener exactamente 7 dígitos numéricos.", "icono" => "error"]; return json_encode($alerta); exit(); }
             $telefono = $telefono_prefijo . $telefono_numero;
         }
 
         if ($email != "") {
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $alerta = ["tipo" => "simple", "titulo" => "Email inválido", "texto" => "Formato incorrecto", "icono" => "error"]; return json_encode($alerta); exit(); }
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $alerta = ["tipo" => "simple", "titulo" => "Email inválido", "texto" => "El formato del correo electrónico es incorrecto.", "icono" => "error"]; return json_encode($alerta); exit(); }
             $check_email = $this->ejecutarConsulta("SELECT cliente_email FROM cliente WHERE cliente_email='$email'");
-            if ($check_email->rowCount() > 0) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El EMAIL ya está registrado", "icono" => "error"]; return json_encode($alerta); exit(); }
+            if ($check_email->rowCount() > 0) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El correo electrónico ingresado ya está registrado en el sistema.", "icono" => "error"]; return json_encode($alerta); exit(); }
         }
 
         $check_documento = $this->ejecutarConsulta("SELECT cliente_id FROM cliente WHERE cliente_tipo_documento='$tipo_documento' AND cliente_numero_documento='$numero_documento'");
-        if ($check_documento->rowCount() > 0) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El documento ya se encuentra registrado", "icono" => "error"]; return json_encode($alerta); exit(); }
+        if ($check_documento->rowCount() > 0) { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "El número de documento ya se encuentra registrado con otro cliente.", "icono" => "error"]; return json_encode($alerta); exit(); }
 
-		$cliente_datos_reg = [
-			["campo_nombre" => "cliente_tipo_documento", "campo_marcador" => ":TipoDocumento", "campo_valor" => $tipo_documento],
-			["campo_nombre" => "cliente_numero_documento", "campo_marcador" => ":NumeroDocumento", "campo_valor" => $numero_documento],
-			["campo_nombre" => "cliente_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
-			["campo_nombre" => "cliente_apellido", "campo_marcador" => ":Apellido", "campo_valor" => $apellido],
-			["campo_nombre" => "cliente_provincia", "campo_marcador" => ":Provincia", "campo_valor" => $provincia],
-			["campo_nombre" => "cliente_ciudad", "campo_marcador" => ":Ciudad", "campo_valor" => $ciudad],
-			["campo_nombre" => "cliente_direccion", "campo_marcador" => ":Direccion", "campo_valor" => $direccion],
-			["campo_nombre" => "cliente_telefono", "campo_marcador" => ":Telefono", "campo_valor" => $telefono],
-			["campo_nombre" => "cliente_email", "campo_marcador" => ":Email", "campo_valor" => $email]
-		];
+        $cliente_datos_reg = [
+            ["campo_nombre" => "cliente_tipo_documento", "campo_marcador" => ":TipoDocumento", "campo_valor" => $tipo_documento],
+            ["campo_nombre" => "cliente_numero_documento", "campo_marcador" => ":NumeroDocumento", "campo_valor" => $numero_documento],
+            ["campo_nombre" => "cliente_nombre", "campo_marcador" => ":Nombre", "campo_valor" => $nombre],
+            ["campo_nombre" => "cliente_apellido", "campo_marcador" => ":Apellido", "campo_valor" => $apellido],
+            ["campo_nombre" => "cliente_provincia", "campo_marcador" => ":Provincia", "campo_valor" => $provincia],
+            ["campo_nombre" => "cliente_ciudad", "campo_marcador" => ":Ciudad", "campo_valor" => $ciudad],
+            ["campo_nombre" => "cliente_direccion", "campo_marcador" => ":Direccion", "campo_valor" => $direccion],
+            ["campo_nombre" => "cliente_telefono", "campo_marcador" => ":Telefono", "campo_valor" => $telefono],
+            ["campo_nombre" => "cliente_email", "campo_marcador" => ":Email", "campo_valor" => $email]
+        ];
 
-		$registrar_cliente = $this->guardarDatos("cliente", $cliente_datos_reg);
+        $registrar_cliente = $this->guardarDatos("cliente", $cliente_datos_reg);
 
-		if ($registrar_cliente->rowCount() == 1) {
-			$this->guardarBitacora("Clientes", "Registro", "Se registró el cliente: " . $nombre . " " . $apellido);
-			$alerta = ["tipo" => "redireccionar", "titulo" => "Cliente registrado", "texto" => "Registrado con éxito", "icono" => "success", "url" => APP_URL . "clientList/"];
-		} else {
-			$alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar el cliente", "icono" => "error"];
-		}
-		return json_encode($alerta);
-	}
+        if ($registrar_cliente->rowCount() == 1) {
+            $this->guardarBitacora("Clientes", "Registro", "Se registró el cliente: " . $nombre . " " . $apellido);
+            $alerta = ["tipo" => "redireccionar", "titulo" => "Cliente registrado", "texto" => "Los datos del cliente se almacenaron con éxito.", "icono" => "success", "url" => APP_URL . "clientList/"];
+        } else {
+            $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "Hubo un problema al intentar registrar el cliente, intente más tarde.", "icono" => "error"];
+        }
+        return json_encode($alerta);
+    }
+    
+    /*----------  Controlador listar cliente  ----------*/
+    public function listarClienteControlador($pagina, $registros, $url, $busqueda)
+    {
+        $pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $url = $this->limpiarCadena($url); $url = APP_URL . $url . "/"; $busqueda = $this->limpiarCadena($busqueda); $tabla = "";
+        $pagina = (isset($pagina) && $pagina > 0) ? (int) $pagina : 1; $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
-	/*----------  Controlador listar cliente  ----------*/
-	public function listarClienteControlador($pagina, $registros, $url, $busqueda)
-	{
-		$pagina = $this->limpiarCadena($pagina); $registros = $this->limpiarCadena($registros); $url = $this->limpiarCadena($url); $url = APP_URL . $url . "/"; $busqueda = $this->limpiarCadena($busqueda); $tabla = "";
-		$pagina = (isset($pagina) && $pagina > 0) ? (int) $pagina : 1; $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
+        if (isset($busqueda) && $busqueda != "") {
+            $consulta_datos = "SELECT * FROM cliente WHERE ((cliente_id!='1') AND (cliente_tipo_documento LIKE '%$busqueda%' OR cliente_numero_documento LIKE '%$busqueda%' OR cliente_nombre LIKE '%$busqueda%' OR cliente_apellido LIKE '%$busqueda%' OR cliente_email LIKE '%$busqueda%' OR cliente_provincia LIKE '%$busqueda%' OR cliente_ciudad LIKE '%$busqueda%')) ORDER BY cliente_nombre ASC LIMIT $inicio,$registros";
+            $consulta_total = "SELECT COUNT(cliente_id) FROM cliente WHERE ((cliente_id!='1') AND (cliente_tipo_documento LIKE '%$busqueda%' OR cliente_numero_documento LIKE '%$busqueda%' OR cliente_nombre LIKE '%$busqueda%' OR cliente_apellido LIKE '%$busqueda%' OR cliente_email LIKE '%$busqueda%' OR cliente_provincia LIKE '%$busqueda%' OR cliente_ciudad LIKE '%$busqueda%'))";
+        } else {
+            $consulta_datos = "SELECT * FROM cliente WHERE cliente_id!='1' ORDER BY cliente_nombre ASC LIMIT $inicio,$registros";
+            $consulta_total = "SELECT COUNT(cliente_id) FROM cliente WHERE cliente_id!='1'";
+        }
 
-		if (isset($busqueda) && $busqueda != "") {
-			$consulta_datos = "SELECT * FROM cliente WHERE ((cliente_id!='1') AND (cliente_tipo_documento LIKE '%$busqueda%' OR cliente_numero_documento LIKE '%$busqueda%' OR cliente_nombre LIKE '%$busqueda%' OR cliente_apellido LIKE '%$busqueda%' OR cliente_email LIKE '%$busqueda%' OR cliente_provincia LIKE '%$busqueda%' OR cliente_ciudad LIKE '%$busqueda%')) ORDER BY cliente_nombre ASC LIMIT $inicio,$registros";
-			$consulta_total = "SELECT COUNT(cliente_id) FROM cliente WHERE ((cliente_id!='1') AND (cliente_tipo_documento LIKE '%$busqueda%' OR cliente_numero_documento LIKE '%$busqueda%' OR cliente_nombre LIKE '%$busqueda%' OR cliente_apellido LIKE '%$busqueda%' OR cliente_email LIKE '%$busqueda%' OR cliente_provincia LIKE '%$busqueda%' OR cliente_ciudad LIKE '%$busqueda%'))";
-		} else {
-			$consulta_datos = "SELECT * FROM cliente WHERE cliente_id!='1' ORDER BY cliente_nombre ASC LIMIT $inicio,$registros";
-			$consulta_total = "SELECT COUNT(cliente_id) FROM cliente WHERE cliente_id!='1'";
-		}
+        $datos = $this->ejecutarConsulta($consulta_datos); $datos = $datos->fetchAll(); $total = $this->ejecutarConsulta($consulta_total); $total = (int) $total->fetchColumn(); $numeroPaginas = ceil($total / $registros);
 
-		$datos = $this->ejecutarConsulta($consulta_datos); $datos = $datos->fetchAll(); $total = $this->ejecutarConsulta($consulta_total); $total = (int) $total->fetchColumn(); $numeroPaginas = ceil($total / $registros);
+        $tabla .= '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-light"><th class="has-text-centered">#</th><th class="has-text-centered">Documento</th><th class="has-text-centered">Nombre</th><th class="has-text-centered">Teléfono</th><th class="has-text-centered">Actualizar</th><th class="has-text-centered">Eliminar</th></tr></thead><tbody>';
 
-		$tabla .= '<div class="table-container"><table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"><thead><tr class="has-background-link-light"><th class="has-text-centered">#</th><th class="has-text-centered">Documento</th><th class="has-text-centered">Nombre</th><th class="has-text-centered">Teléfono</th><th class="has-text-centered">Actualizar</th><th class="has-text-centered">Eliminar</th></tr></thead><tbody>';
-
-		if ($total >= 1 && $pagina <= $numeroPaginas) {
-			$contador = $inicio + 1; $pag_inicio = $inicio + 1;
-			foreach ($datos as $rows) {
-                // Formateamos el teléfono para que se vea bien en la tabla
+        if ($total >= 1 && $pagina <= $numeroPaginas) {
+            $contador = $inicio + 1; $pag_inicio = $inicio + 1;
+            foreach ($datos as $rows) {
                 $tel_tabla = ($rows['cliente_telefono'] != "") ? substr($rows['cliente_telefono'], 0, 4)."-".substr($rows['cliente_telefono'], 4) : "N/A";
-				$tabla .= '<tr class="has-text-centered" ><td>' . $contador . '</td><td>' . $rows['cliente_tipo_documento'] . '-' . $rows['cliente_numero_documento'] . '</td><td>' . $rows['cliente_nombre'] . ' ' . $rows['cliente_apellido'] . '</td><td>' . $tel_tabla . '</td><td><a href="' . APP_URL . 'clientUpdate/' . $rows['cliente_id'] . '/" class="button is-success is-rounded is-small"><i class="fas fa-sync fa-fw"></i></a></td><td><form class="FormularioAjax" action="' . APP_URL . 'app/ajax/clienteAjax.php" method="POST" autocomplete="off" ><input type="hidden" name="modulo_cliente" value="eliminar"><input type="hidden" name="cliente_id" value="' . $rows['cliente_id'] . '"><button type="submit" class="button is-danger is-rounded is-small"><i class="far fa-trash-alt fa-fw"></i></button></form></td></tr>';
-				$contador++;
-			}
-			$pag_final = $contador - 1;
-		} else { $tabla .= '<tr class="has-text-centered" ><td colspan="6">No hay registros en el sistema</td></tr>'; }
-		$tabla .= '</tbody></table></div>';
-		if ($total > 0 && $pagina <= $numeroPaginas) { $tabla .= '<p class="has-text-right">Mostrando clientes <strong>' . $pag_inicio . '</strong> al <strong>' . $pag_final . '</strong> de un <strong>total de ' . $total . '</strong></p>'; $tabla .= $this->paginadorTablas($pagina, $numeroPaginas, $url, 7); }
-		return $tabla;
-	}
+                
+                $tabla .= '<tr class="has-text-centered" >
+                    <td>' . $contador . '</td>
+                    <td>' . $rows['cliente_tipo_documento'] . '-' . $rows['cliente_numero_documento'] . '</td>
+                    <td>' . $rows['cliente_nombre'] . ' ' . $rows['cliente_apellido'] . '</td>
+                    <td>' . $tel_tabla . '</td>
+                    <td>
+                        <a href="' . APP_URL . 'clientUpdate/' . $rows['cliente_id'] . '/" class="button is-success is-rounded is-small">
+                            <i class="fas fa-sync fa-fw"></i>
+                        </a>
+                    </td>
+                    <td>
+                        <form class="FormularioAjax" action="' . APP_URL . 'app/ajax/clienteAjax.php" method="POST" autocomplete="off" data-pregunta="¿Desea eliminar este cliente? Se perderán sus datos de contacto y facturación, aunque su historial de ventas pasadas se mantendrá por integridad contable." >
+                            <input type="hidden" name="modulo_cliente" value="eliminar">
+                            <input type="hidden" name="cliente_id" value="' . $rows['cliente_id'] . '">
+                            <button type="submit" class="button is-danger is-rounded is-small">
+                                <i class="far fa-trash-alt fa-fw"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>';
+                $contador++;
+            }
+            $pag_final = $contador - 1;
+        } else { $tabla .= '<tr class="has-text-centered" ><td colspan="6">No hay registros en el sistema</td></tr>'; }
+        
+        $tabla .= '</tbody></table></div>';
+        
+        if ($total > 0 && $pagina <= $numeroPaginas) { 
+            $tabla .= '<p class="has-text-right">Mostrando clientes <strong>' . $pag_inicio . '</strong> al <strong>' . $pag_final . '</strong> de un <strong>total de ' . $total . '</strong></p>'; 
+            $tabla .= $this->paginadorTablas($pagina, $numeroPaginas, $url, 7); 
+        }
+        return $tabla;
+    }
 
 	/*----------  Controlador eliminar cliente  ----------*/
 	public function eliminarClienteControlador()

@@ -89,7 +89,7 @@
 		}
 
 
-		/*----------  Controlador listar categoria (CON DISEÑO MEJORADO) ----------*/
+		/*----------  Controlador listar categoria  ----------*/
 		public function listarCategoriaControlador($pagina,$registros,$url,$busqueda){
 
 			$pagina=$this->limpiarCadena($pagina);
@@ -102,13 +102,13 @@
 			$pagina = (isset($pagina) && $pagina>0) ? (int) $pagina : 1;
 			$inicio = ($pagina>0) ? (($pagina * $registros)-$registros) : 0;
 
-            if (isset($busqueda) && $busqueda != "") {
-                $consulta_datos = "SELECT * FROM categoria WHERE (categoria_nombre LIKE '%$busqueda%' OR categoria_ubicacion LIKE '%$busqueda%') AND categoria_padre_id IS NULL ORDER BY categoria_nombre ASC LIMIT $inicio,$registros";
-                $consulta_total = "SELECT COUNT(categoria_id) FROM categoria WHERE (categoria_nombre LIKE '%$busqueda%' OR categoria_ubicacion LIKE '%$busqueda%') AND categoria_padre_id IS NULL";
-            } else {
-                $consulta_datos = "SELECT * FROM categoria WHERE categoria_padre_id IS NULL ORDER BY categoria_nombre ASC LIMIT $inicio,$registros";
-                $consulta_total = "SELECT COUNT(categoria_id) FROM categoria WHERE categoria_padre_id IS NULL";
-            }
+			if (isset($busqueda) && $busqueda != "") {
+				$consulta_datos = "SELECT * FROM categoria WHERE (categoria_nombre LIKE '%$busqueda%' OR categoria_ubicacion LIKE '%$busqueda%') AND categoria_padre_id IS NULL ORDER BY categoria_nombre ASC LIMIT $inicio,$registros";
+				$consulta_total = "SELECT COUNT(categoria_id) FROM categoria WHERE (categoria_nombre LIKE '%$busqueda%' OR categoria_ubicacion LIKE '%$busqueda%') AND categoria_padre_id IS NULL";
+			} else {
+				$consulta_datos = "SELECT * FROM categoria WHERE categoria_padre_id IS NULL ORDER BY categoria_nombre ASC LIMIT $inicio,$registros";
+				$consulta_total = "SELECT COUNT(categoria_id) FROM categoria WHERE categoria_padre_id IS NULL";
+			}
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
 			$total = $this->ejecutarConsulta($consulta_total);
@@ -116,25 +116,25 @@
 			$numeroPaginas =ceil($total/$registros);
 
 			$tabla.='
-		        <div class="table-container">
-		        <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-		            <thead>
-		                <tr class="has-background-link-light">
-		                    <th class="has-text-centered">#</th>
-		                    <th class="has-text-left">Nombre de Categoría</th>
-		                    <th class="has-text-left">Codificación en Almacén</th>
-		                    <th class="has-text-centered" colspan="3">Opciones</th>
-		                </tr>
-		            </thead>
-		            <tbody>
-		    ';
+				<div class="table-container">
+				<table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+					<thead>
+						<tr class="has-background-link-light">
+							<th class="has-text-centered">#</th>
+							<th class="has-text-left">Nombre de Categoría</th>
+							<th class="has-text-left">Codificación en Almacén</th>
+							<th class="has-text-centered" colspan="3">Opciones</th>
+						</tr>
+					</thead>
+					<tbody>
+			';
 
-		    if($total>=1 && $pagina<=$numeroPaginas){
+			if($total>=1 && $pagina<=$numeroPaginas){
 				$contador=$inicio+1;
 				$pag_inicio=$inicio+1;
 				foreach($datos as $rows){
 
-                    $ubicacion = ($rows['categoria_ubicacion'] != "") ? $rows['categoria_ubicacion'] : '<em class="has-text-grey-light">Sin ubicación registrada</em>';
+					$ubicacion = ($rows['categoria_ubicacion'] != "") ? $rows['categoria_ubicacion'] : '<em class="has-text-grey-light">Sin ubicación registrada</em>';
 
 				$tabla.='
 					<tr>
@@ -148,7 +148,7 @@
 							</a>
 						</td>
 						<td class="has-text-centered">
-							<form class="FormularioAjax" action="'.APP_URL.'app/ajax/categoriaAjax.php" method="POST" autocomplete="off" >
+							<form class="FormularioAjax" action="'.APP_URL.'app/ajax/categoriaAjax.php" method="POST" autocomplete="off" data-pregunta="¿Está seguro de que desea ELIMINAR esta categoría? Tenga en cuenta que los productos asociados a ella podrían quedar sin una clasificación asignada en el inventario.">
 								<input type="hidden" name="modulo_categoria" value="eliminar">
 								<input type="hidden" name="categoria_id" value="'.$rows['categoria_id'].'">
 								<button type="submit" class="button is-danger is-rounded is-small" title="Eliminar categoría">
@@ -210,7 +210,7 @@
 				<div class="table-container">
 				<table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
 					<thead>
-						<tr>
+						<tr class="has-background-link-light">
 							<th class="has-text-centered">#</th>
 							<th class="has-text-centered">Nombre</th>
 							<th class="has-text-centered">Ubicación</th>
@@ -240,7 +240,7 @@
 								</a>
 							</td>
 							<td>
-								<form class="FormularioAjax" action="'.APP_URL.'app/ajax/categoriaAjax.php" method="POST" autocomplete="off" >
+								<form class="FormularioAjax" action="'.APP_URL.'app/ajax/categoriaAjax.php" method="POST" autocomplete="off" data-pregunta="¿Está seguro de que desea ELIMINAR esta subcategoría? Los productos vinculados a ella perderán su clasificación específica en el reporte de inventario.">
 									<input type="hidden" name="modulo_categoria" value="eliminar">
 									<input type="hidden" name="categoria_id" value="'.$rows['categoria_id'].'">
 									<button type="submit" class="button is-danger is-rounded is-small">
