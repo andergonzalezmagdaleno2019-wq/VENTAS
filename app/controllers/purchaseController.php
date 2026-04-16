@@ -743,36 +743,62 @@ public function agregarProductoCompraControlador(){
             return $tabla;
         }
 
-    /*----------  Controlador eliminar abono compra  ----------*/
-    public function eliminarAbonoControlador(){
-        $pago_id = $this->limpiarCadena($_POST['pago_id']);
-        $compra_id = $this->limpiarCadena($_POST['compra_id']);
+/*=============================================
+        =            ELIMINAR ABONO (REVERSO)         =
+        =============================================*/
+        public function eliminarAbonoControlador(){
+            $pago_id = $this->limpiarCadena($_POST['pago_id']);
+            $compra_id = $this->limpiarCadena($_POST['compra_id']);
 
-        // Verificamos si el pago existe y lo eliminamos
-        $eliminar_pago = $this->ejecutarConsulta("DELETE FROM compra_pagos WHERE pago_id='$pago_id'");
+            // 1. Obtenemos el código de la compra
+            $consulta = $this->ejecutarConsulta("SELECT compra_codigo FROM compra WHERE compra_id='$compra_id'");
+            $datos_compra = $consulta->fetch();
+            
+            if(!$datos_compra){
+                 return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "No encontramos la compra asociada.", "icono" => "error"]);
+            }
 
-        if($eliminar_pago->rowCount() == 1){
-            
-            // Recalculamos el saldo de la compra
-            $this->actualizarSaldosCompra($compra_id);
-            
-            $alerta = [
-                "tipo" => "recargar",
-                "titulo" => "Abono eliminado",
-                "texto" => "El abono ha sido borrado correctamente y el saldo de la compra fue restaurado.",
-                "icono" => "success"
-            ];
-        } else {
-            $alerta = [
-                "tipo" => "simple",
-                "titulo" => "Error",
-                "texto" => "No se pudo eliminar el abono solicitado, por favor intente nuevamente.",
-                "icono" => "error"
-            ];
+            $codigo = $datos_compra['compra_codigo'];
+
+            // 2. Eliminamos el registro del dinero (Paso 1 del reverso)
+            $eliminar_pago = $this->ejecutarConsulta("DELETE FROM compra_pagos WHERE pago_id='$pago_id'");
+
+            if($eliminar_pago->rowCount() == 1){
+                
+                // 3. REVERSIÓN DE CUOTAS Y CONTADOR (Paso 2 del reverso)
+                $ultima_cuota = $this->ejecutarConsulta("SELECT cuota_id FROM compra_cuotas 
+                    WHERE compra_codigo='$codigo' AND cuota_estado='Pagado' 
+                    ORDER BY cuota_numero DESC LIMIT 1")->fetch();
+
+                if($ultima_cuota){
+                    $cuota_id = $ultima_cuota['cuota_id'];
+                    $this->ejecutarConsulta("UPDATE compra_cuotas SET cuota_estado='Pendiente' WHERE cuota_id='$cuota_id'");
+                    $this->ejecutarConsulta("UPDATE compra SET compra_cuotas_pagadas = IF(compra_cuotas_pagadas > 0, compra_cuotas_pagadas - 1, 0) WHERE compra_id='$compra_id'");
+                }
+
+                // 4. RECALCULAR SALDOS GENERALES (Paso 3 del reverso)
+                $this->actualizarSaldosCompra($compra_id);
+
+                // 5. DEVOLVER EL ESTADO (LA SOLUCIÓN DEFINITIVA)
+                // Si pudimos borrar un abono, es porque la compra ya era 'Facturada'.
+                // La forzamos a volver a ese estado para mantener el botón verde activo.
+                $this->ejecutarConsulta("UPDATE compra SET compra_estado='Facturada' WHERE compra_id='$compra_id'");
+
+                return json_encode([
+                    "tipo" => "recargar",
+                    "titulo" => "Abono eliminado",
+                    "texto" => "El abono fue borrado, el saldo restaurado y la cuota volvió a estar pendiente.",
+                    "icono" => "success"
+                ]);
+            } else {
+                return json_encode([
+                    "tipo" => "simple",
+                    "titulo" => "Error",
+                    "texto" => "El abono ya no existe o no pudo ser eliminado.",
+                    "icono" => "error"
+                ]);
+            }
         }
-
-        return json_encode($alerta);
-    }
 
         /*---------- Anulación de Compra Segura ----------*/
         public function eliminarCompraControlador() {

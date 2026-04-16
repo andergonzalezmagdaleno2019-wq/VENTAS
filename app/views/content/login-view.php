@@ -80,9 +80,6 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
                     <i class="fas fa-eye" id="icon_login"></i>
                 </span>
             </div>
-            <p id="nota_mayuscula" class="help is-info mt-1 ml-1" style="font-size: 0.8rem; display: none;">
-                <i class="fas fa-info-circle"></i>Solo es de estilo la inicial <strong>Mayúscula</strong>.
-            </p>
         </div>
 
         <?php
@@ -124,16 +121,6 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
 </body>
 </html>
     <script>
-
-    // Función para mostrar la nota cuando el usuario hace clic en contraseña
-    function mostrarNota() {
-        document.getElementById('nota_mayuscula').style.display = 'block';
-    }
-
-    // Función para ocultar la nota cuando el usuario sale del campo de contraseña
-    function ocultarNota() {
-        document.getElementById('nota_mayuscula').style.display = 'none';
-    }
 
     function toggleLoginPassword() {
         const input = document.getElementById('login_clave');

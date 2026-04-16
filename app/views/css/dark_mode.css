@@ -1296,3 +1296,18 @@ input[type="search"].input {
     background-color: rgba(255, 140, 0, 0.1) !important;
     color: #ff8c00 !important;
 }
+
+/* --- EXCEPCIONES PARA FORMULARIO DE REGISTRO --- */
+#usuario_clave_1, 
+#usuario_clave_2, 
+#login_clave,
+input[type="password"] {
+    text-transform: none !important;
+    font-variant: normal !important;
+}
+
+#login_clave {
+    text-transform: none !important;
+    font-variant: normal !important;
+    font-feature-settings: "smcp" 0, "c2sc" 0 !important; /* Desactiva mayúsculas pequeñas */
+}

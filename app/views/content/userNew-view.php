@@ -74,10 +74,6 @@
 					<span class="icon is-small is-right" onclick="togglePassword('usuario_clave_1', 'icon_1')" style="pointer-events: all; cursor: pointer; margin-top: 1.5rem;">
 						<i class="fas fa-eye" id="icon_1"></i>
 					</span>
-					<p class="help is-info mt-0" style="font-size: 0.85rem; line-height: 1.2;">
-						<i class="fas fa-info-circle"></i> 
-						Nota: Si tu clave inicia con una letra, se marcará en <strong>Mayúscula</strong> por defecto.
-					</p>
 				</div>
 			</div>
 			<div class="column">

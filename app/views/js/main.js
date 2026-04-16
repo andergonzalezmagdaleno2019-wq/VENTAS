@@ -78,18 +78,23 @@ document.addEventListener('DOMContentLoaded', () => {
       closeAllModals();
     }
   });
-  
-    /* Capitalizar la primera letra de los inputs automáticamente */
+    
+  /* Capitalizar la primera letra de los inputs automáticamente */
   document.addEventListener('input', (e) => {
-
       if (e.target.matches('.input') || e.target.matches('.textarea')) {
           
-          // EXCEPCIÓN: No capitalizar en campos de email o password (Login/Registro)
-          if (e.target.type === 'email' || e.target.type === 'password') return;
+          // Creamos una lista de palabras prohibidas para capitalizar
+          const id = e.target.id.toLowerCase();
+          const esCampoProtegido = id.includes('clave') || 
+                                  id.includes('email') || 
+                                  e.target.type === 'password' || 
+                                  e.target.type === 'email';
+
+          // Si es alguno de estos, SALIMOS del script
+          if (esCampoProtegido) return;
 
           let valor = e.target.value;
           if (valor.length > 0) {
-
               e.target.value = valor.charAt(0).toUpperCase() + valor.slice(1);
           }
       }
