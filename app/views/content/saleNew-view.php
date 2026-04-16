@@ -178,7 +178,7 @@
                             <div class="column is-half">
                                 <div class="control mb-5">
                                     <label>Referencia <span style="color:red;">*</span></label>
-                                    <input class="input" type="text" name="venta_referencia" id="venta_referencia" pattern="[0-9]{6}" maxlength="6" placeholder="Ej: 123456" required>
+                                    <input class="input only-numbers" type="text" name="venta_referencia" id="venta_referencia" pattern="[0-9]{6}" maxlength="6" placeholder="Ej: 123456" required>
                                 </div>
                             </div>
                         </div>

@@ -44,7 +44,7 @@
                 $pdf->Image('../views/img/logo.png',165,12,32,32,'PNG'); 
             }
 
-            // Datos Empresa
+            // Datos Empresa (Estandarizado)
             $pdf->SetFont('Arial','B',16);
             $pdf->SetTextColor(32,100,210);
             $pdf->Cell(150,10,iconv("UTF-8", "ISO-8859-1//TRANSLIT",strtoupper($datos_empresa['empresa_nombre'])),0,0,'L');
@@ -52,11 +52,13 @@
             $pdf->SetFont('Arial','',10);
             $pdf->SetTextColor(39,39,51);
             $pdf->Cell(150,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT","RIF: ".$datos_empresa['empresa_rif']),0,1,'L');
-            $pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_empresa['empresa_direccion']),0,1,'L');
+            $pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Teléfono: ".$datos_empresa['empresa_telefono']),0,1,'L');
+            $pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Correo: ".$datos_empresa['empresa_emailKV']),0,1,'L');
+            $pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Dirección: ".$datos_empresa['empresa_direccion']),0,1,'L');
             $pdf->Ln(10);
 
             $pdf->SetFont('Arial','B',14);
-            $pdf->Cell(0,10,iconv("UTF-8", "ISO-8859-1//TRANSLIT","NOTA DE COMPRA RECIBIDA"),0,1,'C');
+            $pdf->Cell(0,10,iconv("UTF-8", "ISO-8859-1//TRANSLIT","NOTA DE RECEPCIÓN"),0,1,'C');
             $pdf->Ln(5);
 
             // Información Recepción
@@ -71,12 +73,10 @@
             $pdf->Cell(100,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_compra['proveedor_nombre']),0,1);
 
             $pdf->SetFont('Arial','B',10);
-            $pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Facturas:'),0,0);
-            $query_facturas = $ins_compra->ejecutarConsulta("SELECT factura_numero FROM compra_factura WHERE compra_id='$id'");
-            $facturas_lista = $query_facturas->fetchAll(PDO::FETCH_COLUMN);
+            $pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT",'Nro. de Factura:'),0,0);
             $pdf->SetFont('Arial','',10);
             $pdf->SetTextColor(32,100,210);
-            $pdf->Cell(100,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT", (count($facturas_lista) > 0 ? implode(", ", $facturas_lista) : "N/A")),0,1);
+            $pdf->Cell(100,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT", $datos_compra['compra_codigo']),0,1);
             $pdf->Ln(5);
 
             // Tabla
@@ -105,10 +105,9 @@
                 $pdf->Cell(36,7,"$".number_format($item['cantidad_recibida']*$item['compra_detalle_precio'],2),'LRB',1,'R');
             }
 
-            /* --- CIERRE DE PÁGINA (TODO EN UNA SOLA HOJA) --- */
-            $pdf->SetAutoPageBreak(false); // Desactivamos el salto automático
+            /* --- CIERRE DE PÁGINA --- */
+            $pdf->SetAutoPageBreak(false);
 
-            // Totales (Ajustados a 200mm)
             $pdf->SetY(200); 
             $pdf->SetFont('Arial','B',10);
             $pdf->SetTextColor(39,39,51); 
@@ -124,7 +123,7 @@
                 $pdf->Cell(36,6,"Bs. ".number_format($datos_compra['compra_total']*$tasa,2),0,1,'R');
             }
 
-            // Firmas (Subidas a 230mm para que no toquen el pie)
+            // Firmas
             $pdf->SetY(230);
             $pdf->SetTextColor(39,39,51);
             $pdf->Cell(85,0,'',1,0); $pdf->Cell(11,0,'',0,0); $pdf->Cell(85,0,'',1,1);
@@ -132,7 +131,6 @@
             $pdf->Cell(11,7,'',0,0);
             $pdf->Cell(85,7,"Firma Proveedor (Entrega)",0,1,'C');
 
-            // Pie de página final
             $pdf->SetY(-15);
             $pdf->SetFont('Arial','I',7);
             $pdf->SetTextColor(150,150,150);

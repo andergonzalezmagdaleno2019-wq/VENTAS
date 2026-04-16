@@ -192,12 +192,12 @@
                                                 '.($costo_ref > 0 ? "$".number_format($costo_ref, 2) : '$0.00').'
                                             </td>
                                             <td style="vertical-align: middle;">
-                                                <input class="input is-small has-text-centered" type="number" step="0.01" name="detalle_precio['.$id_prod.']" value="'.$costo_ref.'" oninput="recalcularTotales()" style="width: 100%; max-width: 110px; margin: 0 auto; display: block;">
+                                                <input class="input input-precio is-small has-text-centered" type="number" step="0.01" data-min="'.$costo_ref.'" name="detalle_precio['.$id_prod.']" value="'.$costo_ref.'" oninput="recalcularTotales()" style="width: 100%; max-width: 110px; margin: 0 auto; display: block;">
                                             </td>
                                             <td style="vertical-align: middle;">
-                                                <input class="input is-small has-text-centered" type="number" name="detalle_cantidad['.$id_prod.']" value="'.$cant_actual.'" min="1" oninput="recalcularTotales()" style="width: 100%; max-width: 70px; margin: 0 auto; display: block;">
+                                                <input class="input input-cantidad is-small has-text-centered" type="number" name="detalle_cantidad['.$id_prod.']" value="'.$cant_actual.'" min="1" oninput="recalcularTotales()" style="width: 100%; max-width: 70px; margin: 0 auto; display: block;">
                                             </td>
-                                            <td class="has-text-centered has-text-weight-bold" style="vertical-align: middle;">$'.number_format($subtotal_est, 2).'</td>
+                                            <td class="has-text-centered has-text-weight-bold subtotal-txt" style="vertical-align: middle;">$'.number_format($subtotal_est, 2).'</td>
                                             <td class="has-text-centered" style="vertical-align: middle;">
                                                 <button type="button" class="button is-danger is-small is-outlined" onclick="eliminarDelCarrito('.$id_prod.')">
                                                     <i class="fas fa-trash-alt"></i>
@@ -549,8 +549,6 @@
                     // Regla de Auditoría (Costo anterior)
                     if (valor < minCostoAnterior) {
                         hayMenorAlAnterior = true;
-                        // Opcional: podrías usar 'is-warning' aquí si no quieres bloquear, 
-                        // pero si quieres bloquear, usa 'is-danger'
                         input.classList.add('is-danger');
                     }
                 });
@@ -580,12 +578,12 @@
                 // --- 1. PRIMERA ALERTA: ¿ESTÁS SEGURO? ---
                 Swal.fire({
                     title: "¿Estás seguro?",
-                    text: "¿Quieres realizar la acción solicitada?",
+                    text: "¿Estás seguro de generar esta orden de compra?",
                     icon: "question",
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
-                    confirmButtonText: "Sí, realizar",
+                    confirmButtonText: "Sí, generar orden",
                     cancelButtonText: "No, cancelar"
                 }).then((result) => {
                     
@@ -605,34 +603,25 @@
                             // Si el servidor responde con éxito
                             if (res.status == "orden_ok") {
                                 
-                                // --- 3. SEGUNDA ALERTA: ÉXITO (Confirmación de Registro) ---
+                                // --- 3. ALERTA ÉXITO Y OPCIONES ---
                                 Swal.fire({
-                                    title: res.mensaje_confirmacion,
+                                    title: res.mensaje_confirmacion, 
                                     text: "La orden se registró con éxito en el sistema.",
                                     icon: "success",
-                                    confirmButtonText: 'Aceptar'
-                                }).then((confirmExit) => {
-                                    
-                                    // --- 4. TERCERA ALERTA: ¿DESEA IMPRIMIR? ---
-                                    // Solo aparece después de que el usuario acepta la de éxito
-                                    if (confirmExit.isConfirmed || confirmExit.isDismissed) {
-                                        Swal.fire({
-                                            title: "¿Desea imprimir la Orden de Compra?",
-                                            text: "Se abrirá el reporte en una nueva pestaña",
-                                            icon: "question",
-                                            showCancelButton: true,
-                                            confirmButtonColor: '#3085d6',
-                                            cancelButtonColor: '#d33',
-                                            confirmButtonText: "Sí, imprimir",
-                                            cancelButtonText: "No, después"
-                                        }).then((printResult) => {
-                                            if (printResult.isConfirmed) {
-                                                // Abre el PDF en pestaña nueva
-                                                window.open(res.url_pdf, '_blank');
-                                            }
-                                            // Recarga la página para limpiar el carrito/formulario
-                                            location.reload();
-                                        });
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#3085d6', 
+                                    cancelButtonColor: '#28a745',  
+                                    confirmButtonText: '<i class="fas fa-print"></i> Imprimir Orden',
+                                    cancelButtonText: '<i class="fas fa-list"></i> Ir a Lista de Compras',
+                                    allowOutsideClick: false
+                                }).then((opcion) => {
+                                    if (opcion.isConfirmed) {
+                                        // Clic en Imprimir Orden
+                                        window.open(res.url_pdf, '_blank');
+                                        window.location.href = '<?php echo APP_URL; ?>purchaseList/';
+                                    } else {
+                                        // Clic en Ir a Lista de Compras
+                                        window.location.href = '<?php echo APP_URL; ?>purchaseList/';
                                     }
                                 }); 
 
@@ -652,32 +641,32 @@
         }
 
         function cargarTodosLosProductos() {
-    // Rescatamos el ID del proveedor (funciona aunque esté disabled)
-    let id_prov = document.getElementById('compra_proveedor').value;
+            // Rescatamos el ID del proveedor (funciona aunque esté disabled)
+            let id_prov = document.getElementById('compra_proveedor').value;
 
-    if(id_prov === "") {
-        Swal.fire({ icon: 'warning', title: 'Proveedor requerido', text: 'Seleccione un proveedor primero.' });
-        return;
-    }
+            if(id_prov === "") {
+                Swal.fire({ icon: 'warning', title: 'Proveedor requerido', text: 'Seleccione un proveedor primero.' });
+                return;
+            }
 
-    // Limpiamos visualmente las categorías seleccionadas
-    document.querySelectorAll('.is-active-category').forEach(btn => btn.classList.remove('is-active-category'));
-    categoriaActual = ""; 
+            // Limpiamos visualmente las categorías seleccionadas
+            document.querySelectorAll('.is-active-category').forEach(btn => btn.classList.remove('is-active-category'));
+            categoriaActual = ""; 
 
-    let datos = new FormData();
-    datos.append("modulo_compra", "buscar_por_proveedor"); 
-    datos.append("proveedor_id", id_prov);
+            let datos = new FormData();
+            datos.append("modulo_compra", "buscar_por_proveedor"); 
+            datos.append("proveedor_id", id_prov);
 
-    fetch("<?php echo APP_URL; ?>app/ajax/compraAjax.php", {
-        method: 'POST',
-        body: datos
-    })
-    .then(res => res.text())
-    .then(response => {
-        if(resultadoBusqueda){
-            resultadoBusqueda.innerHTML = response;
-            reactivarFormularios(); 
+            fetch("<?php echo APP_URL; ?>app/ajax/compraAjax.php", {
+                method: 'POST',
+                body: datos
+            })
+            .then(res => res.text())
+            .then(response => {
+                if(resultadoBusqueda){
+                    resultadoBusqueda.innerHTML = response;
+                    reactivarFormularios(); 
+                }
+            });
         }
-    });
-}
     </script>

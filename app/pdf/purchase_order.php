@@ -2,22 +2,17 @@
     $peticion_ajax=true;
     $code=(isset($_GET['code'])) ? $_GET['code'] : 0;
 
-    /*---------- Incluyendo configuraciones ----------*/
     require_once "../../config/app.php";
     require_once "../../autoload.php";
 
-    /*---------- Instancia al controlador de compras ----------*/
     use app\controllers\purchaseController;
     $ins_compra = new purchaseController();
 
-    /*---------- Seleccionando datos de la compra ----------*/
     $datos_compra=$ins_compra->seleccionarDatos("Normal","compra INNER JOIN proveedor ON compra.proveedor_id=proveedor.proveedor_id INNER JOIN usuario ON compra.usuario_id=usuario.usuario_id WHERE (compra_codigo='$code')","*",0);
 
     if($datos_compra->rowCount()==1){
 
         $datos_compra=$datos_compra->fetch();
-
-        /*---------- Seleccion de datos de la empresa ----------*/
         $datos_empresa=$ins_compra->seleccionarDatos("Normal","empresa LIMIT 1","*",0);
         $datos_empresa=$datos_empresa->fetch();
 
@@ -27,12 +22,11 @@
         $pdf->SetMargins(17,17,17);
         $pdf->AddPage();
         
-        // Logo
         if(is_file("../views/img/logo.png")){
             $pdf->Image('../views/img/logo.png',165,12,35,35,'PNG');
         }
 
-        // Encabezado de Empresa
+        // Encabezado de Empresa (Estandarizado)
         $pdf->SetFont('Arial','B',16);
         $pdf->SetTextColor(32,100,210); 
         $pdf->Cell(150,10,iconv("UTF-8", "ISO-8859-1",strtoupper($datos_empresa['empresa_nombre'])),0,0,'L');
@@ -41,12 +35,11 @@
         $pdf->SetFont('Arial','',10);
         $pdf->SetTextColor(39,39,51); 
         $rif_empresa = (isset($datos_empresa['empresa_rif'])) ? $datos_empresa['empresa_rif'] : "N/A";
-        $pdf->Cell(150,7,iconv("UTF-8", "ISO-8859-1","RIF: ".$rif_empresa),0,0,'L');
-        $pdf->Ln(5);
-        $pdf->Cell(150,7,iconv("UTF-8", "ISO-8859-1",$datos_empresa['empresa_direccion']),0,0,'L');
-        $pdf->Ln(5);
-        $pdf->Cell(150,7,iconv("UTF-8", "ISO-8859-1","Teléfono: ".$datos_empresa['empresa_telefono']),0,0,'L');
-        $pdf->Ln(15);
+        $pdf->Cell(150,7,iconv("UTF-8", "ISO-8859-1","RIF: ".$rif_empresa),0,1,'L');
+        $pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1","Teléfono: ".$datos_empresa['empresa_telefono']),0,1,'L');
+        $pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1","Correo: ".$datos_empresa['empresa_emailKV']),0,1,'L');
+        $pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1","Dirección: ".$datos_empresa['empresa_direccion']),0,1,'L');
+        $pdf->Ln(10);
 
         // Título del Documento
         $pdf->SetFont('Arial','B',14);
@@ -107,13 +100,7 @@
             $pdf->Ln(7);
         }
 
-        /*========================================================================*/
-        /*== POSICIONAMIENTO AL FINAL DE LA PÁGINA PARA TOTALES Y NOTAS         ==*/
-        /*========================================================================*/
-        
-        // Saltamos a la posición 210mm (cerca del final de una hoja carta que mide 279mm)
         $pdf->SetY(210); 
-        
         $pdf->SetFont('Arial','B',11);
         $pdf->SetTextColor(39,39,51); 
         
@@ -141,7 +128,6 @@
             $pdf->Cell(35,8,iconv("UTF-8", "ISO-8859-1",'POR DEFINIR'),0,0,'R');
         }
 
-        // Notas y pie de página final
         $pdf->Ln(15);
         $pdf->SetFont('Arial','I',9);
         $pdf->SetTextColor(150,150,150);
@@ -152,10 +138,10 @@
             $pdf->Ln(2);
         }
         
-        $pdf->MultiCell(0,5,iconv("UTF-8", "ISO-8859-1","*** Este documento es una solicitud formal de mercancía al proveedor. Los valores monetarios están sujetos a confirmación tras la entrega ***"),0,'C');
 
         $pdf->Output("I","Orden_Compra_".$datos_compra['compra_codigo'].".pdf",true);
 
     }else{
         echo "Orden de compra no encontrada.";
     }
+?>

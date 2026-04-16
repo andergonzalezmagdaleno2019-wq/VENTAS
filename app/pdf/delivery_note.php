@@ -27,20 +27,17 @@
 		$pdf->AddPage();
 		if(is_file('../views/img/logo.png')){ $pdf->Image('../views/img/logo.png',165,12,35,35,'PNG'); }
 
+        // Encabezado de Empresa (Estandarizado)
 		$pdf->SetFont('Arial','B',16);
 		$pdf->SetTextColor(32,100,210);
 		$pdf->Cell(150,10,iconv("UTF-8", "ISO-8859-1//TRANSLIT",strtoupper($datos_empresa['empresa_nombre'])),0,0,'L');
 		$pdf->Ln(9);
-
 		$pdf->SetFont('Arial','',10);
 		$pdf->SetTextColor(39,39,51);
-		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","RIF: ".$datos_empresa['empresa_rif']),0,0,'L');
-		$pdf->Ln(5);
-		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT",$datos_empresa['empresa_direccion']),0,0,'L');
-		$pdf->Ln(5);
-		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Teléfono: ".$datos_empresa['empresa_telefono']),0,0,'L');
-		$pdf->Ln(5);
-		$pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Email: ".$datos_empresa['empresa_email']),0,0,'L');
+		$pdf->Cell(150,7,iconv("UTF-8", "ISO-8859-1//TRANSLIT","RIF: ".$datos_empresa['empresa_rif']),0,1,'L');
+		$pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Teléfono: ".$datos_empresa['empresa_telefono']),0,1,'L');
+		$pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Correo: ".$datos_empresa['empresa_emailKV']),0,1,'L');
+		$pdf->Cell(150,5,iconv("UTF-8", "ISO-8859-1//TRANSLIT","Dirección: ".$datos_empresa['empresa_direccion']),0,1,'L');
 		$pdf->Ln(10);
 
         // Título de Nota de Entrega
@@ -144,7 +141,6 @@
         $pdf->Ln(12);
 		$pdf->SetFont('Arial','',9);
         
-        // NUEVO MENSAJE PARA NOTA DE ENTREGA (DOCUMENTO NO FISCAL)
 		$pdf->MultiCell(0,9,iconv("UTF-8", "ISO-8859-1//TRANSLIT","*** Verifique su mercancía al recibirla. Para cualquier reclamo o cambio es indispensable presentar esta Nota de Entrega. ***"),0,'C',false);
 
 		ob_end_clean();

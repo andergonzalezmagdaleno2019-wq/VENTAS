@@ -47,4 +47,4 @@
             echo $insCompra->listarCompraControlador($pagina_actual, 15, $url[0], $_SESSION['busqueda_purchaseList']);
         }
     ?>
-</div>
+</div>g
