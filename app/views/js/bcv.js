@@ -106,7 +106,7 @@ async function consultarBCV() {
 
     const celdas = document.querySelectorAll('.precio-bcv');
 
-    // Si no encuentra celdas, el script no hace nada (evita errores)
+    // Si no encuentra celdas, el script no hace nada
 
     if (celdas.length === 0) return;
 
@@ -168,6 +168,5 @@ function actualizarInterfazBase(tasa, fechaActualizacion) {
 
 document.addEventListener('DOMContentLoaded', consultarBCV);
 
-// Actualizar cada 6 horas (21600000 ms)
-
-setInterval(consultarBCV, 21600000);
+// Actualizar cada 4 horas (14400000 ms)
+setInterval(consultarBCV, 14400000);
