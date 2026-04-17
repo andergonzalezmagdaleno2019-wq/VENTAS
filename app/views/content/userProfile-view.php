@@ -39,10 +39,6 @@
                         <i class="fas fa-eye" id="icon_profile_1"></i>
                     </span>
                 </div>
-                <p class="help is-info mt-0" style="font-size: 0.85rem; line-height: 1.2;">
-                    <i class="fas fa-info-circle"></i> 
-                    Nota: Si tu clave inicia con una letra, se marcará en <strong>Mayúscula</strong> por defecto.
-                </p>
             </div>
 
             <div class="column is-6">

@@ -779,7 +779,7 @@ public function agregarProductoCompraControlador(){
                 // 4. RECALCULAR SALDOS GENERALES (Paso 3 del reverso)
                 $this->actualizarSaldosCompra($compra_id);
 
-                // 5. DEVOLVER EL ESTADO (LA SOLUCIÓN DEFINITIVA)
+                // 5. DEVOLVER EL ESTADO 
                 // Si pudimos borrar un abono, es porque la compra ya era 'Facturada'.
                 // La forzamos a volver a ese estado para mantener el botón verde activo.
                 $this->ejecutarConsulta("UPDATE compra SET compra_estado='Facturada' WHERE compra_id='$compra_id'");

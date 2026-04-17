@@ -1,20 +1,36 @@
 <?php
     $peticion_ajax = true;
-    
-    // 1. Recibir parámetros del formulario
-    $fecha_inicio = (isset($_GET['fecha_inicio'])) ? $_GET['fecha_inicio'] : date("Y-m-d");
-    $fecha_fin = (isset($_GET['fecha_fin'])) ? $_GET['fecha_fin'] : date("Y-m-d");
-    $vendedor = (isset($_GET['reporte_vendedor'])) ? $_GET['reporte_vendedor'] : "all";
-    $pago = (isset($_GET['reporte_pago'])) ? $_GET['reporte_pago'] : "all";
 
-    /*---------- Incluyendo configuraciones ----------*/
+    /*---------- 1. Incluyendo configuraciones PRIMERO ----------*/
     require_once "../../config/app.php";
     require_once "../../autoload.php";
 
+    /*---------- 2. Iniciar sesión conectada a FastNet ----------*/
+    if(session_status() == PHP_SESSION_NONE) {
+        if(defined('APP_SESSION_NAME')){
+            session_name(APP_SESSION_NAME);
+        } else {
+            session_name("FASTNET"); // Respaldo
+        }
+        session_start();
+    }
+
+    if(!isset($_SESSION['id'])){
+        // Si tienes problemas visualizando el PDF en pruebas locales, comenta la siguiente línea:
+        exit("Error: Acceso denegado. Por favor, inicia sesión en FastNet para ver este reporte.");
+    }
+
+    /*---------- 3. INSTANCIAR EL CONTROLADOR ----------*/
     use app\controllers\saleController;
     $ins_reporte = new saleController();
 
-    /*---------- Seleccion de datos de la empresa ----------*/
+    /*---------- 4. Recibir parámetros del formulario de forma SEGURA ----------*/
+    $fecha_inicio = (isset($_GET['fecha_inicio'])) ? $ins_reporte->limpiarCadena($_GET['fecha_inicio']) : date("Y-m-d");
+    $fecha_fin = (isset($_GET['fecha_fin'])) ? $ins_reporte->limpiarCadena($_GET['fecha_fin']) : date("Y-m-d");
+    $vendedor = (isset($_GET['reporte_vendedor'])) ? $ins_reporte->limpiarCadena($_GET['reporte_vendedor']) : "all";
+    $pago = (isset($_GET['reporte_pago'])) ? $ins_reporte->limpiarCadena($_GET['reporte_pago']) : "all";
+
+    /*---------- 5. Selección de datos de la empresa ----------*/
     $datos_empresa = $ins_reporte->seleccionarDatos("Normal","empresa LIMIT 1","*",0);
     $datos_empresa = $datos_empresa->fetch();
 
@@ -48,15 +64,27 @@
     $pdf->Cell(150,9,iconv("UTF-8", "ISO-8859-1","RIF: ".$emp_rif),0,0,'L');
     $pdf->Ln(15);
 
-    // Título y Filtros
+    // Título y Rango de Fechas
     $pdf->SetFont('Arial','B',14);
     $pdf->SetTextColor(39,39,51);
     $pdf->Cell(0,10,iconv("UTF-8", "ISO-8859-1",strtoupper('REPORTE DETALLADO DE VENTAS')),0,1,'C');
     $pdf->SetFont('Arial','',10);
     $pdf->Cell(0,7,iconv("UTF-8", "ISO-8859-1",'Desde: '.date("d/m/Y", strtotime($fecha_inicio)).'  Hasta: '.date("d/m/Y", strtotime($fecha_fin))),0,1,'C');
     
-    $texto_filtros = "Vendedor: " . (($vendedor == "all") ? "Todos" : "Filtrado");
-    $texto_filtros .= " | Pago: " . (($pago == "all") ? "Todos" : $pago);
+    /* --- Buscar el nombre real del vendedor para el filtro --- */
+    $nombre_vendedor_filtro = "Todos";
+    
+    if($vendedor != "all"){
+        // Usamos ejecutarConsulta que es más directo para una consulta con WHERE
+        $consulta_vend = $ins_reporte->ejecutarConsulta("SELECT usuario_nombre, usuario_apellido FROM usuario WHERE usuario_id='$vendedor'");
+        if($consulta_vend->rowCount() > 0){
+            $datos_v = $consulta_vend->fetch();
+            $nombre_vendedor_filtro = trim($datos_v['usuario_nombre'] . " " . $datos_v['usuario_apellido']);
+        }
+    }
+
+    $texto_filtros = "Vendedor: " . $nombre_vendedor_filtro . " | Pago: " . (($pago == "all") ? "Todos" : $pago);
+    
     $pdf->SetFont('Arial','I',9);
     $pdf->Cell(0,7,iconv("UTF-8", "ISO-8859-1", $texto_filtros),0,1,'C');
     $pdf->Ln(5);
@@ -103,10 +131,13 @@
             $tipo_pago = (isset($row['venta_metodo_pago'])) ? $row['venta_metodo_pago'] : "N/R";
             $referencia = (isset($row['venta_referencia']) && $row['venta_referencia'] != "") ? $row['venta_referencia'] : "S/R";
 
+            // CORRECCIÓN: Tratamiento de acentos seguro para FPDF
+            $nombre_vendedor_tabla = mb_strimwidth($row['usuario_nombre']." ".$row['usuario_apellido'], 0, 18, ".");
+
             $pdf->Cell(10,7,iconv("UTF-8", "ISO-8859-1",$contador),'L',0,'C');
             $pdf->Cell(20,7,iconv("UTF-8", "ISO-8859-1",date("d/m/Y", strtotime($row['venta_fecha']))),'L',0,'C');
             $pdf->Cell(28,7,iconv("UTF-8", "ISO-8859-1",$row['venta_codigo']),'L',0,'C');
-            $pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1", substr($row['usuario_nombre']." ".$row['usuario_apellido'], 0, 18)),'L',0,'L');
+            $pdf->Cell(35,7,iconv("UTF-8", "ISO-8859-1", $nombre_vendedor_tabla),'L',0,'L');
             $pdf->Cell(25,7,iconv("UTF-8", "ISO-8859-1",$tipo_pago),'L',0,'C');
             $pdf->Cell(25,7,iconv("UTF-8", "ISO-8859-1",$referencia),'L',0,'C');
             $pdf->Cell(20,7,iconv("UTF-8", "ISO-8859-1",number_format($row['venta_total'],2,'.',',')),'L',0,'R');
@@ -135,3 +166,4 @@
     $pdf->Cell(0,7,iconv("UTF-8", "ISO-8859-1",'Reporte generado por FastNet el '.date("d/m/Y h:i A")),0,1,'C');
 
     $pdf->Output("I","Reporte_Ventas_Completo.pdf",true);
+?>
