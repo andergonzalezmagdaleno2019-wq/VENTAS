@@ -1311,3 +1311,67 @@ input[type="password"] {
     font-variant: normal !important;
     font-feature-settings: "smcp" 0, "c2sc" 0 !important; /* Desactiva mayúsculas pequeñas */
 }
+
+/* ==========================================================================
+   ESTILOS PARA LA SECCIÓN DE EMPRESA (FASTNET)
+   ========================================================================== */
+
+/* Estilo para los nombres de archivo en los inputs (para que no se corten) */
+.file-name {
+    justify-content: flex-start !important;
+    border-color: #dbdbdb !important;
+}
+
+/* Contenedor del logo principal (el de arriba) */
+.logo-preview-target {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+}
+
+/* Efecto cuando pasas el mouse por el logo actual */
+.logo-preview-target:hover {
+    transform: scale(1.05);
+}
+
+/* --- AJUSTES PARA MODO OSCURO --- */
+body.dark-mode .file-name {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    border-color: #3273dc; /* Color azul para resaltar en la oscuridad */
+}
+
+body.dark-mode .file-cta {
+    background-color: #242424;
+    border-color: #3273dc;
+    color: #ffffff;
+}
+
+/* Personalización del checkbox para que resalte más en el modo oscuro */
+body.dark-mode .checkbox:hover {
+    color: #3273dc;
+}
+
+/* Animación de entrada para el div del logo oscuro */
+#div-logo-oscuro {
+    animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ajuste para que el mensaje de información no sea tan brillante en la oscuridad */
+body.dark-mode .message.is-info {
+    background-color: #0d2137;
+}
+
+body.dark-mode .message.is-info .message-body {
+    color: #e0e0e0;
+    border-color: #3273dc;
+}

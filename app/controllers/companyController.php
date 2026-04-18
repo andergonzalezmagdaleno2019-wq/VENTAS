@@ -168,33 +168,57 @@
 				["campo_nombre"=>"empresa_emailKV","campo_marcador"=>":Email","campo_valor"=>$email], // <-- Corregido aquí
 				["campo_nombre"=>"empresa_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
 			];
-
-			/*== PROCESANDO EL LOGO DE LA EMPRESA ==*/
+			/*== 1. PROCESANDO EL LOGO PRINCIPAL (MODO CLARO) ==*/
+            $img_dir = "../views/img/";
+            
             if(isset($_FILES['empresa_foto']) && $_FILES['empresa_foto']['name'] != "" && $_FILES['empresa_foto']['size'] > 0){
                 
-                $img_dir = "../views/img/";
-                
-                // Comprobando el formato de la imagen
                 if($_FILES['empresa_foto']['type']=="image/jpeg" || $_FILES['empresa_foto']['type']=="image/png" || $_FILES['empresa_foto']['type']=="image/jpg"){
-                    
-                    // Comprobando el peso (Máximo 3MB)
                     if(($_FILES['empresa_foto']['size']/1024) <= 3072){
                         
-                        // Forzamos el nombre a "logo.png" que es el que buscan los reportes PDF
                         $foto_nombre = "logo.png";
-                        
-                        // Otorgamos permisos y sobreescribimos la imagen
                         chmod($img_dir, 0777);
-                        if(!move_uploaded_file($_FILES['empresa_foto']['tmp_name'], $img_dir.$foto_nombre)){
-                            $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No se pudo subir el logo al servidor","icono"=>"error"]; return json_encode($alerta); exit();
+
+                        if(is_file($img_dir.$foto_nombre)){ chmod($img_dir.$foto_nombre, 0777); unlink($img_dir.$foto_nombre); }
+                        
+                        if(move_uploaded_file($_FILES['empresa_foto']['tmp_name'], $img_dir.$foto_nombre)){
+                            // Si NO activó el check de logo oscuro y NO existe un logo oscuro, usamos este como comodín para ambos
+                            if(!isset($_POST['usar_logo_oscuro']) && !is_file($img_dir."logo_black.png")){
+                                copy($img_dir.$foto_nombre, $img_dir."logo_black.png");
+                            }
+                        } else {
+                            $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo subir el logo principal.","icono"=>"error"]; return json_encode($alerta); exit();
                         }
-
                     }else{
-                        $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"La imagen supera el peso máximo permitido de 3MB","icono"=>"error"]; return json_encode($alerta); exit();
+                        $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El logo principal supera los 3MB","icono"=>"error"]; return json_encode($alerta); exit();
                     }
-
                 }else{
-                    $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El formato del logo no está permitido (solo JPG o PNG)","icono"=>"error"]; return json_encode($alerta); exit();
+                    $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Formato de logo principal no válido","icono"=>"error"]; return json_encode($alerta); exit();
+                }
+            }
+
+            /*== 2. PROCESANDO EL LOGO SECUNDARIO (MODO OSCURO) ==*/
+            if(isset($_POST['usar_logo_oscuro']) && $_POST['usar_logo_oscuro'] == "si"){
+                
+                if(isset($_FILES['empresa_foto_dark']) && $_FILES['empresa_foto_dark']['name'] != "" && $_FILES['empresa_foto_dark']['size'] > 0){
+                    
+                    if($_FILES['empresa_foto_dark']['type']=="image/jpeg" || $_FILES['empresa_foto_dark']['type']=="image/png" || $_FILES['empresa_foto_dark']['type']=="image/jpg"){
+                        if(($_FILES['empresa_foto_dark']['size']/1024) <= 3072){
+                            
+                            $foto_oscura = "logo_black.png";
+                            chmod($img_dir, 0777);
+    
+                            if(is_file($img_dir.$foto_oscura)){ chmod($img_dir.$foto_oscura, 0777); unlink($img_dir.$foto_oscura); }
+                            
+                            if(!move_uploaded_file($_FILES['empresa_foto_dark']['tmp_name'], $img_dir.$foto_oscura)){
+                                $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo subir el logo para el modo oscuro.","icono"=>"error"]; return json_encode($alerta); exit();
+                            }
+                        }else{
+                            $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"El logo oscuro supera los 3MB","icono"=>"error"]; return json_encode($alerta); exit();
+                        }
+                    }else{
+                        $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Formato de logo oscuro no válido","icono"=>"error"]; return json_encode($alerta); exit();
+                    }
                 }
             }
 
