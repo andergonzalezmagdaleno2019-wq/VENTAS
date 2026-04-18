@@ -107,6 +107,34 @@
             if($datos->rowCount() > 0){
                 $datos = $datos->fetchAll();
         ?>
+<style>
+    /* Animación de brinquito suave */
+    @keyframes brincoLlamativo {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.06); }
+        100% { transform: scale(1); }
+    }
+
+    .numero-clicable {
+        display: inline-block; 
+        margin: 0 auto; 
+        cursor: pointer;
+        animation: brincoLlamativo 2s infinite ease-in-out;
+        
+        transform-origin: center center; 
+        backface-visibility: hidden; 
+        -webkit-font-smoothing: antialiased;
+        
+        transition: transform 0.2s ease, text-shadow 0.2s ease;
+    }
+    
+    /* Cuando le pasan el ratón por encima */
+    .numero-clicable:hover {
+        animation: none;
+        transform: scale(1.1);
+        text-shadow: 0px 4px 8px rgba(0,0,0,0.15);
+    }
+</style>
         <div class="table-container">
             <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth" id="tabla_cxp">
                 <thead>
@@ -140,18 +168,10 @@
                             }
                             
                             // 2. Lógica de Factura/Documento
-                                $num_fac = (!empty($c['compra_codigo'])) ? $c['compra_codigo'] : "S/N";
-                                $doc_color = "is-light";
+                            $num_fac = (!empty($c['compra_codigo'])) ? $c['compra_codigo'] : "S/N";
+                            $doc_color = "is-light";
 
-                                // Si existe una nota interna (Factura oficial), intentamos extraer el número
-                                if(!empty($c['compra_nota_interna'])){
-                                    if(preg_match('/Nro:\s*([^ \]]+)/', $c['compra_nota_interna'], $match_fac)) {
-                                        $num_fac = trim($match_fac[1]);
-                                        $doc_color = "is-primary is-light"; 
-                                    }
-                                }
-
-                            // Nota Interna (Factura Oficial) usando $c
+                            // Nota Interna (Factura Oficial) 
                             if(!empty($c['compra_nota_interna'])){
                                 if(preg_match('/Nro:\s*([^ \]]+)/', $c['compra_nota_interna'], $match_fac)) {
                                     $num_fac = trim($match_fac[1]);
@@ -168,19 +188,30 @@
                             };
                             $label_cond = ($condicion == "Credito") ? "Crédito" : (($condicion == "Consignacion") ? "Consignación" : $condicion);
 
-                            // 3. Cálculos monetarios
+                            // 3. Cálculos monetarios y de CUOTAS
                             $tasa_compra = ($c['compra_tasa_bcv'] > 0) ? $c['compra_tasa_bcv'] : 1;
                             $saldo_bs_historico = $c['compra_saldo_pendiente'] * $tasa_compra;
+                            
+                            // Lógica de cálculo de la Cuota
+                            $cuotas_totales = (isset($c['compra_cuotas_total']) && $c['compra_cuotas_total'] > 0) ? $c['compra_cuotas_total'] : 1;
+                            $cuotas_pagadas_actual = (isset($c['compra_cuotas_pagadas'])) ? $c['compra_cuotas_pagadas'] : 0;
+                            
+                            $num_cuota_actual = $cuotas_pagadas_actual + 1;
+                            if($num_cuota_actual > $cuotas_totales) $num_cuota_actual = $cuotas_totales;
+
+                            $monto_cuota_teorica = $c['compra_total'] / $cuotas_totales;
+                            // Si el saldo restante es menor a una cuota (por abonos irregulares), solo cobramos el saldo
+                            $monto_cuota_cobrar = ($c['compra_saldo_pendiente'] < $monto_cuota_teorica) ? $c['compra_saldo_pendiente'] : $monto_cuota_teorica;
+
                     ?>
                         <tr class="has-text-centered fila-deuda">
                             <td class="has-text-centered">
                                 <strong><?php echo $c['compra_codigo']; ?></strong>
                             </td>
                             <td class="has-text-weight-bold" style="vertical-align: middle;"><?php echo $c['proveedor_nombre']; ?></td>
-                           <td>
+                            <td>
                                 <?php 
                                     if(!empty($c['recepcion_nota'])){
-                                        // Buscamos lo que esté entre "Factura Nro: " y el símbolo "|"
                                         $inicio = strpos($c['recepcion_nota'], "Factura Nro: ") + 13;
                                         $fin = strpos($c['recepcion_nota'], " |");
                                         $nro_factura = substr($c['recepcion_nota'], $inicio, $fin - $inicio);
@@ -195,7 +226,7 @@
                                     <?php echo $label_cond; ?>
                                 </span>
                             </td>
-                                                        
+                                                                                
                             <td class="<?php echo $clase_color; ?>" style="vertical-align: middle; line-height: 1.2;">
                                 <?php if($condicion == "Crédito" || $condicion == "Credito"): ?>
                                     
@@ -203,45 +234,60 @@
                                         $frecuencia = (int)$c['compra_frecuencia'];
                                         $cuotas_pagadas = (int)$c['compra_cuotas_pagadas'];
 
-                                        // 1. Obtenemos la fecha de la compra
                                         $fecha_compra = new DateTime($c['compra_fecha']);
                                         $hoy = new DateTime(date("Y-m-d"));
 
-                                        // 2. Calculamos la fecha en la que "debería" empezar el ciclo actual
-                                        // Si ha pagado 1 cuota de 10 días, el nuevo ciclo empezó 10 días después de la compra
                                         $dias_a_sumar = $cuotas_pagadas * $frecuencia;
                                         $fecha_inicio_ciclo_actual = clone $fecha_compra;
                                         $fecha_inicio_ciclo_actual->modify("+$dias_a_sumar days");
 
-                                        // 3. La nueva cuenta regresiva es: Frecuencia + (Días que van del ciclo actual)
+                                        // Calcular la fecha exacta de pago sumando la frecuencia
+                                        $fecha_vencimiento_cuota = clone $fecha_inicio_ciclo_actual;
+                                        $fecha_vencimiento_cuota->modify("+$frecuencia days");
+                                        $fecha_pago_exacta = $fecha_vencimiento_cuota->format('Y-m-d');
+
                                         $intervalo = $fecha_inicio_ciclo_actual->diff($hoy);
                                         $dias_desde_inicio_ciclo = (int)$intervalo->format("%r%a");
 
-                                        // Frecuencia menos los días que han pasado desde que empezó el ciclo actual
                                         $cuenta_regresiva = $frecuencia - $dias_desde_inicio_ciclo;
                                     ?>
 
-                                    <span class="has-text-weight-bold is-size-3" style="display: block;">
-                                        <?php 
-                                            if($cuenta_regresiva < 0){
-                                                echo '<span class="has-text-danger">' . abs($cuenta_regresiva) . ' Días Vencidos</span>';
-                                            } elseif($cuenta_regresiva == 0){
-                                                echo '<span class="has-text-warning-dark">Paga Hoy</span>';
-                                            } else {
-                                                echo $cuenta_regresiva . ' Días';
-                                            }
-                                        ?>
-                                    </span>
+                                    <div class="mb-2">
+                                        <span class="has-text-weight-bold is-size-3 numero-clicable" 
+                                            onclick="verMiniCalendario('<?php echo $fecha_pago_exacta; ?>', 'Fecha límite para pagar la Cuota <?php echo $num_cuota_actual; ?>/<?php echo $cuotas_totales; ?>')"
+                                            title="Haz clic para ver el calendario en grande">
+                                            <?php 
+                                                if($cuenta_regresiva < 0){
+                                                    echo '<span class="has-text-danger">' . abs($cuenta_regresiva) . ' Días Vencidos</span>';
+                                                } elseif($cuenta_regresiva == 0){
+                                                    echo '<span class="has-text-warning-dark">Paga Hoy</span>';
+                                                } else {
+                                                    echo $cuenta_regresiva . ' Días';
+                                                }
+                                            ?>
+                                        </span>
+                                    </div>
                                     
-                                    <span class="tag is-small is-link is-light has-text-weight-bold" style="font-size: 0.7rem; margin-top: 5px;">
-                                        PRÓXIMO ABONO (CADA <?php echo $frecuencia; ?> DÍAS)
+                                    <div class="mb-1">
+                                        <span class="tag is-small is-link is-light has-text-weight-bold" style="font-size: 0.75rem;">
+                                            CUOTA <?php echo $num_cuota_actual; ?>/<?php echo $cuotas_totales; ?>: $<?php echo number_format($monto_cuota_cobrar, 2); ?>
+                                        </span>
+                                    </div>
+                                    <span class="is-size-7 has-text-grey-light has-text-weight-semibold" style="display: block;">
+                                        (CADA <?php echo $frecuencia; ?> DÍAS)
                                     </span>
 
                                 <?php else: ?>
-                                    <i class="fas <?php echo $icono; ?> is-size-5 mb-1"></i><br>
-                                    <span class="has-text-weight-bold">
-                                        <?php echo date("d/m/Y", strtotime($c['compra_fecha_vencimiento'])); ?>
-                                    </span>
+                                    <?php $fecha_pago_exacta = date("Y-m-d", strtotime($c['compra_fecha_vencimiento'])); ?>
+                                    
+                                    <div class="numero-clicable" 
+                                        onclick="verMiniCalendario('<?php echo $fecha_pago_exacta; ?>', 'Fecha de pago único (Al contado)')"
+                                        title="Haz clic para ver el calendario en grande">
+                                        <i class="fas <?php echo $icono; ?> is-size-5 mb-1"></i><br>
+                                        <span class="has-text-weight-bold">
+                                            <?php echo date("d/m/Y", strtotime($c['compra_fecha_vencimiento'])); ?>
+                                        </span>
+                                    </div>
                                 <?php endif; ?>
                             </td>
                             
@@ -257,7 +303,6 @@
                             <td style="vertical-align: middle;">
                                 <div class="buttons is-centered">
                                     <?php 
-                                        // Solo permitir abonos si ya tiene factura registrada
                                         if($c['compra_estado'] == "Facturada" || $c['compra_estado'] == "Completado"): 
                                     ?>
                                         <button class="button is-success is-small is-rounded" 
@@ -460,6 +505,56 @@
     </div>
 </div>
 
+    <div id="modal-mini-calendario" class="modal">
+        <div class="modal-background" onclick="cerrarMiniCalendario()"></div>
+        
+        <div class="modal-content" style="width: 280px;">
+            <div class="box p-0" style="border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                
+                <div class="has-text-white has-text-centered py-3" style="background-color: #d90429; position: relative;">
+                    <span id="mc-mes-anio" class="is-size-5 has-text-weight-bold is-uppercase" style="letter-spacing: 2px;">MAYO 2026</span>
+                    
+                    <button class="delete is-medium" aria-label="close" onclick="cerrarMiniCalendario()" style="position: absolute; top: 12px; right: 12px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></button>
+                </div>
+                
+                <div class="has-background-white has-text-centered py-5">
+                    <span id="mc-dia" class="has-text-weight-bold has-text-dark" style="font-size: 5rem; line-height: 1;">15</span>
+                    <br>
+                    <span id="mc-dia-semana" class="is-size-5 has-text-grey has-text-weight-semibold">VIERNES</span>
+                </div>
+                
+                <div class="has-background-light has-text-centered py-3 px-2">
+                    <span id="mc-texto" class="is-size-7 has-text-grey-dark has-text-weight-bold">Fecha de Pago</span>
+                </div>  
+        </div>
+    </div>
+<script>
+    function verMiniCalendario(fechaStr, textoCuota) {
+        // Configuramos la fecha 
+        const fechaObj = new Date(fechaStr + 'T12:00:00');
+        
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        const anio = fechaObj.getFullYear();
+        const mes = meses[fechaObj.getMonth()];
+        const dia = fechaObj.getDate();
+        const diaSemana = diasSemana[fechaObj.getDay()];
+
+        // Inyecta los datos en el modal
+        document.getElementById('mc-mes-anio').innerText = mes + ' ' + anio;
+        document.getElementById('mc-dia').innerText = dia;
+        document.getElementById('mc-dia-semana').innerText = diaSemana.toUpperCase();
+        document.getElementById('mc-texto').innerText = textoCuota;
+
+        // Abrir el modal
+        document.getElementById('modal-mini-calendario').classList.add('is-active');
+    }
+
+    function cerrarMiniCalendario() {
+        document.getElementById('modal-mini-calendario').classList.remove('is-active');
+    }
+</script>
 <script>
     function validarReferenciaDinamica(input) {
         input.value = input.value.replace(/[^0-9]/g, '');
