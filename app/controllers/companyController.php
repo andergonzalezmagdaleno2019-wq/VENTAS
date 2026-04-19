@@ -87,13 +87,15 @@
 				["campo_nombre"=>"empresa_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
 				["campo_nombre"=>"empresa_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
 				["campo_nombre"=>"empresa_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono],
-				["campo_nombre"=>"empresa_emailKV","campo_marcador"=>":Email","campo_valor"=>$email], // <-- Corregido aquí
+				["campo_nombre"=>"empresa_emailKV","campo_marcador"=>":Email","campo_valor"=>$email], 
 				["campo_nombre"=>"empresa_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
 			];
 
 			$registrar_empresa=$this->guardarDatos("empresa",$empresa_datos_reg);
 
 			if($registrar_empresa->rowCount()==1){
+                # REGISTRO EN BITÁCORA #
+                $this->guardarBitacora("Sistema", "Registro", "Se registraron los datos iniciales de la empresa: " . $nombre);
 				$alerta=["tipo"=>"recargar","titulo"=>"Empresa registrada","texto"=>"Los datos de la empresa se registraron con exito","icono"=>"success"];
 			}else{
 				$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No se pudo registrar los datos de la empresa, por favor intente nuevamente","icono"=>"error"];
@@ -165,11 +167,13 @@
 				["campo_nombre"=>"empresa_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
 				["campo_nombre"=>"empresa_rif","campo_marcador"=>":Rif","campo_valor"=>$rif],
 				["campo_nombre"=>"empresa_telefono","campo_marcador"=>":Telefono","campo_valor"=>$telefono],
-				["campo_nombre"=>"empresa_emailKV","campo_marcador"=>":Email","campo_valor"=>$email], // <-- Corregido aquí
+				["campo_nombre"=>"empresa_emailKV","campo_marcador"=>":Email","campo_valor"=>$email], 
 				["campo_nombre"=>"empresa_direccion","campo_marcador"=>":Direccion","campo_valor"=>$direccion]
 			];
+
 			/*== 1. PROCESANDO EL LOGO PRINCIPAL (MODO CLARO) ==*/
             $img_dir = "../views/img/";
+            $cambio_logo = false;
             
             if(isset($_FILES['empresa_foto']) && $_FILES['empresa_foto']['name'] != "" && $_FILES['empresa_foto']['size'] > 0){
                 
@@ -182,6 +186,7 @@
                         if(is_file($img_dir.$foto_nombre)){ chmod($img_dir.$foto_nombre, 0777); unlink($img_dir.$foto_nombre); }
                         
                         if(move_uploaded_file($_FILES['empresa_foto']['tmp_name'], $img_dir.$foto_nombre)){
+                            $cambio_logo = true;
                             // Si NO activó el check de logo oscuro y NO existe un logo oscuro, usamos este como comodín para ambos
                             if(!isset($_POST['usar_logo_oscuro']) && !is_file($img_dir."logo_black.png")){
                                 copy($img_dir.$foto_nombre, $img_dir."logo_black.png");
@@ -210,7 +215,9 @@
     
                             if(is_file($img_dir.$foto_oscura)){ chmod($img_dir.$foto_oscura, 0777); unlink($img_dir.$foto_oscura); }
                             
-                            if(!move_uploaded_file($_FILES['empresa_foto_dark']['tmp_name'], $img_dir.$foto_oscura)){
+                            if(move_uploaded_file($_FILES['empresa_foto_dark']['tmp_name'], $img_dir.$foto_oscura)){
+                                $cambio_logo = true;
+                            } else {
                                 $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo subir el logo para el modo oscuro.","icono"=>"error"]; return json_encode($alerta); exit();
                             }
                         }else{
@@ -225,6 +232,10 @@
 			$condicion=["condicion_campo"=>"empresa_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
 			if($this->actualizarDatos("empresa",$empresa_datos_up,$condicion)){
+                # REGISTRO EN BITÁCORA #
+                $detalles = ($cambio_logo) ? " (Incluyendo actualización de logotipos)" : "";
+                $this->guardarBitacora("Sistema", "Actualización", "Se actualizaron los datos generales de la empresa: " . $nombre . $detalles);
+
 				$alerta=["tipo"=>"recargar","titulo"=>"Empresa actualizada","texto"=>"Los datos de la empresa se actualizaron correctamente","icono"=>"success"];
 			}else{
 				$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos podido actualizar los datos de la empresa, por favor intente nuevamente","icono"=>"error"];

@@ -83,6 +83,7 @@ class clientController extends mainModel
         $registrar_cliente = $this->guardarDatos("cliente", $cliente_datos_reg);
 
         if ($registrar_cliente->rowCount() == 1) {
+            # REGISTRO EN BITÁCORA #
             $this->guardarBitacora("Clientes", "Registro", "Se registró el cliente: " . $nombre . " " . $apellido);
             $alerta = ["tipo" => "redireccionar", "titulo" => "Cliente registrado", "texto" => "Los datos del cliente se almacenaron con éxito.", "icono" => "success", "url" => APP_URL . "clientList/"];
         } else {
@@ -160,6 +161,7 @@ class clientController extends mainModel
 
 		$eliminarCliente = $this->eliminarRegistro("cliente", "cliente_id", $id);
 		if ($eliminarCliente->rowCount() == 1) {
+            # REGISTRO EN BITÁCORA #
 			$this->guardarBitacora("Clientes", "Eliminación", "Se eliminó el cliente: " . $datos['cliente_nombre'] . " " . $datos['cliente_apellido']);
 			$alerta = ["tipo" => "recargar", "titulo" => "Cliente eliminado", "texto" => "Eliminado con éxito", "icono" => "success"];
 		} else { $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo eliminar el cliente", "icono" => "error"]; }
@@ -231,6 +233,7 @@ class clientController extends mainModel
         $condicion = ["condicion_campo" => "cliente_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
 
         if ($this->actualizarDatos("cliente", $cliente_datos_up, $condicion)) {
+            # REGISTRO EN BITÁCORA #
             $this->guardarBitacora("Clientes", "Actualización", "Se actualizaron los datos de: " . $nombre . " " . $apellido);
             $alerta = ["tipo" => "redireccionar", "titulo" => "Cliente actualizado", "texto" => "Actualizado correctamente", "icono" => "success", "url" => APP_URL."clientList/"];
         } else {

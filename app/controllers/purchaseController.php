@@ -377,6 +377,9 @@ public function agregarProductoCompraControlador(){
                     $this->guardarDatos("compra_detalle",$datos_detalle);
                 }
                 
+                # REGISTRO EN BITÁCORA: Registro #
+                $this->guardarBitacora("Compras", "Registro", "Se generó una nueva Orden de Compra: " . $codigo_compra);
+
                 unset($_SESSION['datos_compra']);
                 return json_encode([
                     "status" => "orden_ok", 
@@ -528,6 +531,9 @@ public function agregarProductoCompraControlador(){
                     compra_frecuencia = '$frecuencia'   
                     WHERE compra_id = '$compra_id'");
 
+                # REGISTRO EN BITÁCORA: Actualización #
+                $this->guardarBitacora("Compras", "Actualización", "Se recibió mercancía de la Orden: " . $codigo_compra . " bajo el documento: " . $tipo_doc . " Nro: " . $numero_doc);
+
                 return json_encode(["tipo" => "confirmar", "titulo" => "¡Éxito!", "texto" => "Recepción procesada correctamente.", "icono" => "success", "url" => APP_URL."app/pdf/purchaseReceipt.php?id=".$compra_id]);
             } else { return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo registrar.", "icono" => "error"]); }
         }
@@ -545,7 +551,7 @@ public function agregarProductoCompraControlador(){
                 if($check_fac_recepcion->rowCount() > 0 || $check_fac_compra->rowCount() > 0){ return json_encode(["tipo" => "simple", "titulo" => "Factura Duplicada", "texto" => "La Factura Nro $numero_doc ya está registrada.", "icono" => "error"]); exit(); }
             }
 
-            $check = $this->ejecutarConsulta("SELECT compra_estado, compra_estado_pago, compra_saldo_pendiente, compra_nota_interna FROM compra WHERE compra_id='$id'");
+            $check = $this->ejecutarConsulta("SELECT compra_codigo, compra_estado, compra_estado_pago, compra_saldo_pendiente, compra_nota_interna FROM compra WHERE compra_id='$id'");
             if($check->rowCount() <= 0) { return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "La orden no existe.", "icono" => "error"]); }
 
             $datos = $check->fetch();
@@ -555,7 +561,12 @@ public function agregarProductoCompraControlador(){
 
             $upd = $this->ejecutarConsulta("UPDATE compra SET compra_estado='$estado_nuevo', compra_fecha_vencimiento='$fecha_vencimiento', compra_nota_interna='$nota_nueva' WHERE compra_id='$id'");
 
-            if($upd->rowCount() > 0) { return json_encode(["tipo" => "recargar", "titulo" => "¡Factura Registrada!", "texto" => "Factura vinculada exitosamente. Estado: $estado_nuevo.", "icono" => "success"]);
+            if($upd->rowCount() > 0) { 
+                
+                # REGISTRO EN BITÁCORA: Actualización #
+                $this->guardarBitacora("Compras", "Actualización", "Se registró la Factura Oficial Nro: " . $numero_doc . " para la Orden: " . $datos['compra_codigo']);
+
+                return json_encode(["tipo" => "recargar", "titulo" => "¡Factura Registrada!", "texto" => "Factura vinculada exitosamente. Estado: $estado_nuevo.", "icono" => "success"]);
             } else { return json_encode(["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo actualizar.", "icono" => "error"]); }
         }
 
@@ -574,9 +585,16 @@ public function agregarProductoCompraControlador(){
             }
 
             $nuevo_total = (float) $this->ejecutarConsulta("SELECT SUM(compra_detalle_cantidad * compra_detalle_precio) FROM compra_detalle WHERE compra_id='$id'")->fetchColumn();
+            
+            $codigo_compra = $this->ejecutarConsulta("SELECT compra_codigo FROM compra WHERE compra_id='$id'")->fetchColumn();
+
             $this->ejecutarConsulta("UPDATE compra SET compra_estado='Completado', compra_total='$nuevo_total' WHERE compra_id='$id'");
             
             $this->actualizarSaldosCompra($id);
+
+            # REGISTRO EN BITÁCORA: Actualización #
+            $this->guardarBitacora("Compras", "Actualización", "Se forzó el cierre de la Orden: " . $codigo_compra . ". Cantidades ajustadas a lo recibido.");
+
             return json_encode(["tipo"=>"recargar","titulo"=>"Orden Finalizada","texto"=>"Las cantidades se ajustaron a lo real.","icono"=>"success"]);
         }
 
@@ -683,6 +701,9 @@ public function agregarProductoCompraControlador(){
                 // Actualizar saldos y estados generales en la tabla compra
                 $this->actualizarSaldosCompra($id);
 
+                # REGISTRO EN BITÁCORA: Actualización #
+                $this->guardarBitacora("Compras", "Actualización", "Se registró un abono de $" . number_format($monto, 2) . " a la Orden: " . $codigo_compra . ". Ref: " . $referencia);
+
                 /* --- CORRECCIÓN AUTOMÁTICA DE ESTADO --- */
                 // Verificamos el saldo final después de actualizar
                 $check_saldo_final = (float) $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetchColumn();
@@ -760,6 +781,9 @@ public function agregarProductoCompraControlador(){
 
             $codigo = $datos_compra['compra_codigo'];
 
+            # Obtenemos datos del pago para la bitácora antes de borrar #
+            $pago_datos = $this->ejecutarConsulta("SELECT * FROM compra_pagos WHERE pago_id='$pago_id'")->fetch();
+
             // 2. Eliminamos el registro del dinero (Paso 1 del reverso)
             $eliminar_pago = $this->ejecutarConsulta("DELETE FROM compra_pagos WHERE pago_id='$pago_id'");
 
@@ -780,9 +804,10 @@ public function agregarProductoCompraControlador(){
                 $this->actualizarSaldosCompra($compra_id);
 
                 // 5. DEVOLVER EL ESTADO 
-                // Si pudimos borrar un abono, es porque la compra ya era 'Facturada'.
-                // La forzamos a volver a ese estado para mantener el botón verde activo.
                 $this->ejecutarConsulta("UPDATE compra SET compra_estado='Facturada' WHERE compra_id='$compra_id'");
+
+                # REGISTRO EN BITÁCORA: Eliminación #
+                $this->guardarBitacora("Compras", "Eliminación", "Se eliminó el abono de $" . number_format($pago_datos['pago_monto'], 2) . " correspondiente a la Orden: " . $codigo . ". Saldo revertido.");
 
                 return json_encode([
                     "tipo" => "recargar",
@@ -828,6 +853,9 @@ public function agregarProductoCompraControlador(){
                     $mensaje_texto = "La orden de compra ha sido anulada (No hubo afectación de inventario).";
                 }
 
+                # REGISTRO EN BITÁCORA: Eliminación #
+                $this->guardarBitacora("Compras", "Eliminación", "Se anuló la Orden de Compra: " . $datos_compra['compra_codigo'] . ". Motivo: " . $motivo);
+
                 return json_encode([
                     "tipo" => "recargar", 
                     "titulo" => "Compra Anulada", 
@@ -849,7 +877,10 @@ public function agregarProductoCompraControlador(){
             if($referencia == "" && ($metodo == "Efectivo" || $metodo == "Divisas")){ $referencia = "DEVOLUCION"; } 
             elseif ($referencia == "") { return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"La referencia es obligatoria", "icono"=>"error"]); }
 
-            $saldo_actual = (float) $this->ejecutarConsulta("SELECT compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetchColumn();
+            $consulta_compra = $this->ejecutarConsulta("SELECT compra_codigo, compra_saldo_pendiente FROM compra WHERE compra_id='$id'")->fetch();
+            $saldo_actual = (float) $consulta_compra['compra_saldo_pendiente'];
+            $codigo_compra = $consulta_compra['compra_codigo'];
+
             if($saldo_actual >= 0){ return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Esta compra no tiene saldo a favor.", "icono"=>"error"]); }
             if($monto > abs($saldo_actual)){ return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Monto supera el saldo a favor", "icono"=>"error"]); }
 
@@ -866,6 +897,10 @@ public function agregarProductoCompraControlador(){
 
             if($this->guardarDatos("compra_pagos", $datos_pago)->rowCount() >= 1){
                 $this->actualizarSaldosCompra($id);
+
+                # REGISTRO EN BITÁCORA: Actualización #
+                $this->guardarBitacora("Compras", "Actualización", "Se registró un reintegro de dinero por $" . number_format($monto, 2) . " para la Orden: " . $codigo_compra);
+
                 return json_encode(["tipo"=>"recargar", "titulo"=>"¡Recuperado!", "texto"=>"El reintegro se registró.", "icono"=>"success"]);
             }
             return json_encode(["tipo"=>"simple", "titulo"=>"Error", "texto"=>"Error al registrar", "icono"=>"error"]);
@@ -1035,20 +1070,27 @@ public function agregarProductoCompraControlador(){
                     $tabla .= '<a href="' . APP_URL . 'purchaseDetail/' . $rows['compra_id'] . '/" class="button is-info is-rounded is-small" title="Ver Detalles"><i class="fas fa-eye"></i></a>';
 
                     if($rows['compra_estado'] != "Anulada"){
+   
+                        $compra_id = $rows['compra_id']; 
+
                         if($rows['compra_estado'] == "Pendiente" || $rows['compra_estado'] == "Parcial"){
-                            $tabla .= '<a href="' . APP_URL . 'purchaseReceptionDetail/' . $rows['compra_id'] . '/" class="button is-success is-rounded is-small" title="Recibir Mercancía"><i class="fas fa-truck-loading"></i></a>';
+                            $tabla .= '<a href="' . APP_URL . 'purchaseReceptionDetail/' . $compra_id . '/" class="button is-success is-rounded is-small" title="Recibir Mercancía"><i class="fas fa-truck-loading"></i></a>';
                         }
+                        
                         if($rows['compra_estado'] == "Pendiente Factura"){
                             $tabla .= '<button type="button" class="button is-primary is-rounded is-small" onclick="abrirModalFactura(\'' . $rows['compra_id'] . '\', \'' . $rows['compra_codigo'] . '\')" title="Registrar Factura Oficial"><i class="fas fa-file-invoice"></i></button>';
                         }
+                        
                         if($rows['compra_estado'] == "Completado" || $rows['compra_estado'] == "Facturada"){
                             $tabla .= '<button type="button" class="button is-warning is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchaseReceipt.php?id=' . $rows['compra_id'] . '\')" title="Imprimir Nota de Recepción"><i class="fas fa-file-invoice-dollar"></i></button>';
                         } else {
                             $tabla .= '<button type="button" class="button is-danger is-rounded is-small" onclick="print_invoice(\'' . APP_URL . 'app/pdf/purchase_order.php?code=' . $rows['compra_codigo'] . '\')" title="Imprimir Orden"><i class="fas fa-file-pdf"></i></button>';
                         }
+                        
                         if($rows['compra_estado'] == "Pendiente"){
                             $tabla .= '<button type="button" class="button is-dark is-rounded is-small ml-1" onclick="anularCompraConMotivo(\'' . $rows['compra_id'] . '\')" title="Anular Orden"><i class="fas fa-ban"></i></button>';
                         }
+                        
                         if($rows['compra_saldo_pendiente'] > 0 && ($rows['compra_estado'] == "Facturada" || $rows['compra_estado'] == "Completado")){
                             $tabla .= '<a href="' . APP_URL . 'purchasePay/' . $rows['compra_id'] . '/" class="button is-success is-light is-rounded is-small" title="Abonar a Deuda"><i class="fas fa-money-bill-wave"></i></a>';
                         }

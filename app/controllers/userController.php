@@ -133,7 +133,9 @@
             $registrar_usuario=$this->guardarDatos("usuario",$usuario_datos_reg);
 
             if($registrar_usuario->rowCount()==1){
+                # REGISTRO EN BITÁCORA #
                 $this->guardarBitacora("Usuarios", "Registro", "Se registró el usuario: " . $nombre . " " . $apellido);
+                
                 $alerta=["tipo"=>"redireccionar","titulo"=>"Éxito","texto"=>"El empleado ha sido registrado correctamente en el sistema.","icono"=>"success" ,"url" => APP_URL."userList/"];
             }else{
                 if(is_file($img_dir.$foto)){ chmod($img_dir.$foto,0777); unlink($img_dir.$foto); }
@@ -276,6 +278,9 @@
 
             $eliminarUsuario=$this->eliminarRegistro("usuario","usuario_id",$id);
             if($eliminarUsuario->rowCount()==1){
+                # REGISTRO EN BITÁCORA #
+                $this->guardarBitacora("Usuarios", "Eliminación", "Se eliminó al usuario: " . $datos['usuario_nombre'] . " " . $datos['usuario_apellido']);
+
                 if(is_file("../views/fotos/".$datos['usuario_foto'])){ chmod("../views/fotos/".$datos['usuario_foto'],0777); unlink("../views/fotos/".$datos['usuario_foto']); }
                 $alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"Usuario eliminado del sistema","icono"=>"success"];
             }else{
@@ -293,7 +298,7 @@
                 return json_encode($alerta); exit();
             }
 
-            $datos = $this->ejecutarConsulta("SELECT usuario_estado FROM usuario WHERE usuario_id='$id'");
+            $datos = $this->ejecutarConsulta("SELECT usuario_nombre, usuario_apellido, usuario_estado FROM usuario WHERE usuario_id='$id'");
             $datos = $datos->fetch();
 
             $nuevo_estado = ($datos['usuario_estado'] == "Activo") ? "Inhabilitado" : "Activo";
@@ -305,6 +310,10 @@
             $condicion = ["condicion_campo" => "usuario_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
 
             if($this->actualizarDatos("usuario", $usuario_datos_up, $condicion)){
+                # REGISTRO EN BITÁCORA #
+                $accion_log = ($nuevo_estado == "Activo") ? "Activación" : "Inhabilitación";
+                $this->guardarBitacora("Usuarios", "Actualización", "Se cambió el estado (".$accion_log.") del usuario: " . $datos['usuario_nombre'] . " " . $datos['usuario_apellido']);
+
                 $alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "El estado del usuario se actualizó a: ".$nuevo_estado, "icono" => "success"];
             } else {
                 $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo cambiar el estado", "icono" => "error"];
@@ -399,6 +408,9 @@
             $condicion=["condicion_campo"=>"usuario_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
             if($this->actualizarDatos("usuario",$usuario_datos_up,$condicion)){
+                # REGISTRO EN BITÁCORA #
+                $this->guardarBitacora("Usuarios", "Actualización", "Se actualizaron los datos del usuario: " . $nombre . " " . $apellido);
+
                 if($id==$_SESSION['id']){
                     $_SESSION['nombre']=$nombre;
                     $_SESSION['apellido']=$apellido;
@@ -431,7 +443,7 @@
         public function actualizarFotoUsuarioControlador(){
             $id=$this->limpiarCadena($_POST['usuario_id']);
             $datos=$this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_id='$id'");
-            if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado","icono"=>"error"]; return json_encode($alerta); exit(); }
+            if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado.","icono"=>"error"]; return json_encode($alerta); exit(); }
             $datos=$datos->fetch();
             $img_dir="../views/fotos/";
             if(!isset($_FILES['usuario_foto']) || $_FILES['usuario_foto']['name']=="" && $_FILES['usuario_foto']['size']<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Seleccione una foto","icono"=>"error"]; return json_encode($alerta); exit(); }
@@ -445,6 +457,9 @@
             $usuario_datos_up=[["campo_nombre"=>"usuario_foto","campo_marcador"=>":Foto","campo_valor"=>$foto]];
             $condicion=["condicion_campo"=>"usuario_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
             if($this->actualizarDatos("usuario",$usuario_datos_up,$condicion)){ 
+                # REGISTRO EN BITÁCORA #
+                $this->guardarBitacora("Usuarios", "Actualización", "Se actualizó la fotografía del usuario: " . $datos['usuario_nombre'] . " " . $datos['usuario_apellido']);
+
                 if($id==$_SESSION['id']){ $_SESSION['foto']=$foto; }
                 $alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"Foto actualizada","icono"=>"success"]; 
             }else{ $alerta=["tipo"=>"recargar","titulo"=>"Alerta","texto"=>"No se pudo actualizar BD","icono"=>"warning"]; }
@@ -454,7 +469,7 @@
         public function eliminarFotoUsuarioControlador(){
             $id=$this->limpiarCadena($_POST['usuario_id']);
             $datos=$this->ejecutarConsulta("SELECT * FROM usuario WHERE usuario_id='$id'");
-            if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado","icono"=>"error"]; return json_encode($alerta); exit(); }
+            if($datos->rowCount()<=0){ $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Usuario no encontrado.","icono"=>"error"]; return json_encode($alerta); exit(); }
             $datos=$datos->fetch();
             $img_dir="../views/fotos/";
             chmod($img_dir,0777);
@@ -462,6 +477,9 @@
             $usuario_datos_up=[["campo_nombre"=>"usuario_foto","campo_marcador"=>":Foto","campo_valor"=>""]];
             $condicion=["condicion_campo"=>"usuario_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
             if($this->actualizarDatos("usuario",$usuario_datos_up,$condicion)){ 
+                # REGISTRO EN BITÁCORA #
+                $this->guardarBitacora("Usuarios", "Actualización", "Se eliminó la fotografía del usuario: " . $datos['usuario_nombre'] . " " . $datos['usuario_apellido']);
+
                 if($id==$_SESSION['id']){ $_SESSION['foto']="default.png"; }
                 $alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"Foto eliminada","icono"=>"success"]; 
             }else{ $alerta=["tipo"=>"recargar","titulo"=>"Alerta","texto"=>"Foto borrada, error en BD","icono"=>"warning"]; }

@@ -112,6 +112,10 @@
 
                     /*== VALIDACIÓN: ESTADO DEL USUARIO ==*/
                     if($check_usuario['usuario_estado'] == "Inactivo" || $check_usuario['usuario_estado'] == "Inhabilitado" || $check_usuario['usuario_estado'] == "Bloqueado"){
+                        
+                        # REGISTRO EN BITÁCORA: Intento en cuenta restringida #
+                        $this->guardarBitacora("Seguridad", "Seguridad", "Intento de acceso a cuenta restringida (".$check_usuario['usuario_estado']."): ".$email);
+
                         echo '<article class="message is-danger"><div class="message-body"><strong>Acceso Restringido</strong><br>Tu cuenta ha sido bloqueada o inhabilitada. Por favor, contacta al administrador del sistema.</div></article>';
                         return;
                     }
@@ -148,8 +152,8 @@
                             $_SESSION['seguridad_pendiente'] = false;
                         }
 
-                        /*== REGISTRO EN BITÁCORA ==*/
-                        $this->guardarBitacora("Seguridad", "Inicio de Sesión", "El usuario ".$_SESSION['usuario']." entró al sistema.");
+                        /*== REGISTRO EN BITÁCORA: Éxito ==*/
+                        $this->guardarBitacora("Seguridad", "Seguridad", "El usuario ".$_SESSION['usuario']." inició sesión correctamente.");
 
                         /*== REDIRECCIÓN AL DASHBOARD ==*/
                         if(!headers_sent()){
@@ -174,20 +178,33 @@
 
                             if($_SESSION['intentos_fallidos'][$email] >= 3){
                                 $this->ejecutarConsulta("UPDATE usuario SET usuario_estado='Inactivo' WHERE usuario_id='".$check_usuario['usuario_id']."'");
+                                
+                                # REGISTRO EN BITÁCORA: Bloqueo de cuenta #
+                                $this->guardarBitacora("Seguridad", "Seguridad", "Cuenta bloqueada por exceso de intentos fallidos: ".$email);
+
                                 unset($_SESSION['intentos_fallidos'][$email]); 
                                 
                                 echo '<article class="message is-danger"><div class="message-body"><strong>¡Cuenta Bloqueada!</strong><br>Ha superado el límite de 3 intentos fallidos. Por seguridad, su cuenta ha sido bloqueada automáticamente. Contacte al Administrador.</div></article>';
                                 return;
                             }else{
+                                # REGISTRO EN BITÁCORA: Intento fallido #
+                                $this->guardarBitacora("Seguridad", "Seguridad", "Contraseña incorrecta para el usuario: ".$email);
+
                                 echo '<article class="message is-warning"><div class="message-body"><strong>Credenciales incorrectas</strong><br>La contraseña es incorrecta. Le quedan '.$intentos_restantes.' intento(s) antes de que la cuenta sea bloqueada.</div></article>';
                                 return;
                             }
                         }else{
+                            # REGISTRO EN BITÁCORA: Fallo admin #
+                            $this->guardarBitacora("Seguridad", "Seguridad", "Intento de acceso fallido a cuenta Administrador.");
+
                             echo '<article class="message is-danger"><div class="message-body"><strong>Atención Administrador</strong><br>La CONTRASEÑA ingresada es incorrecta.</div></article>';
                             return;
                         }
                     }
                 }else{
+                    # REGISTRO EN BITÁCORA: Usuario inexistente #
+                    $this->guardarBitacora("Seguridad", "Seguridad", "Intento de acceso con correo no registrado: ".$email);
+
                     echo '<article class="message is-warning"><div class="message-body"><strong>Atención</strong><br>El correo electrónico ingresado no existe en el sistema.</div></article>';
                 }
             }
@@ -196,7 +213,8 @@
         /*----------  Controlador cerrar sesion  ----------*/
         public function cerrarSesionControlador(){
             if(isset($_SESSION['usuario'])){
-                $this->guardarBitacora("Seguridad", "Cierre de Sesión", "El usuario ".$_SESSION['usuario']." salió del sistema.");
+                # REGISTRO EN BITÁCORA: Cierre de sesión #
+                $this->guardarBitacora("Seguridad", "Seguridad", "El usuario ".$_SESSION['usuario']." cerró su sesión.");
             }
             session_destroy();
             if(headers_sent()){
@@ -251,5 +269,5 @@
                 ]);
             }
             exit;
-}
+        }
     }

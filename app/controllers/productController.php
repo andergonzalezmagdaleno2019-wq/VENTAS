@@ -158,6 +158,7 @@ class productController extends mainModel
                 $this->guardarDatos("producto_proveedor", $relacion_datos);
             }
 
+            # REGISTRO EN BITÁCORA: Registro #
             $this->guardarBitacora("Productos", "Registro", "Se registró el producto: " . $nombre . " con sus proveedores correspondientes.");
             
             $alerta = ["tipo" => "redireccionar", "titulo" => "Catálogo Actualizado", "texto" => "Producto registrado y vinculado a sus proveedores correctamente.", "icono" => "success", "url" => APP_URL."productList/"];
@@ -439,7 +440,10 @@ class productController extends mainModel
 
 		$eliminarProducto = $this->eliminarRegistro("producto", "producto_id", $id);
 		if ($eliminarProducto->rowCount() == 1) {
+            
+            # REGISTRO EN BITÁCORA: Eliminación #
 			$this->guardarBitacora("Productos", "Eliminación", "Se eliminó el producto: " . $datos['producto_nombre']);
+            
 			if (is_file("../views/productos/" . $datos['producto_foto'])) {
 				chmod("../views/productos/" . $datos['producto_foto'], 0777);
 				unlink("../views/productos/" . $datos['producto_foto']);
@@ -553,21 +557,22 @@ class productController extends mainModel
                 $datos_prov_reg = [
                     [
                         "campo_nombre" => "producto_id", 
-                        "campo_marcador" => ":ProdID", // ESTO ES LO QUE FALTA
+                        "campo_marcador" => ":ProdID", 
                         "campo_valor" => $id
                     ],
                     [
                         "campo_nombre" => "proveedor_id", 
-                        "campo_marcador" => ":ProvID", // ESTO ES LO QUE FALTA
+                        "campo_marcador" => ":ProvID", 
                         "campo_valor" => $id_p
                     ]
                 ];
                 
-                // Ahora guardarDatos() encontrará los índices y no dará error en la línea 57 y 63
                 $this->guardarDatos("producto_proveedor", $datos_prov_reg);
             }
 
+            # REGISTRO EN BITÁCORA: Actualización #
             $this->guardarBitacora("Productos", "Actualización", "Datos actualizados del producto: " . $nombre);
+            
             $alerta = ["tipo" => "recargar", "titulo" => "Éxito", "texto" => "Producto actualizado con éxito", "icono" => "success"];
         } else {
             $alerta = ["tipo" => "simple", "titulo" => "Error", "texto" => "No se pudo actualizar o no hubo cambios", "icono" => "error"];
@@ -634,6 +639,10 @@ class productController extends mainModel
         $condicion = ["condicion_campo" => "producto_id", "condicion_marcador" => ":ID", "condicion_valor" => $id];
 
         if ($this->actualizarDatos("producto", $producto_datos_up, $condicion)) {
+            
+            # REGISTRO EN BITÁCORA: Actualización #
+            $this->guardarBitacora("Productos", "Actualización", "Se actualizó la fotografía del producto: " . $datos['producto_nombre']);
+            
             $alerta = ["tipo" => "recargar", "titulo" => "¡Foto actualizada!", "texto" => "La imagen se actualizó con éxito", "icono" => "success"];
         } else {
             $alerta = ["tipo" => "recargar", "titulo" => "Foto subida", "texto" => "La foto se guardó pero el nombre no cambió en la BD", "icono" => "warning"];

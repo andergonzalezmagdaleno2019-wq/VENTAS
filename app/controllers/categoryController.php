@@ -42,26 +42,26 @@
 		    	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El NOMBRE ingresado ya se encuentra registrado, por favor elija otro","icono"=>"error"]; return json_encode($alerta); exit();
 		    }
 
-            # --- LÓGICA INTELIGENTE DE HERENCIA DE UNIDADES ---
+            # --- LÓGICA DE HERENCIA DE UNIDADES ---
             $unidades_str = "";
+            $tipo_log = "categoría principal"; // Para la bitácora
+
             if($padre_id == ""){
-                // Es Categoría Principal: Exigimos los checkboxes
                 $unidades = isset($_POST['categoria_unidades']) ? $_POST['categoria_unidades'] : [];
                 if(empty($unidades)){
                     $alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Debes seleccionar al menos un Tipo de Producto permitido para esta categoría","icono"=>"error"]; return json_encode($alerta); exit();
                 }
                 $unidades_str = implode(",", $unidades);
             } else {
-                // Es Subcategoría: Heredamos las unidades del padre
+                $tipo_log = "subcategoría"; // Para la bitácora
                 $check_padre = $this->ejecutarConsulta("SELECT categoria_unidades FROM categoria WHERE categoria_id='$padre_id'");
                 if($check_padre->rowCount() > 0){
                     $datos_padre = $check_padre->fetch();
                     $unidades_str = $datos_padre['categoria_unidades'];
                 } else {
-                    $unidades_str = "Unidad"; // Respaldo por seguridad
+                    $unidades_str = "Unidad";
                 }
             }
-            # --------------------------------------------------
 
 		    $categoria_datos_reg=[
 				["campo_nombre"=>"categoria_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
@@ -69,7 +69,6 @@
                 ["campo_nombre"=>"categoria_unidades","campo_marcador"=>":Unidades","campo_valor"=>$unidades_str]
 			];
 
-            // Si hay un padre seleccionado, lo agregamos al array de datos
             if ($padre_id != "") {
                 $categoria_datos_reg[] = ["campo_nombre" => "categoria_padre_id", "campo_marcador" => ":Padre", "campo_valor" => $padre_id];
             }
@@ -77,8 +76,12 @@
 			$registrar_categoria=$this->guardarDatos("categoria",$categoria_datos_reg);
 
 			if($registrar_categoria->rowCount()==1){
-                /*== AUDITORIA ==*/
-                $this->guardarBitacora("Categorías", "Registro", "Se registró la categoría: ".$nombre);
+                
+                /*== AUDITORIA REFORZADA ==*/
+                $desc_bitacora = "Se registró una nueva ".$tipo_log.": ".$nombre;
+                if($ubicacion != "") { $desc_bitacora .= " en la ubicación: ".$ubicacion; }
+                
+                $this->guardarBitacora("Categorías", "Registro", $desc_bitacora);
 
 				$alerta=["tipo"=>"limpiar","titulo"=>"Categoría registrada","texto"=>"La categoría ".$nombre." se registró con éxito","icono"=>"success"];
 			}else{
@@ -87,7 +90,6 @@
 
 			return json_encode($alerta);
 		}
-
 
 		/*----------  Controlador listar categoria  ----------*/
 		public function listarCategoriaControlador($pagina,$registros,$url,$busqueda){
@@ -270,108 +272,111 @@
 
 			return $tabla;
 		}
+
 		/*----------  Controlador eliminar categoria  ----------*/
-		public function eliminarCategoriaControlador(){
+        public function eliminarCategoriaControlador(){
 
-			$id=$this->limpiarCadena($_POST['categoria_id']);
+            $id=$this->limpiarCadena($_POST['categoria_id']);
 
-			# Verificando existencia y obteniendo datos #
-			$datos=$this->ejecutarConsulta("SELECT * FROM categoria WHERE categoria_id='$id'");
-			if($datos->rowCount()<=0){
-				$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos encontrado el registro en el sistema","icono"=>"error"]; return json_encode($alerta); exit();
-			}else{
-				$datos=$datos->fetch();
-			}
+            # Verificando existencia y obteniendo datos #
+            $datos=$this->ejecutarConsulta("SELECT * FROM categoria WHERE categoria_id='$id'");
+            if($datos->rowCount()<=0){
+                $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos encontrado el registro en el sistema","icono"=>"error"]; return json_encode($alerta); exit();
+            }else{
+                $datos=$datos->fetch();
+            }
 
-			# IDENTIFICAR SI ES CATEGORÍA O SUBCATEGORÍA #
-			$es_subcategoria = ($datos['categoria_padre_id'] != NULL && $datos['categoria_padre_id'] != "");
-			$termino = ($es_subcategoria) ? "subcategoría" : "categoría";
+            # IDENTIFICAR SI ES CATEGORÍA O SUBCATEGORÍA #
+            $es_subcategoria = ($datos['categoria_padre_id'] != NULL && $datos['categoria_padre_id'] != "");
+            $termino = ($es_subcategoria) ? "subcategoría" : "categoría";
 
-			# VALIDACIÓN 1: Si es Categoría Principal, verificar si tiene hijos (Subcategorías) #
-			if(!$es_subcategoria){
-				$check_subcategorias=$this->ejecutarConsulta("SELECT categoria_id FROM categoria WHERE categoria_padre_id='$id' LIMIT 1");
-				if($check_subcategorias->rowCount()>0){
-					$alerta=[
-						"tipo"=>"simple",
-						"titulo"=>"Operación denegada",
-						"texto"=>"No podemos eliminar esta categoría porque tiene subcategorías dependientes. Elimine primero las subcategorías asociadas.",
-						"icono"=>"error"
-					]; 
-					return json_encode($alerta); exit();
-				}
-			}
+            # VALIDACIÓN 1: Si es Categoría Principal, verificar si tiene hijos (Subcategorías) #
+            if(!$es_subcategoria){
+                $check_subcategorias=$this->ejecutarConsulta("SELECT categoria_id FROM categoria WHERE categoria_padre_id='$id' LIMIT 1");
+                if($check_subcategorias->rowCount()>0){
+                    $alerta=[
+                        "tipo"=>"simple",
+                        "titulo"=>"Operación denegada",
+                        "texto"=>"No podemos eliminar esta categoría porque tiene subcategorías dependientes. Elimine primero las subcategorías asociadas.",
+                        "icono"=>"error"
+                    ]; 
+                    return json_encode($alerta); exit();
+                }
+            }
 
-			# VALIDACIÓN 2: Verificar productos asociados (aplica para ambas) #
-			$check_productos=$this->ejecutarConsulta("SELECT categoria_id FROM producto WHERE categoria_id='$id' LIMIT 1");
-			if($check_productos->rowCount()>0){
-				$alerta=[
-					"tipo"=>"simple",
-					"titulo"=>"Error",
-					"texto"=>"No podemos eliminar la ".$termino." ya que tiene productos asociados en el inventario.",
-					"icono"=>"error"
-				]; 
-				return json_encode($alerta); exit();
-			}
+            # VALIDACIÓN 2: Verificar productos asociados (aplica para ambas) #
+            $check_productos=$this->ejecutarConsulta("SELECT categoria_id FROM producto WHERE categoria_id='$id' LIMIT 1");
+            if($check_productos->rowCount()>0){
+                $alerta=[
+                    "tipo"=>"simple",
+                    "titulo"=>"Error",
+                    "texto"=>"No podemos eliminar la ".$termino." ya que tiene productos asociados en el inventario.",
+                    "icono"=>"error"
+                ]; 
+                return json_encode($alerta); exit();
+            }
 
-			$eliminarCategoria=$this->eliminarRegistro("categoria","categoria_id",$id);
+            $eliminarCategoria=$this->eliminarRegistro("categoria","categoria_id",$id);
 
-			if($eliminarCategoria->rowCount()==1){
-				$this->guardarBitacora("Categorías", "Eliminación", "Se eliminó la ".$termino.": ".$datos['categoria_nombre']);
-				
-				$alerta=[
-					"tipo"=>"recargar",
-					"titulo"=>ucfirst($termino)." eliminada",
-					"texto"=>"La ".$termino." '".$datos['categoria_nombre']."' ha sido eliminada correctamente.",
-					"icono"=>"success"
-				];
-			}else{
-				$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos podido eliminar la ".$termino.", por favor intente nuevamente","icono"=>"error"];
-			}
+            if($eliminarCategoria->rowCount()==1){
+                
+                # REGISTRO EN BITÁCORA: Eliminación #
+                $this->guardarBitacora("Categorías", "Eliminación", "Se eliminó la ".$termino.": ".$datos['categoria_nombre']);
+                
+                $alerta=[
+                    "tipo"=>"recargar",
+                    "titulo"=>ucfirst($termino)." eliminada",
+                    "texto"=>"La ".$termino." '".$datos['categoria_nombre']."' ha sido eliminada correctamente.",
+                    "icono"=>"success"
+                ];
+            }else{
+                $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos podido eliminar la ".$termino.", por favor intente nuevamente","icono"=>"error"];
+            }
 
-			return json_encode($alerta);
-		}
+            return json_encode($alerta);
+        }
 
 
 		/*----------  Controlador actualizar categoria  ----------*/
-		public function actualizarCategoriaControlador(){
+        public function actualizarCategoriaControlador(){
 
-			$id=$this->limpiarCadena($_POST['categoria_id']);
+            $id=$this->limpiarCadena($_POST['categoria_id']);
 
-		    $datos=$this->ejecutarConsulta("SELECT * FROM categoria WHERE categoria_id='$id'");
-		    if($datos->rowCount()<=0){
-		        $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos encontrado la categoría en el sistema","icono"=>"error"]; return json_encode($alerta); exit();
-		    }else{
-		    	$datos=$datos->fetch();
-		    }
-
-		    $nombre=$this->limpiarCadena($_POST['categoria_nombre']);
-		    $ubicacion=$this->limpiarCadena($_POST['categoria_ubicacion']);
-
-            if($nombre==""){
-            	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No has llenado todos los campos que son obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
+            $datos=$this->ejecutarConsulta("SELECT * FROM categoria WHERE categoria_id='$id'");
+            if($datos->rowCount()<=0){
+                $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No hemos encontrado la categoría en el sistema","icono"=>"error"]; return json_encode($alerta); exit();
+            }else{
+                $datos=$datos->fetch();
             }
 
-		    if($this->verificarDatos("[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{4,50}",$nombre)){
-		    	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El NOMBRE no coincide con el formato solicitado","icono"=>"error"]; return json_encode($alerta); exit();
-		    }
+            $nombre=$this->limpiarCadena($_POST['categoria_nombre']);
+            $ubicacion=$this->limpiarCadena($_POST['categoria_ubicacion']);
+
+            if($nombre==""){
+                $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"No has llenado todos los campos que son obligatorios","icono"=>"error"]; return json_encode($alerta); exit();
+            }
+
+            if($this->verificarDatos("[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{4,50}",$nombre)){
+                $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El NOMBRE no coincide con el formato solicitado","icono"=>"error"]; return json_encode($alerta); exit();
+            }
 
             # VALIDACIÓN: El nombre debe tener letras #
             if (!preg_match("/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/", $nombre)) {
                 $alerta = ["tipo" => "simple", "titulo" => "Nombre Inválido", "texto" => "El nombre de la categoría no puede ser solo números.", "icono" => "error"]; return json_encode($alerta); exit();
             }
 
-		    if($ubicacion!=""){
-		    	if($this->verificarDatos("[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{5,150}",$ubicacion)){
-			    	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"La UBICACION no coincide con el formato solicitado","icono"=>"error"]; return json_encode($alerta); exit();
-			    }
-		    }
+            if($ubicacion!=""){
+                if($this->verificarDatos("[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]{5,150}",$ubicacion)){
+                    $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"La UBICACION no coincide con el formato solicitado","icono"=>"error"]; return json_encode($alerta); exit();
+                }
+            }
 
-		    if($datos['categoria_nombre']!=$nombre){
-			    $check_nombre=$this->ejecutarConsulta("SELECT categoria_nombre FROM categoria WHERE categoria_nombre='$nombre'");
-			    if($check_nombre->rowCount()>0){
-			    	$alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El NOMBRE ingresado ya se encuentra registrado, por favor elija otro","icono"=>"error"]; return json_encode($alerta); exit();
-			    }
-		    }
+            if($datos['categoria_nombre']!=$nombre){
+                $check_nombre=$this->ejecutarConsulta("SELECT categoria_nombre FROM categoria WHERE categoria_nombre='$nombre'");
+                if($check_nombre->rowCount()>0){
+                    $alerta=["tipo"=>"simple","titulo"=>"Ocurrió un error inesperado","texto"=>"El NOMBRE ingresado ya se encuentra registrado, por favor elija otro","icono"=>"error"]; return json_encode($alerta); exit();
+                }
+            }
 
             # --- LÓGICA DE ACTUALIZACIÓN DE UNIDADES ---
             $es_subcategoria = ($datos['categoria_padre_id'] != NULL && $datos['categoria_padre_id'] != "");
@@ -385,19 +390,19 @@
                 }
                 $unidades_str = implode(",", $unidades);
             }
-            # ---------------------------------------------
 
-		    $categoria_datos_up=[
-				["campo_nombre"=>"categoria_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
-				["campo_nombre"=>"categoria_ubicacion","campo_marcador"=>":Ubicacion","campo_valor"=>$ubicacion]
-			];
+
+            $categoria_datos_up=[
+                ["campo_nombre"=>"categoria_nombre","campo_marcador"=>":Nombre","campo_valor"=>$nombre],
+                ["campo_nombre"=>"categoria_ubicacion","campo_marcador"=>":Ubicacion","campo_valor"=>$ubicacion]
+            ];
 
             // Solo actualizamos el campo unidades si es la categoría padre
             if(!$es_subcategoria){
                 $categoria_datos_up[] = ["campo_nombre"=>"categoria_unidades","campo_marcador"=>":Unidades","campo_valor"=>$unidades_str];
             }
 
-			$condicion=["condicion_campo"=>"categoria_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
+            $condicion=["condicion_campo"=>"categoria_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
             $tipo_txt = (isset($_POST['tipo_elemento']) && $_POST['tipo_elemento'] == "subcategoria") ? "Subcategoría" : "Categoría";
             $url_listado = ($tipo_txt == "Subcategoría") ? "subcategorylist/" : "categoryList/";
@@ -410,6 +415,7 @@
                     $this->ejecutarConsulta("UPDATE categoria SET categoria_unidades='$unidades_str' WHERE categoria_padre_id='$id'");
                 }
 
+                # REGISTRO EN BITÁCORA: Actualización #
                 $this->guardarBitacora("Categorías", "Actualización", "Se actualizaron los datos de la ".$tipo_txt.": ".$nombre);
 
                 $alerta=[
@@ -424,5 +430,5 @@
             }
 
             return json_encode($alerta);
-	    }
+        }
     }

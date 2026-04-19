@@ -33,6 +33,8 @@
                                 <option value="Proveedores" <?php echo ($busqueda=="Proveedores") ? 'selected' : ''; ?>>Proveedores</option>
                                 <option value="Clientes" <?php echo ($busqueda=="Clientes") ? 'selected' : ''; ?>>Clientes</option>
                                 <option value="Usuarios" <?php echo ($busqueda=="Usuarios") ? 'selected' : ''; ?>>Usuarios</option>
+                                <option value="Compras" <?php echo ($busqueda=="Compras") ? 'selected' : ''; ?>>Compras</option>
+                                <option value="Ventas" <?php echo ($busqueda=="Ventas") ? 'selected' : ''; ?>>Ventas</option>
                             </select>
                         </span>
                     </p>

@@ -262,6 +262,9 @@
             // Se mantiene el monto de la caja igual (sin sumar el pago digital)
             $this->actualizarDatos("caja",[ ["campo_nombre"=>"caja_efectivo","campo_marcador"=>":E","campo_valor"=>$total_caja] ],["condicion_campo"=>"caja_id","condicion_marcador"=>":I","condicion_valor"=>$caja]);
 
+            # AUDITORIA #
+            $this->guardarBitacora("Ventas", "Registro", "Se procesó una nueva venta con código: ".$codigo_venta." por un monto de $".$venta_total_final);
+
             unset($_SESSION['venta_total']); 
             unset($_SESSION['datos_cliente_venta']); 
             unset($_SESSION['datos_producto_venta']);
@@ -421,42 +424,55 @@
             $tabla.='</tbody></table></div>';
             $tabla .= $modales;
 
-            if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de <strong>'.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina,$numeroPaginas,$url,7); }
+            if($total>0 && $pagina<=$numeroPaginas){ $tabla.='<p class="has-text-right">Mostrando <strong>'.$pag_inicio.'</strong> al <strong>'.$pag_final.'</strong> de <strong>'.$total.'</strong></p>'; $tabla.=$this->paginadorTablas($pagina, $numeroPaginas, $url, 7); }
             return $tabla;
         }
 
-		/*----------  Controlador eliminar venta ----------*/
+        /*----------  Controlador eliminar venta ----------*/
 		public function eliminarVentaControlador(){
 			$id=$this->limpiarCadena($_POST['venta_id']);
-		    $datos=$this->ejecutarConsulta("SELECT * FROM venta WHERE venta_id='$id'");
-		    if($datos->rowCount()<=0){ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"Venta no encontrada","icono"=>"error"]); exit(); }else{ $datos=$datos->fetch(); }
-		    
-            $detalles = $this->ejecutarConsulta("SELECT * FROM venta_detalle WHERE venta_codigo='".$datos['venta_codigo']."'")->fetchAll();
-            
-            // Abrir conexión una sola vez
-            $conexion_db = $this->conectar();
-            $stmt_stock = $conexion_db->prepare("UPDATE producto SET producto_stock = producto_stock + :Cantidad WHERE producto_id = :ID");
-            
-            foreach($detalles as $prod){
-                $stmt_stock->execute([
-                    ':Cantidad' => $prod['venta_detalle_cantidad'],
-                    ':ID' => $prod['producto_id']
-                ]);
-            }
-            
-            
-            if($datos['venta_metodo_pago'] == "Efectivo" || $datos['venta_metodo_pago'] == "Divisas"){
-                $update_caja = $conexion_db->prepare("UPDATE caja SET caja_efectivo = caja_efectivo - :Efectivo WHERE caja_id = :CajaID");
-                $update_caja->execute([
-                    ':Efectivo' => $datos['venta_total'],
-                    ':CajaID' => $datos['caja_id']
-                ]);
-            }
+			$datos=$this->ejecutarConsulta("SELECT * FROM venta WHERE venta_id='$id'");
 
-		    $this->eliminarRegistro("venta_detalle","venta_codigo",$datos['venta_codigo']);
-		    if($this->eliminarRegistro("venta","venta_id",$id)->rowCount()==1){
-		        return json_encode(["tipo"=>"recargar","titulo"=>"Venta anulada","texto"=>"Stock y cuentas restauradas correctamente","icono"=>"success"]);
-		    }else{ return json_encode(["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo eliminar la cabecera de la venta","icono"=>"error"]); }
+			if($datos->rowCount()<=0){
+				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"Venta no encontrada","icono"=>"error"];
+				return json_encode($alerta);
+				exit();
+			}else{
+				$datos=$datos->fetch();
+			}
+
+			$detalles=$this->ejecutarConsulta("SELECT * FROM venta_detalle WHERE venta_codigo='".$datos['venta_codigo']."'")->fetchAll();
+
+			$conexion_db=$this->conectar();
+			$stmt_stock=$conexion_db->prepare("UPDATE producto SET producto_stock=producto_stock+:Cantidad WHERE producto_id=:ID");
+
+			foreach($detalles as $prod){
+				$stmt_stock->execute([
+					':Cantidad'=>$prod['venta_detalle_cantidad'],
+					':ID'=>$prod['producto_id']
+				]);
+			}
+
+			if($datos['venta_metodo_pago']=="Efectivo" || $datos['venta_metodo_pago']=="Divisas"){
+				$update_caja=$conexion_db->prepare("UPDATE caja SET caja_efectivo=caja_efectivo-:Efectivo WHERE caja_id=:CajaID");
+				$update_caja->execute([
+					':Efectivo'=>$datos['venta_total'],
+					':CajaID'=>$datos['caja_id']
+				]);
+			}
+
+			$this->eliminarRegistro("venta_detalle","venta_codigo",$datos['venta_codigo']);
+
+			if($this->eliminarRegistro("venta","venta_id",$id)->rowCount()==1){
+				# AUDITORIA #
+				$this->guardarBitacora("Ventas", "Eliminación", "Se anuló la venta con código: ".$datos['venta_codigo'].". El stock fue devuelto al inventario.");
+
+				$alerta=["tipo"=>"recargar","titulo"=>"Venta anulada","texto"=>"Stock y cuentas restauradas correctamente","icono"=>"success"];
+				return json_encode($alerta);
+			}else{
+				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo eliminar la cabecera de la venta","icono"=>"error"];
+				return json_encode($alerta);
+			}
 		}
 
         /*---------- Controlador vaciar carrito ----------*/

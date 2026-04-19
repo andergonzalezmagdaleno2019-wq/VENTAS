@@ -56,6 +56,10 @@
 			$registrar_proveedor=$this->guardarDatos("proveedor",$datos_proveedor_reg);
 
 			if($registrar_proveedor->rowCount()==1){
+                
+                # REGISTRO EN BITÁCORA: Registro #
+                $this->guardarBitacora("Proveedores", "Registro", "Se registró un nuevo proveedor: " . $nombre . " con RIF: " . $rif);
+                
 				$alerta=["tipo"=>"limpiar","titulo"=>"¡Éxito!","texto"=>"Proveedor registrado correctamente bajo el RIF: $rif","icono"=>"success"];
 			}else{
 				$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo registrar el proveedor","icono"=>"error"];
@@ -118,7 +122,10 @@
 
 		    $eliminarProveedor=$this->eliminarRegistro("proveedor","proveedor_id",$id);
 		    if($eliminarProveedor->rowCount()==1){
+                
+                # REGISTRO EN BITÁCORA: Eliminación #
                 $this->guardarBitacora("Proveedores", "Eliminación", "Se eliminó el proveedor: ".$datos['proveedor_nombre']);
+                
 		        $alerta=["tipo"=>"recargar","titulo"=>"Éxito","texto"=>"El proveedor fue eliminado del sistema","icono"=>"success"];
 		    }else{
 		    	$alerta=["tipo"=>"simple","titulo"=>"Error","texto"=>"No se pudo eliminar el proveedor","icono"=>"error"];
@@ -200,7 +207,10 @@
             $condicion=["condicion_campo"=>"proveedor_id","condicion_marcador"=>":ID","condicion_valor"=>$id];
 
             if($this->actualizarDatos("proveedor",$proveedor_datos_up,$condicion)){
+                
+                # REGISTRO EN BITÁCORA: Actualización #
                 $this->guardarBitacora("Proveedores", "Actualización", "Se actualizaron datos del proveedor: ".$nombre);
+                
                 $alerta=[
 					"tipo"=>"redireccionar",
 					"titulo"=>"¡Éxito!",
