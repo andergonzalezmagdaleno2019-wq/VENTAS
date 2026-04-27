@@ -202,7 +202,7 @@ if(isset($_POST['verificar_correo_ajax']) && $_POST['verificar_correo_ajax'] ===
                 title: 'Recuperar Cuenta',
                 text: 'Ingresa tu correo electrónico registrado:',
                 input: 'email',
-                inputPlaceholder: 'tu-correo@ejemplo.com',
+                inputPlaceholder: 'usuario@correo.com',
                 showCancelButton: true,
                 confirmButtonText: 'Verificar correo',
                 cancelButtonText: 'Cancelar',
