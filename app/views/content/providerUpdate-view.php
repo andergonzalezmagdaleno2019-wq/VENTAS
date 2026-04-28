@@ -5,6 +5,22 @@
 
 <div class="container pb-6 pt-6">
 	<?php
+        /*---------- Bloque de seguridad: Admin (1) y Supervisor (3) ----------*/
+        if($_SESSION['rol'] != 1 && $_SESSION['rol'] != 3){
+            echo '
+            <div class="notification is-danger is-light has-text-centered">
+                <br>
+                <i class="fas fa-ban fa-3x"></i><br>
+                <h1 class="title mt-4">¡Acceso Denegado!</h1>
+                <p>No tienes los permisos necesarios para acceder a este módulo.</p>
+                <br>
+                <a href="'.APP_URL.'dashboard/" class="button is-danger is-rounded">Regresar al Inicio</a>
+                <br><br>
+            </div>';
+            exit(); 
+        }
+    ?>
+	<?php
 		include "./app/views/inc/btn_back.php";
         $id = $insLogin->limpiarCadena($url[1]);
 		$datos=$insLogin->seleccionarDatos("Unico","proveedor","proveedor_id",$id);

@@ -4,6 +4,23 @@
 </div>
 
 <div class="container is-fluid pb-6">
+    
+    <?php
+        /*---------- Bloque de seguridad: Admin (1) y Supervisor (3) ----------*/
+        if($_SESSION['rol'] != 1 && $_SESSION['rol'] != 3){
+            echo '
+            <div class="notification is-danger is-light has-text-centered">
+                <br>
+                <i class="fas fa-ban fa-3x"></i><br>
+                <h1 class="title mt-4">¡Acceso Denegado!</h1>
+                <p>No tienes los permisos necesarios para acceder a este módulo.</p>
+                <br>
+                <a href="'.APP_URL.'dashboard/" class="button is-danger is-rounded">Regresar al Inicio</a>
+                <br><br>
+            </div>';
+            exit(); 
+        }
+    ?>
 
     <form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/productoAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data">
 

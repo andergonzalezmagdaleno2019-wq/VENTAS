@@ -1,3 +1,23 @@
+   <div class="container pb-6 pt-6">
+    <?php
+        /*---------- Bloque de seguridad: Solo Administrador (1) ----------*/
+        if($_SESSION['rol'] != 1){
+            echo '
+            <div class="notification is-danger is-light has-text-centered">
+                <i class="fas fa-ban fa-3x"></i><br>
+                <h1 class="title">¡Acceso Denegado!</h1>
+                <p>No tienes los permisos necesarios para acceder a este módulo de administración.</p>
+                <br>
+                <a href="'.APP_URL.'dashboard/" class="button is-danger is-rounded">Regresar al Inicio</a>
+            </div>';
+            exit(); 
+        }
+
+        // Si es Admin, el código continúa sin el "else" gigante
+        $insCategoria = new app\controllers\categoryController();
+        $busqueda = isset($_SESSION[$url[0]]) ? $_SESSION[$url[0]] : "";
+    ?>
+    </div>
 <div class="container is-fluid mb-6">
 	<h1 class="title">Cajas</h1>
 	<h2 class="subtitle"><i class="fas fa-cash-register fa-fw"></i> &nbsp; Nueva caja</h2>
